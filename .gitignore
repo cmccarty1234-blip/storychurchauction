@@ -32,6 +32,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
 
 # vercel
 .vercel
@@ -39,3 +40,13 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local project data
+/.pgdata
+/uploads
+/uploads-sim
+.dev-server.log
+.sim-output.log
+
+# donor contact data — local only
+/data
