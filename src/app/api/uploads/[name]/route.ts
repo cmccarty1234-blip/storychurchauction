@@ -8,7 +8,7 @@ export const GET = route<RouteContext<'/api/uploads/[name]'>>(async (_req, ctx) 
   return new Response(new Uint8Array(img.buf), {
     headers: {
       'Content-Type': img.type,
-      'Cache-Control': 'public, max-age=31536000, immutable',
+      'Cache-Control': 'public, max-age=31536000, s-maxage=31536000, immutable',
       'X-Content-Type-Options': 'nosniff',
       'Content-Security-Policy': "default-src 'none'; style-src 'unsafe-inline'",
     },

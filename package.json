@@ -20,7 +20,8 @@
     "setup": "tsx scripts/setup-event.ts",
     "db:bundle": "node scripts/bundle-sql.mjs",
     "import:items": "tsx scripts/import-items.ts",
-    "admin:reset-password": "tsx scripts/reset-admin-password.ts"
+    "admin:reset-password": "tsx scripts/reset-admin-password.ts",
+    "attach:images": "tsx scripts/attach-images.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
@@ -48,6 +49,7 @@
     "dotenv": "^18.0.9",
     "eslint": "^9",
     "eslint-config-next": "16.4.3",
+    "sharp": "^0.35.5",
     "tailwindcss": "^4",
     "tsx": "^4.23.15",
     "typescript": "^5",
