@@ -23,6 +23,11 @@ function supabase() {
   return { url, key, bucket: process.env.SUPABASE_STORAGE_BUCKET || 'item-images' }
 }
 
+/** Legacy service_role keys are JWTs (sent as Bearer + apikey); the newer `sb_secret_…` keys are NOT JWTs and go in `apikey` only. */
+function authHeaders(key: string): Record<string, string> {
+  return key.startsWith('sb_') ? { apikey: key } : { Authorization: `Bearer ${key}`, apikey: key }
+}
+
 export function storageBackend(): 'supabase' | 'local' {
   return supabase() ? 'supabase' : 'local'
 }
@@ -46,7 +51,7 @@ async function ensureBucket(s: NonNullable<ReturnType<typeof supabase>>) {
   bucketReady ??= (async () => {
     const res = await fetch(`${s.url}/storage/v1/bucket`, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${s.key}`, apikey: s.key, 'Content-Type': 'application/json' },
+      headers: { ...authHeaders(s.key), 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: s.bucket, name: s.bucket, public: false, file_size_limit: MAX_BYTES, allowed_mime_types: ['image/png', 'image/jpeg', 'image/gif', 'image/webp'] }),
     })
     if (res.ok) return
@@ -71,7 +76,7 @@ export async function saveImage(buf: Buffer): Promise<string> {
     await ensureBucket(s)
     const res = await fetch(`${s.url}/storage/v1/object/${s.bucket}/${name}`, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${s.key}`, apikey: s.key, 'Content-Type': t.type, 'x-upsert': 'false' },
+      headers: { ...authHeaders(s.key), 'Content-Type': t.type, 'x-upsert': 'false' },
       body: new Uint8Array(buf),
     })
     if (!res.ok) throw new AppError('STORAGE_ERROR', `The photo couldn’t be saved (${res.status}). Please try again.`, 502)
@@ -91,7 +96,7 @@ export async function readImage(name: string): Promise<{ buf: Buffer; type: stri
   const type = TYPES[name.split('.').pop()!]
   const s = supabase()
   if (s) {
-    const res = await fetch(`${s.url}/storage/v1/object/${s.bucket}/${name}`, { headers: { Authorization: `Bearer ${s.key}`, apikey: s.key } })
+    const res = await fetch(`${s.url}/storage/v1/object/${s.bucket}/${name}`, { headers: authHeaders(s.key) })
     if (!res.ok) return null
     return { buf: Buffer.from(await res.arrayBuffer()), type }
   }

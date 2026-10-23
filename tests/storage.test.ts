@@ -34,6 +34,15 @@ describe('Supabase Storage backend (mocked network)', () => {
     expect((upload.init!.headers as Record<string, string>)['Content-Type']).toBe('image/png')
   })
 
+  it('sends the newer sb_secret_ keys in the apikey header only (they are not JWTs)', async () => {
+    process.env.SUPABASE_SERVICE_ROLE_KEY = 'sb_secret_abc123'
+    await saveImage(PNG)
+    const upload = calls.find((c) => c.url.includes('/storage/v1/object/'))!
+    const h = upload.init!.headers as Record<string, string>
+    expect(h.apikey).toBe('sb_secret_abc123')
+    expect(h.Authorization).toBeUndefined()
+  })
+
   it('reads through the server (never exposes the key) and rejects odd names', async () => {
     const img = await readImage('11111111-1111-1111-1111-111111111111.png')
     expect(img?.type).toBe('image/png')
