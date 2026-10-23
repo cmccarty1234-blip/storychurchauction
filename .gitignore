@@ -50,3 +50,6 @@ next-env.d.ts
 
 # donor contact data — local only
 /data
+
+# generated handouts (rebuild with: node handouts/build.mjs)
+/handouts/out
