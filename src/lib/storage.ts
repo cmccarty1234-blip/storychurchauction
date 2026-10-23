@@ -14,7 +14,7 @@ import { AppError } from './errors'
  */
 const MAX_BYTES = 4 * 1024 * 1024 // Vercel limits request bodies to ~4.5 MB; the browser shrinks photos before upload
 
-const localDir = () => path.resolve(process.env.UPLOAD_DIR ?? './uploads')
+const localDir = () => path.resolve(/*turbopackIgnore: true*/ process.env.UPLOAD_DIR ?? './uploads')
 
 function supabase() {
   const url = process.env.SUPABASE_URL?.replace(/\/+$/, '')
@@ -82,7 +82,7 @@ export async function saveImage(buf: Buffer): Promise<string> {
     throw new AppError('STORAGE_NOT_CONFIGURED', 'Photo storage isn’t set up yet. An administrator needs to add the Supabase storage settings.', 503)
   }
   await fs.mkdir(localDir(), { recursive: true })
-  await fs.writeFile(path.join(localDir(), name), buf)
+  await fs.writeFile(path.join(/*turbopackIgnore: true*/ localDir(), name), buf)
   return name
 }
 
@@ -96,7 +96,7 @@ export async function readImage(name: string): Promise<{ buf: Buffer; type: stri
     return { buf: Buffer.from(await res.arrayBuffer()), type }
   }
   try {
-    return { buf: await fs.readFile(path.join(localDir(), name)), type }
+    return { buf: await fs.readFile(path.join(/*turbopackIgnore: true*/ localDir(), name)), type }
   } catch {
     return null
   }
@@ -105,5 +105,5 @@ export async function readImage(name: string): Promise<{ buf: Buffer; type: stri
 /** Seed-only: demo artwork is written as SVG to local disk. Never used in production. */
 export async function writeSeedSvg(name: string, svg: string) {
   await fs.mkdir(localDir(), { recursive: true })
-  await fs.writeFile(path.join(localDir(), name), svg)
+  await fs.writeFile(path.join(/*turbopackIgnore: true*/ localDir(), name), svg)
 }
