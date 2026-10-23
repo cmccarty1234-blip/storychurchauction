@@ -7,7 +7,7 @@
  */
 import { config } from 'dotenv'
 config({ path: '.env.local' })
-import { one, pool } from '../src/lib/db'
+import { one, pool, dbUrl } from '../src/lib/db'
 import { createAdminUser } from '../src/lib/auth-core'
 import { localInputToUtc } from '../src/lib/time'
 
@@ -22,6 +22,8 @@ async function main() {
   const password = arg('admin-password')
   if (!email || !name || !password) throw new Error('Required: --admin-email, --admin-name, --admin-password (and --event on first run)')
 
+  const u = new URL(dbUrl())
+  console.log(`Database host : ${u.hostname}\nDatabase user : ${decodeURIComponent(u.username)}   (on Supabase, the part after the dot is the project ID)`)
   const existing = await one<{ id: string; is_demo: boolean }>('select id, is_demo from events order by created_at desc limit 1')
   if (existing?.is_demo) throw new Error('This database holds the DEMO event. Use a fresh database for a real event.')
   if (!existing) {
@@ -35,8 +37,13 @@ async function main() {
     )
     console.log(`Created event "${eventName}" (${tz}).`)
   }
-  const admin = await createAdminUser({ email, name, password, role: 'admin' })
-  console.log(`Created administrator ${admin!.email}.`)
+  try {
+    const admin = await createAdminUser({ email, name, password, role: 'admin' })
+    console.log(`Created administrator ${admin!.email}.`)
+  } catch (e) {
+    if ((e as { code?: string }).code === 'DUPLICATE') console.log(`An administrator with ${email} already exists — kept as is (password unchanged).`)
+    else throw e
+  }
 }
 
 main()

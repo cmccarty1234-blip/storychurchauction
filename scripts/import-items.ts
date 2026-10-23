@@ -50,10 +50,11 @@ async function main() {
   const parsed = new URL(dbUrl())
   const host = parsed.hostname
   const dbUser = decodeURIComponent(parsed.username) // on the Supabase pooler this is postgres.<project-id>
+  console.log(`Database host : ${host}\nDatabase user : ${dbUser}   (on Supabase, the part after the dot is the project ID)`)
   const ev = await one<{ id: string; name: string; is_demo: boolean }>('select id, name, is_demo from events order by created_at desc limit 1')
   if (!ev) throw new Error('No event exists yet. Run `npm run setup` first.')
   if (ev.is_demo) throw new Error(`The event on ${host} is the DEMO event. Refusing to import real items into it.`)
-  console.log(`Database host : ${host}\nDatabase user : ${dbUser}   (on Supabase, the part after the dot is the project ID)\nEvent         : ${ev.name}\nFile          : ${file} (${clean.length} rows)\nMode          : ${apply ? 'APPLY (writing)' : 'dry run (nothing is written)'}\n`)
+  console.log(`Event         : ${ev.name}\nFile          : ${file} (${clean.length} rows)\nMode          : ${apply ? 'APPLY (writing)' : 'dry run (nothing is written)'}\n`)
 
   const existing = new Set((await query<{ t: string }>(`select kind || ':' || lower(title) as t from auction_items where event_id = $1`, [ev.id])).map((r) => r.t))
   const todo = clean.filter((r) => !existing.has(`${r.kind}:${r.title.toLowerCase()}`))
