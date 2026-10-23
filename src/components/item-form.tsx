@@ -23,6 +23,7 @@ export type ItemFormValues = {
   increment: string
   published: boolean
   locked?: boolean // prices locked once bidding started
+  kindLocked?: boolean // type can no longer be switched (bids exist, or it's on the block / closed)
 }
 
 export function ItemForm({ initial, defaultIncrement }: { initial?: ItemFormValues; defaultIncrement: string }) {
@@ -35,6 +36,7 @@ export function ItemForm({ initial, defaultIncrement }: { initial?: ItemFormValu
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
+  const originalKind = initial?.kind
   const set = <K extends keyof ItemFormValues>(k: K, val: ItemFormValues[K]) => { setV((p) => ({ ...p, [k]: val })); setSaved(false) }
 
   async function submit(e: React.FormEvent) {
@@ -64,16 +66,19 @@ export function ItemForm({ initial, defaultIncrement }: { initial?: ItemFormValu
 
     const common = {
       title: v.title.trim(), description: v.description, donorName: v.donorName.trim() || null, imagePath,
-      startingBidCents: start, incrementCents: inc, itemNumber: v.itemNumber || undefined, published: v.published,
+      startingBidCents: start, incrementCents: inc, published: v.published,
+      // When the type changes the server assigns a new number in the other range.
+      itemNumber: editing && v.kind !== originalKind ? undefined : v.itemNumber || undefined,
     }
     const res = editing
-      ? await post('/api/admin/items', { action: 'update', id: v.id, ...common })
+      ? await post('/api/admin/items', { action: 'update', id: v.id, kind: v.kind, ...common })
       : await post<{ id: string }>('/api/admin/items', { action: 'create', kind: v.kind, ...common })
     setBusy(false)
     if (!res.ok) return setError(res.error.message)
     if (editing) {
       setSaved(true)
       setFile(null)
+      if (v.kind !== originalKind) window.location.reload() // new item number / status come back from the server
       router.refresh()
     } else {
       router.push(`/admin/items/${(res.data as { id: string }).id}`)
@@ -83,8 +88,8 @@ export function ItemForm({ initial, defaultIncrement }: { initial?: ItemFormValu
 
   return (
     <form onSubmit={submit} className="space-y-5 rounded-xl border bg-card p-5 shadow-sm" noValidate>
-      {!editing ? (
-        <fieldset>
+      {(
+        <fieldset disabled={editing && !!v.kindLocked}>
           <legend className="mb-2 text-sm font-medium">Auction type</legend>
           <div className="flex gap-2">
             {(['silent', 'live'] as const).map((k) => (
@@ -94,8 +99,13 @@ export function ItemForm({ initial, defaultIncrement }: { initial?: ItemFormValu
               </label>
             ))}
           </div>
+          {editing ? (
+            <p className="mt-2 text-xs text-muted-foreground">
+              {v.kindLocked ? 'The type is locked because this item has bids or is already on the block or closed.' : 'You can switch silent ⇄ live until the first bid. Saving a change gives the item a new number (silent 1…, live 101…), so reprint its QR label if you already printed one.'}
+            </p>
+          ) : null}
         </fieldset>
-      ) : null}
+      )}
       <Field label="Title" htmlFor="title">
         <Input id="title" value={v.title} onChange={(e) => set('title', e.target.value)} maxLength={120} />
       </Field>

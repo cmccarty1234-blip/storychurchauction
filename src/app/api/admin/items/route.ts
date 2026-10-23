@@ -5,6 +5,7 @@ import { AppError } from '@/lib/errors'
 import { audit } from '@/lib/audit'
 import { getEvent } from '@/lib/events'
 import { closeSilentItem, finalizeDueSilentItems, reopenItem } from '@/lib/bidding'
+import { changeItemKind } from '@/lib/items'
 import { notify } from '@/lib/realtime'
 import { pool } from '@/lib/db'
 import { localInputToUtc } from '@/lib/time'
@@ -24,7 +25,7 @@ const fields = z.object({
 
 const Body = z.discriminatedUnion('action', [
   z.object({ action: z.literal('create') }).merge(fields),
-  z.object({ action: z.literal('update'), id: uuid }).merge(fields.omit({ kind: true })),
+  z.object({ action: z.literal('update'), id: uuid, kind: z.enum(['silent', 'live']).optional() }).merge(fields.omit({ kind: true })),
   z.object({ action: z.literal('delete'), id: uuid }),
   z.object({ action: z.literal('close'), id: uuid }),
   z.object({ action: z.literal('reopen'), id: uuid, reason: z.string(), newCloseAt: z.string().optional() }),
@@ -68,6 +69,13 @@ export const POST = route(async (req) => {
     case 'update': {
       const item = await one<{ bid_count: number; kind: string; starting_bid_cents: number; increment_cents: number }>('select * from auction_items where id = $1 and event_id = $2', [b.id, ev.id])
       if (!item) throw new AppError('ITEM_NOT_FOUND', 'Item not found.', 404)
+      let itemNumber = b.itemNumber
+      if (b.kind && b.kind !== item.kind) {
+        // Type change moves the item into the other number range; a number typed for the old range is ignored.
+        const r = await changeItemKind(b.id, b.kind, admin.id)
+        itemNumber = undefined
+        void r
+      }
       if (item.bid_count > 0 && (item.starting_bid_cents !== b.startingBidCents || item.increment_cents !== b.incrementCents)) {
         throw new AppError('HAS_BIDS', 'Prices can’t be changed after bidding has started.', 409)
       }
@@ -77,10 +85,10 @@ export const POST = route(async (req) => {
                   starting_bid_cents=$6, increment_cents=$7, item_number=coalesce($8, item_number),
                   live_order = case when kind = 'live' then coalesce($8, live_order) else live_order end, updated_at=now()
             where id=$1`,
-          [b.id, b.title, b.description, b.donorName || null, b.imagePath || null, b.startingBidCents, b.incrementCents, b.itemNumber ?? null],
+          [b.id, b.title, b.description, b.donorName || null, b.imagePath || null, b.startingBidCents, b.incrementCents, itemNumber ?? null],
         )
       } catch (e: any) {
-        if (e.code === '23505') throw new AppError('DUPLICATE_NUMBER', `Item number ${b.itemNumber} is already in use.`, 409)
+        if (e.code === '23505') throw new AppError('DUPLICATE_NUMBER', `Item number ${itemNumber} is already in use.`, 409)
         throw e
       }
       await audit({ eventId: ev.id, actorType: 'admin', actorId: admin.id, action: 'item.updated', entityType: 'auction_item', entityId: b.id, details: { title: b.title } })

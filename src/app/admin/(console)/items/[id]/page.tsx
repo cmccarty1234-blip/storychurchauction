@@ -61,6 +61,7 @@ export default async function AdminItemPage({ params }: { params: Promise<{ id: 
               donorName: item.donor_name ?? '', imagePath: item.image_path,
               startingBid: String(item.starting_bid_cents / 100), increment: String(item.increment_cents / 100),
               published: item.status !== 'draft', locked: item.bid_count > 0,
+              kindLocked: hasHistory || !(item.kind === 'silent' ? ['draft', 'open'] : ['draft', 'upcoming']).includes(item.status),
             }}
           />
         </div>
