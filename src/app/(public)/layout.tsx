@@ -1,8 +1,14 @@
 import { getEvent } from '@/lib/events'
+import { AppError } from '@/lib/errors'
 import { SiteFooter, SiteHeader } from '@/components/site-header'
 
 export default async function PublicLayout({ children }: { children: React.ReactNode }) {
-  const ev = await getEvent().catch(() => null)
+  // Only "no event yet" is a friendly empty state. Anything else (database unreachable, bad password…) must surface as a
+  // real error so it can't be mistaken for "not set up".
+  const ev = await getEvent().catch((e) => {
+    if (e instanceof AppError && e.code === 'NO_EVENT') return null
+    throw e
+  })
   return (
     <div className="flex min-h-screen flex-col">
       {ev?.is_demo ? (
