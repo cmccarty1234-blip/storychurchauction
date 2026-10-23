@@ -3,11 +3,12 @@ import { cache } from 'react'
 import { redirect } from 'next/navigation'
 import { adminFromToken, bidderFromToken, ADMIN_SESSION_HOURS, BIDDER_SESSION_DAYS, type AdminRow, type BidderRow } from './auth-core'
 import { AppError } from './errors'
+import { appUrl } from './appurl'
 
 export const BIDDER_COOKIE = 'sc_bidder'
 export const ADMIN_COOKIE = 'sc_admin'
 
-const secureCookies = () => (process.env.NEXT_PUBLIC_APP_URL ?? '').startsWith('https://')
+const secureCookies = () => appUrl().startsWith('https://')
 
 export const getBidder = cache(async (): Promise<BidderRow | null> => {
   return bidderFromToken((await cookies()).get(BIDDER_COOKIE)?.value)

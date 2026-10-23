@@ -1,7 +1,7 @@
 import { subscribe } from '@/lib/realtime'
 
 export const dynamic = 'force-dynamic'
-export const maxDuration = 300
+export const maxDuration = 60 // Hobby-safe; the browser reconnects automatically (EventSource) and catches up
 
 /** Server-Sent Events: a tiny "something changed" signal. Clients re-fetch their own (authorised) view. */
 export async function GET(req: Request) {

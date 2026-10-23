@@ -1,5 +1,6 @@
 import pg from 'pg'
 import { dbUrl } from './db'
+import { pgConfig } from './pgconfig'
 
 /**
  * Realtime transport: Postgres LISTEN/NOTIFY → Server-Sent Events.
@@ -23,7 +24,7 @@ async function connect() {
   if (hub.client || hub.connecting) return
   hub.connecting = true
   try {
-    const client = new pg.Client({ connectionString: dbUrl() })
+    const client = new pg.Client(pgConfig(dbUrl()))
     client.on('error', () => reset())
     client.on('end', () => reset())
     client.on('notification', (n) => {

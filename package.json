@@ -17,7 +17,8 @@
     "db:seed": "tsx scripts/seed.ts",
     "db:reset": "tsx scripts/seed.ts --reset",
     "sim": "node scripts/sim-run.mjs",
-    "setup": "tsx scripts/setup-event.ts"
+    "setup": "tsx scripts/setup-event.ts",
+    "db:bundle": "node scripts/bundle-sql.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",

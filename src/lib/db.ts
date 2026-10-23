@@ -1,4 +1,5 @@
 import pg from 'pg'
+import { pgConfig } from './pgconfig'
 
 // int8 (count/sum/identity) → number. Our values never approach 2^53.
 pg.types.setTypeParser(20, (v) => parseInt(v, 10))
@@ -17,10 +18,12 @@ export function dbUrl() {
 
 export function pool(): pg.Pool {
   if (!g.__auctionPool) {
+    // Serverless: every instance has its own pool, and a pooler caps total clients — keep it small on Vercel.
+    const defaultMax = process.env.VERCEL ? 3 : 10
     g.__auctionPool = new pg.Pool({
-      connectionString: dbUrl(),
-      max: Number(process.env.AUCTION_DB_POOL_MAX ?? 10),
-      idleTimeoutMillis: 30_000,
+      ...pgConfig(dbUrl()),
+      max: Number(process.env.AUCTION_DB_POOL_MAX ?? defaultMax),
+      idleTimeoutMillis: 20_000,
     })
   }
   return g.__auctionPool

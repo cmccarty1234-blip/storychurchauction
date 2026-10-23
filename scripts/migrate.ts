@@ -2,14 +2,16 @@ import { config } from 'dotenv'
 import { readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import pg from 'pg'
+import { pgConfig } from '../src/lib/pgconfig'
 
 config({ path: '.env.local' })
 
 export async function migrate(url: string, opts: { quiet?: boolean } = {}) {
-  const client = new pg.Client({ connectionString: url })
+  const client = new pg.Client(pgConfig(url))
   await client.connect()
   try {
     await client.query('create table if not exists schema_migrations (name text primary key, applied_at timestamptz not null default now())')
+    await client.query('alter table schema_migrations enable row level security') // never readable through Supabase's public API
     const done = new Set((await client.query('select name from schema_migrations')).rows.map((r) => r.name))
     const dir = path.resolve(process.cwd(), 'db/migrations')
     for (const f of readdirSync(dir).filter((f) => f.endsWith('.sql')).sort()) {

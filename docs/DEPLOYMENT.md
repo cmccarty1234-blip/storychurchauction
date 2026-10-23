@@ -1,43 +1,46 @@
-# Preparing for deployment (Vercel + Supabase)
+# Deploying (Vercel + Supabase)
 
-**Nothing here has been done.** No Vercel project, hosted database or domain exists; that needs approval first. This is the checklist for when you decide to go.
+The code is ready; the hosted pieces are created by you in the Vercel and Supabase dashboards. Never paste secret keys into chat or commit them.
 
-## What the app needs
+## Environment variables (set in Vercel → Project → Settings → Environment Variables)
 
-| Setting | Notes |
-|---|---|
-| `AUCTION_DATABASE_URL` | Postgres connection string. Use a **session-mode / direct** connection if possible (see "Realtime" below) |
-| `NEXT_PUBLIC_APP_URL` | The public address, e.g. `https://storychurch-auction.vercel.app`. Used for QR codes and the Secure-cookie flag. Change it without touching code |
-| `UPLOAD_DIR` | Local dev only — replaced by Supabase Storage in production (see "Photos") |
+| Name | Required | Value |
+|---|---|---|
+| `AUCTION_DATABASE_URL` | yes | Supabase → Connect → **Session pooler** connection string (the app needs a *session* connection so live updates can use `LISTEN`; transaction-mode would fall back to polling). TLS is handled automatically. |
+| `SUPABASE_URL` | yes (photos) | Project URL, e.g. `https://abcd1234.supabase.co` (Project Settings → API) |
+| `SUPABASE_SERVICE_ROLE_KEY` | yes (photos) | The `service_role` secret (Project Settings → API Keys). **Server-only. Never put it in a `NEXT_PUBLIC_` variable.** |
+| `NEXT_PUBLIC_APP_URL` | no | Only if you add a custom domain. On Vercel the app uses `VERCEL_PROJECT_PRODUCTION_URL` (e.g. `https://storychurchauction.vercel.app`) automatically for QR codes and secure cookies. If you set it, redeploy afterwards (it is read at build time). |
+| `AUCTION_DB_POOL_MAX` | no | Connections per serverless instance (default 3 on Vercel). Lower it if Supabase reports "max clients reached". |
+| `SUPABASE_STORAGE_BUCKET` | no | Default `item-images` (a private bucket, created automatically on first upload) |
 
-No `vercel.json` is required and none is included. Build: `npm run build`; start: `npm start`.
+Not needed: SMS or email settings (there is none), `AUTH_SECRET`, `ALLOW_DEV_CODES`, `UPLOAD_DIR`.
 
-## Steps (when approved)
+## One-time database setup
 
-1. Create a **new, separate** Supabase project (not any existing StreamHome one) and a **new, separate** Vercel project.
-2. Run `db/migrations/*.sql` against the new database in order (`npm run db:migrate` with `AUCTION_DATABASE_URL` pointing at it). Do **not** run the demo seed against it.
-3. Create the real event and the first administrator on the new database (never the demo seed):
-   `npm run setup -- --event "StoryChurch Fundraiser 2026" --date 2026-11-14 --close "2026-11-14T20:00" --admin-email you@church.org --admin-name "Your Name" --admin-password "<long password>"`
-   (with `AUCTION_DATABASE_URL` pointing at the new database). It refuses to touch a database holding the demo event.
-4. Sign in at `/admin/login`, finish the event in **Settings** (dates, pickup text, contact), add volunteer accounts, then create the items.
-5. Set the env vars above in Vercel, deploy, set `NEXT_PUBLIC_APP_URL`, then reprint QR labels.
-6. Do a full rehearsal on the real URL with real phones **before** the event (register, bid, live request, checkout).
+1. **Tables:** Supabase → SQL Editor → New query → paste the entire contents of [`db/supabase-setup.sql`](../db/supabase-setup.sql) → Run. Run it **once** on the empty project. (It's generated from `db/migrations` by `npm run db:bundle`; it creates no demo data and turns on row-level security so the public API key can read/write nothing.)
+2. **Event + first administrator** (run on your computer so the password never leaves it). PowerShell, in the project folder:
+   ```powershell
+   $env:AUCTION_DATABASE_URL = "<paste the same Session pooler string>"
+   npm run setup -- --event "StoryChurch Fundraiser 2026" --date 2026-11-14 --close "2026-11-14T20:00" --admin-email you@church.org --admin-name "Your Name" --admin-password "<a long password>"
+   ```
+   It refuses to run against a database that holds the demo event.
+3. Deploy (Vercel builds from the GitHub `main` branch), open `/admin/login`, finish **Settings**, add volunteer accounts, then create items (or run the donor-list import once it exists).
+4. **Rehearse on real phones** over the real URL before the event: register, bid, a live request, checkout, a photo upload.
 
-## Things that will bite if not handled
+## What was adjusted for Vercel
 
-- **Photos (decision: Supabase Storage):** Vercel's filesystem is not persistent, so `src/lib/storage.ts` (two functions: save, read) must be pointed at a Supabase Storage bucket before real photos are uploaded. *Not implemented yet — waiting for the new Supabase project.* Needs: a new, separate Supabase project created by you, then the project URL and a server-side service key stored only as a Vercel environment variable (never pasted into chat or committed).
-- **Realtime & poolers:** `LISTEN/NOTIFY` needs a session connection. Supabase's transaction-mode pooler (port 6543) can't `LISTEN`; the app then falls back to polling every ~8–10 s (still works, slightly slower). Serverless functions also can't hold SSE streams forever (platform duration limits); the stream reconnects automatically. For truly instant updates on Vercel, implement Supabase Realtime (broadcast on bid) — *not implemented*.
-- **Connection counts:** each serverless instance opens its own pool (`AUCTION_DB_POOL_MAX`, default 10). Use the pooler for request traffic and keep the pool small.
-- **Row-level security** is enabled with no policies; the server must connect with the owner/service role. Never ship the Supabase anon key in the browser for this app.
+- Hosted Postgres needs TLS; `src/lib/pgconfig.ts` enables it automatically for any non-local host.
+- Photos go to a private Supabase Storage bucket via `src/lib/storage.ts`. Guests load them through `/api/uploads/…` (cached by Vercel's CDN), so the service key never reaches a browser. In production without these settings, uploads fail with a clear message rather than writing to Vercel's temporary disk.
+- Vercel limits request bodies to ~4.5 MB, so photos are shrunk in the browser (≤1600 px) before upload, which also makes them load faster on phones.
+- The live-update stream is capped at 60 s per connection (Hobby-safe) and reconnects automatically; the page also polls slowly as a safety net.
+- Each serverless instance keeps a small connection pool (3) so the pooler isn't exhausted.
 
-## Plan restrictions and costs to check *before* the event
+## Limits and costs to keep an eye on
 
-These change over time — **confirm on the vendors' current pricing/terms pages**:
-
-- **Vercel Hobby (free)** is described by Vercel as for personal, non-commercial use. A church fundraiser may or may not fit; if in doubt, the paid Pro plan is a monthly cost. Free plans also have request, bandwidth and function-duration limits that a 250-person event with live refreshes could approach (the app throttles each phone to one refresh per 1.5 s to help).
-- **Supabase Free** projects have historically been paused after about a week of inactivity (wake it up the day before and test), and have connection, storage and bandwidth limits. Realtime-style usage and many simultaneous connections may need a paid plan.
-- **Domain:** `*.vercel.app` is free; a custom domain costs money (not purchased).
+- **Vercel Hobby** is described by Vercel as for personal, non-commercial use; you've decided that's fine for now — recheck their current terms. Free-tier request/bandwidth/duration limits apply; the app throttles each phone to one refresh per 1.5 s.
+- **Supabase Free** projects have historically paused after about a week of inactivity (open the project the day before the event and test), and have connection, storage and bandwidth limits. Watch the session pooler's client limit if many phones are connected at once.
+- **Domain:** `*.vercel.app` is free; a custom domain costs money.
 
 ## Demo data
 
-The seed script refuses to run when `NODE_ENV=production` or when the database holds a non-demo event. Demo rows are marked (`events.is_demo`), the UI shows a yellow DEMO banner, and demo items say "Demo item". Don't point the seed at the production database.
+The seed script refuses to run when `NODE_ENV=production` or when the database holds a non-demo event. Never point it at the production database.

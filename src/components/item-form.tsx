@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Field, Notice } from '@/components/admin-ui'
 import { post } from '@/lib/client'
 import { parseDollars } from '@/lib/money'
+import { shrinkImage } from '@/lib/shrink-image'
 
 export type ItemFormValues = {
   id?: string
@@ -49,7 +50,7 @@ export function ItemForm({ initial, defaultIncrement }: { initial?: ItemFormValu
     let imagePath = v.imagePath
     if (file) {
       const fd = new FormData()
-      fd.append('file', file)
+      fd.append('file', await shrinkImage(file))
       try {
         const r = await fetch('/api/admin/upload', { method: 'POST', body: fd })
         const j = await r.json()
@@ -115,7 +116,7 @@ export function ItemForm({ initial, defaultIncrement }: { initial?: ItemFormValu
       <Field label="Donor name (optional)" htmlFor="donor">
         <Input id="donor" value={v.donorName} onChange={(e) => set('donorName', e.target.value)} maxLength={120} />
       </Field>
-      <Field label="Photo" htmlFor="photo" hint="JPG, PNG, WebP or GIF, under 6 MB. Landscape photos look best.">
+      <Field label="Photo" htmlFor="photo" hint="JPG, PNG, WebP or GIF. Big phone photos are shrunk automatically. Landscape looks best.">
         <Input id="photo" type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={(e) => setFile(e.target.files?.[0] ?? null)} className="h-auto py-2" />
         {v.imagePath && !file ? <p className="text-xs text-muted-foreground">Current photo: {v.imagePath}</p> : null}
       </Field>
