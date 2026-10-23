@@ -22,7 +22,7 @@ Not needed: SMS or email settings (there is none), `AUTH_SECRET`, `ALLOW_DEV_COD
 2. **Event + first administrator** (run on your computer so the password never leaves it). PowerShell, in the project folder:
    ```powershell
    $env:AUCTION_DATABASE_URL = "<paste the same Session pooler string>"
-   npm run setup -- --event "StoryChurch Fundraiser 2026" --date 2026-11-14 --close "2026-11-14T20:00" --admin-email you@church.org --admin-name "Your Name" --admin-password "<a long password>"
+   npm run setup -- --event "StoryChurch Fundraiser 2026" --date 2026-10-30 --close "2026-10-30T20:30" --admin-email you@church.org --admin-name "Your Name" --admin-password "<a long password>"
    ```
    It refuses to run against a database that holds the demo event.
 3. Deploy (Vercel builds from the GitHub `main` branch), open `/admin/login`, finish **Settings**, add volunteer accounts, then create items (or run the donor-list import once it exists).

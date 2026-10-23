@@ -1,6 +1,6 @@
 /**
  * First-time setup for a REAL (non-demo) database: creates the event (if none) and an administrator.
- *   npm run setup -- --event "StoryChurch Fundraiser 2026" --date 2026-11-14 --close "2026-11-14T20:00" \
+ *   npm run setup -- --event "StoryChurch Fundraiser 2026" --date 2026-10-30 --close "2026-10-30T20:30" \
  *                    --admin-email you@church.org --admin-name "Your Name" --admin-password "a-long-password"
  * `--close` is the silent auction closing time in the event time zone (default America/Denver). Run against the
  * database named by AUCTION_DATABASE_URL. Never creates demo data.
