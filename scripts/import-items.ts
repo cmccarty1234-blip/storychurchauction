@@ -47,7 +47,9 @@ async function main() {
   })
   if (problems.length) throw new Error('Fix these rows first:\n  ' + problems.join('\n  '))
 
-  const host = new URL(dbUrl()).hostname
+  const parsed = new URL(dbUrl())
+  const host = parsed.hostname
+  const dbUser = decodeURIComponent(parsed.username) // on the Supabase pooler this is postgres.<project-id>
   const ev = await one<{ id: string; name: string; is_demo: boolean }>('select id, name, is_demo from events order by created_at desc limit 1')
   if (!ev) throw new Error('No event exists yet. Run `npm run setup` first.')
   if (ev.is_demo) throw new Error(`The event on ${host} is the DEMO event. Refusing to import real items into it.`)
