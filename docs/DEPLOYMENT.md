@@ -6,7 +6,8 @@ The code is ready; the hosted pieces are created by you in the Vercel and Supaba
 
 | Name | Required | Value |
 |---|---|---|
-| `AUCTION_DATABASE_URL` | yes | Supabase → Connect → **Session pooler** connection string (the app needs a *session* connection so live updates can use `LISTEN`; transaction-mode would fall back to polling). TLS is handled automatically. |
+| `AUCTION_DATABASE_URL` | yes | Supabase → Connect → **Transaction pooler** (port **6543**). All page loads, bids and payments go through it; it shares connections far better under load than session mode (the free session pooler has only ~15 slots, which a 250-person event can exhaust). TLS is handled automatically. |
+| `AUCTION_LISTEN_DATABASE_URL` | yes (live updates) | Supabase → Connect → **Session pooler** (port **5432**). Used by one connection per server for the live-update stream (`LISTEN` needs a session connection). If unset, the main URL is used (fine locally). |
 | `SUPABASE_URL` | yes (photos) | Project URL, e.g. `https://abcd1234.supabase.co` (Project Settings → API) |
 | `SUPABASE_SERVICE_ROLE_KEY` | yes (photos) | The `service_role` secret (Project Settings → API Keys). **Server-only. Never put it in a `NEXT_PUBLIC_` variable.** |
 | `NEXT_PUBLIC_APP_URL` | no | Only if you add a custom domain. On Vercel the app uses `VERCEL_PROJECT_PRODUCTION_URL` (e.g. `https://storychurchauction.vercel.app`) automatically for QR codes and secure cookies. If you set it, redeploy afterwards (it is read at build time). |
@@ -33,7 +34,9 @@ Not needed: SMS or email settings (there is none), `AUTH_SECRET`, `ALLOW_DEV_COD
 - Photos go to a private Supabase Storage bucket via `src/lib/storage.ts`. Guests load them through `/api/uploads/…` (cached by Vercel's CDN), so the service key never reaches a browser. In production without these settings, uploads fail with a clear message rather than writing to Vercel's temporary disk.
 - Vercel limits request bodies to ~4.5 MB, so photos are shrunk in the browser (≤1600 px) before upload, which also makes them load faster on phones.
 - The live-update stream is capped at 60 s per connection (Hobby-safe) and reconnects automatically; the page also polls slowly as a safety net.
-- Each serverless instance keeps a small connection pool (3) so the pooler isn't exhausted.
+- Each serverless instance keeps a small connection pool (3), and ordinary queries use the transaction pooler so the pooler isn't exhausted.
+- `vercel.json` pins functions to `sfo1`, next to the Supabase `us-west-2` database, which cuts latency on every query.
+- `/api/health` reports (without any secrets) whether the database is reachable and, if not, a coarse reason such as `password` or `too_many_connections`.
 
 ## Limits and costs to keep an eye on
 

@@ -7,6 +7,11 @@ import { pgConfig } from './pgconfig'
  * Writers call `notify(client, ...)` INSIDE their transaction, so the event is delivered
  * only if (and when) the bid/request commits. One shared LISTEN connection per server process
  * fans out to every open /api/stream connection.
+ *
+ * LISTEN needs a SESSION connection (direct, or the pooler's session mode on port 5432), whereas ordinary queries are
+ * best sent through the pooler's TRANSACTION mode (port 6543), which shares connections far better under load. Set
+ * AUCTION_DATABASE_URL to the transaction pooler and AUCTION_LISTEN_DATABASE_URL to the session pooler; if the
+ * latter is unset the main URL is used for both (fine locally).
  */
 export type RealtimeMsg = { t: 'item' | 'live' | 'bidder'; id?: string }
 
@@ -24,7 +29,7 @@ async function connect() {
   if (hub.client || hub.connecting) return
   hub.connecting = true
   try {
-    const client = new pg.Client(pgConfig(dbUrl()))
+    const client = new pg.Client(pgConfig(process.env.AUCTION_LISTEN_DATABASE_URL || dbUrl()))
     client.on('error', () => reset())
     client.on('end', () => reset())
     client.on('notification', (n) => {
