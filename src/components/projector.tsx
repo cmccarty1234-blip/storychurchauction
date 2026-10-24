@@ -235,7 +235,6 @@ function Dashboard({ state, now }: { state: GameState; now: number }) {
       <div className="flex items-center justify-between gap-[2vw]">
         <div className="min-w-0">
           <Logo className="h-[6vh]" />
-          <h1 className="mt-[0.6vh] truncate font-heading text-[2.4vw] text-brand-yellow">{state.event.name}</h1>
         </div>
         <p className="font-heading text-[2vw] tracking-wide text-white/70">YOUR STORY MATTERS.</p>
       </div>
