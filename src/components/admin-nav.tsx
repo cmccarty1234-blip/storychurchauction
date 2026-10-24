@@ -2,9 +2,9 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { BadgeDollarSign, Gavel, Hand, LayoutDashboard, ListOrdered, QrCode, Radio, Settings, Users } from 'lucide-react'
+import { BadgeDollarSign, Gavel, Hand, LayoutDashboard, ListOrdered, Mic, QrCode, Radio, Settings, Sparkles, Users } from 'lucide-react'
 
-const ICONS = { dashboard: LayoutDashboard, items: Gavel, bidDesk: Hand, bidders: Users, bids: ListOrdered, live: Radio, checkout: BadgeDollarSign, labels: QrCode, settings: Settings }
+const ICONS = { dashboard: LayoutDashboard, items: Gavel, bidDesk: Hand, bidders: Users, bids: ListOrdered, live: Radio, checkout: BadgeDollarSign, labels: QrCode, settings: Settings, show: Mic, powerups: Sparkles }
 export type NavItem = { href: string; label: string; icon: keyof typeof ICONS }
 
 /** Staff navigation. The current section is shown with a yellow background AND aria-current (never color alone). */

@@ -180,7 +180,6 @@ async function plan(c: pg.PoolClient, item: ItemLock, def: PowerUpDef, a: Activa
 
   const ev = await one<{ min_reopen_seconds: number; live_warning_seconds: number }>('select min_reopen_seconds, live_warning_seconds from events where id = $1', [item.event_id], c)
   const now = item.db_now
-  const leftToDeadline = secsLeft(item.deadline_at, now)
 
   switch (def.code) {
     case 'resurrection': {

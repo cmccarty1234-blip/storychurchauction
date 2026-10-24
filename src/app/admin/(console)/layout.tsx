@@ -15,6 +15,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     { href: '/admin/bidders', label: 'Bidders', icon: 'bidders' },
     { href: '/admin/bids', label: 'Bid history', icon: 'bids' },
     { href: '/admin/live', label: 'Live console', icon: 'live' },
+    ...(admin.role !== 'volunteer' ? [{ href: '/admin/show', label: 'Host console', icon: 'show' } as NavItem] : []),
+    { href: '/admin/powerups', label: 'Power-Ups', icon: 'powerups' },
     { href: '/admin/checkout', label: 'Checkout', icon: 'checkout' },
     { href: '/admin/labels', label: 'QR labels', icon: 'labels' },
     ...(admin.role === 'admin' ? [{ href: '/admin/settings', label: 'Settings', icon: 'settings' } as NavItem] : []),

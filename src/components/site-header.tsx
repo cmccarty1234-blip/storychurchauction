@@ -1,6 +1,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { getBidder } from '@/lib/session'
+import { getEvent } from '@/lib/events'
 import { SignOutButton } from './sign-out-button'
 import { buttonVariants } from '@/components/ui/button'
 
@@ -8,6 +9,7 @@ const link = 'inline-flex min-h-11 items-center rounded-md px-2 hover:bg-ivory s
 
 export async function SiteHeader() {
   const bidder = await getBidder()
+  const game = (await getEvent().catch(() => null))?.game_mode ?? false
   return (
     <header className="no-print sticky top-0 z-40 border-b bg-white">
       <div className="h-1 bg-brand-yellow" aria-hidden />
@@ -18,6 +20,7 @@ export async function SiteHeader() {
         </Link>
         <nav aria-label="Main" className="flex items-center gap-0.5 whitespace-nowrap text-sm font-semibold sm:gap-1">
           <Link href="/auction" className={link}>Auction</Link>
+          {game ? <Link href="/play" className={`${link} bg-brand-yellow font-bold`}>Live ⚡</Link> : null}
           {bidder ? (
             <>
               <Link href="/my-bids" className={link}>My bids</Link>

@@ -9,6 +9,7 @@ import { finalizeDueSilentItems } from '@/lib/bidding'
 import { formatCents } from '@/lib/money'
 import { formatInTz } from '@/lib/time'
 import { BidPanel } from '@/components/bid-panel'
+import { ItemPowerUps } from '@/components/game-portal'
 import { Countdown } from '@/components/countdown'
 import { ItemImage, PhaseBadge } from '@/components/item-card'
 import { LiveRefresh } from '@/components/live-refresh'
@@ -64,7 +65,11 @@ export default async function ItemPage({ params }: { params: Promise<{ itemId: s
   const iWon = !!bidder && winner?.bidder_id === bidder.id
   const hasBid = item.current_bid_cents != null
   const closedMessage =
-    item.phase === 'closed'
+    item.status === 'provisional'
+      ? hasBid
+        ? `Bidding is closed. Bidder #${item.leader_number}${iAmLeading ? ' (you)' : ''} leads at ${formatCents(item.current_bid_cents)} — provisional until the last-chance window ends.`
+        : 'Bidding is closed. This item has no bids yet; it is in its last-chance window.'
+      : item.phase === 'closed'
       ? winner
         ? iWon
           ? `🎉 You won this item for ${formatCents(winner.amount_cents)}!`
@@ -151,6 +156,17 @@ export default async function ItemPage({ params }: { params: Promise<{ itemId: s
               closedMessage={closedMessage}
               myRequest={myRequest}
             />
+          ) : null}
+
+          {ev.game_mode && bidder && !iWon ? (
+            <>
+              {item.status === 'provisional' || item.status === 'reopened' ? (
+                <p className="rounded-xl bg-secondary p-4 text-sm font-semibold" role="status">
+                  {item.status === 'reopened' ? 'This auction was reopened — bidding is open for a short time!' : 'Last-chance window: bidding has closed, but nothing is final yet. Power-Ups can still change the result.'}
+                </p>
+              ) : null}
+              <ItemPowerUps item={{ id: item.id, kind: item.kind, status: item.status, minNextCents: item.min_next_cents }} />
+            </>
           ) : null}
 
           {history.length > 0 ? (

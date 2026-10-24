@@ -132,3 +132,14 @@ h3, h4 { font-weight: 700; letter-spacing: -0.005em; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
 }
+
+/* ─── Game portal / projector animations (disabled by the projector's "reduce motion" switch) ─── */
+@keyframes sc-pop { 0% { transform: scale(0.6); opacity: 0 } 60% { transform: scale(1.06); opacity: 1 } 100% { transform: scale(1) } }
+@keyframes sc-marquee { from { transform: translateX(0) } to { transform: translateX(-50%) } }
+@keyframes sc-glow { 0%, 100% { box-shadow: 0 0 0 0 rgba(245, 197, 24, 0.0) } 50% { box-shadow: 0 0 60px 8px rgba(245, 197, 24, 0.55) } }
+@keyframes sc-fall { from { transform: translateY(-10vh) rotate(0deg); opacity: 1 } to { transform: translateY(110vh) rotate(540deg); opacity: 0.9 } }
+@keyframes sc-slide { from { transform: translateY(24px); opacity: 0 } to { transform: translateY(0); opacity: 1 } }
+.sc-pop { animation: sc-pop 0.55s cubic-bezier(0.2, 1.1, 0.3, 1) both }
+.sc-glow { animation: sc-glow 1.2s ease-in-out infinite }
+.sc-slide { animation: sc-slide 0.35s ease-out both }
+[data-reduce="true"] *, [data-reduce="true"] *::before, [data-reduce="true"] *::after { animation: none !important; transition: none !important; }

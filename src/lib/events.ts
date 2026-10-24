@@ -13,6 +13,10 @@ export type EventRow = {
   contact_info: string
   next_bidder_number: number
   is_demo: boolean
+  game_mode: boolean
+  auto_accept_live: boolean
+  provisional_silent: boolean
+  provisional_seconds: number
 }
 
 /** The app serves a single active event: the most recently created one. */

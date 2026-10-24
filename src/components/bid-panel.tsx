@@ -83,7 +83,7 @@ export function BidPanel(p: Props) {
     const res =
       p.mode === 'silent'
         ? await post<{ currentCents: number }>('/api/bids/silent', { itemId: p.itemId, amountCents, expectedCurrentCents: p.currentCents, idempotencyKey: key.current })
-        : await post('/api/bids/live-request', { itemId: p.itemId, amountCents, idempotencyKey: key.current })
+        : await post<{ accepted?: boolean }>('/api/bids/live-request', { itemId: p.itemId, amountCents, idempotencyKey: key.current })
     setBusy(false)
     if (res.ok) {
       key.current = newKey()
@@ -91,7 +91,9 @@ export function BidPanel(p: Props) {
       setFeedback(
         p.mode === 'silent'
           ? { kind: 'success', text: `Bid placed! You’re the high bidder at ${formatCents(amountCents)}.` }
-          : { kind: 'info', text: `Request sent for ${formatCents(amountCents)}. The clerk will confirm it if the auctioneer takes your bid.` },
+          : (res.data as { accepted?: boolean }).accepted
+            ? { kind: 'success', text: `Bid accepted! You’re leading at ${formatCents(amountCents)}.` }
+            : { kind: 'info', text: `Request sent for ${formatCents(amountCents)}. The clerk will confirm it if the auctioneer takes your bid.` },
       )
       router.refresh()
       return
