@@ -30,7 +30,7 @@ function useBeeper(muted: boolean) {
   }
 }
 
-export function Projector() {
+export function Projector({ qr, joinUrl }: { qr: string; joinUrl: string }) {
   const { state, online, now } = useGameState(1000)
   useTicker(100)
   const [reduced, setReduced] = useState(false)
@@ -103,6 +103,10 @@ export function Projector() {
     )
   } else if (state.event.displayMode === 'message' && state.event.displayMessage) {
     main = <Center><p className="font-heading max-w-[80vw] text-center text-[6vw] leading-tight text-brand-yellow">{state.event.displayMessage}</p></Center>
+  } else if (state.event.displayMode === 'welcome') {
+    main = <Welcome state={state} qr={qr} joinUrl={joinUrl} />
+  } else if (state.event.displayMode === 'thanks') {
+    main = <Thanks state={state} />
   } else if (room?.code === 'lightning') {
     main = <LightningView state={state} now={t} />
   } else if (room?.code === 'battle') {
@@ -117,7 +121,7 @@ export function Projector() {
   } else if ((state.stage || state.reopened[0]) && state.event.displayMode !== 'dashboard') {
     main = <LiveView state={state} item={state.stage ?? state.reopened[0]} now={t} />
   } else {
-    main = <Dashboard state={state} now={t} />
+    main = <Dashboard state={state} now={t} qr={qr} joinUrl={joinUrl} />
   }
 
   return (
@@ -222,70 +226,164 @@ function LiveView({ state, item, now }: { state: GameState; item: StageItem; now
   )
 }
 
-// ───────────────────────── Mode A: dashboard ─────────────────────────
-function Dashboard({ state, now }: { state: GameState; now: number }) {
+// ───────────────────────── Mode A: auction dashboard ─────────────────────────
+const hms = (secs: number) => {
+  const s = Math.max(0, Math.ceil(secs))
+  const h = Math.floor(s / 3600)
+  const m = Math.floor((s % 3600) / 60)
+  const x = s % 60
+  return h > 0 ? `${h}:${String(m).padStart(2, '0')}:${String(x).padStart(2, '0')}` : `${m}:${String(x).padStart(2, '0')}`
+}
+
+const clockTime = (iso: string | null, tz: string) => (iso ? new Date(iso).toLocaleTimeString('en-US', { timeZone: tz, hour: 'numeric', minute: '2-digit' }) : null)
+const shortUrl = (u: string) => u.replace(/^https?:\/\//, '').replace(/\/+$/, '')
+
+function QrCard({ qr, joinUrl, big = false }: { qr: string; joinUrl: string; big?: boolean }) {
+  return (
+    <div className="rounded-2xl bg-white p-[1.2vw] text-center text-ink">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={qr} alt="QR code to register and bid" className={`mx-auto aspect-square ${big ? 'w-[26vh]' : 'w-[18vh]'}`} />
+      <p className={`mt-[0.8vh] font-heading leading-tight ${big ? 'text-[2.6vw]' : 'text-[1.9vw]'}`}>BID FROM YOUR PHONE</p>
+      <p className={`font-bold text-ink/70 ${big ? 'text-[1.7vw]' : 'text-[1.3vw]'}`}>Scan to register &amp; bid</p>
+      <p className={`mt-[0.4vh] font-bold ${big ? 'text-[1.6vw]' : 'text-[1.2vw]'}`}>{shortUrl(joinUrl)}</p>
+    </div>
+  )
+}
+
+function Dashboard({ state, now, qr, joinUrl }: { state: GameState; now: number; qr: string; joinUrl: string }) {
   const tt = state.totals
   // One headline number: every winning/leading bid plus Power-Up sales.
   const committed = tt.leadingCents + tt.finalizedCents + tt.powerupCents
+  const goal = state.event.goalCents
+  const pct = goal ? Math.min(100, (committed / goal) * 100) : 0
+  const closeSecs = state.event.silentCloseAt ? secsUntil(state.event.silentCloseAt, now) : null
+  const closed = closeSecs != null && closeSecs <= 0
+  const finalStretch = closeSecs != null && closeSecs > 0 && closeSecs <= 15 * 60
+  const chance = [...state.reopened, ...state.lastChance].slice(0, 3)
+  const spots = state.hot
+  const spot = spots.length ? spots[Math.floor(now / 8000) % spots.length] : null
+  const tz = state.event.timezone
+  const tips = [
+    'POWER-UPS! Buy one at the bidding desk to reopen, extend or end an auction.',
+    ...(closeSecs != null && !closed ? [`The silent auction closes at ${clockTime(state.event.silentCloseAt, tz)}. Get your final bids in!`] : []),
+    ...(state.nextLive ? [`UP NEXT LIVE: #${state.nextLive.number} ${state.nextLive.title} — opens at ${formatCents(state.nextLive.startingBidCents)}`] : []),
+    'Checkout opens after the silent auction closes. Pay by cash, check or card.',
+    'No phone? Ask any volunteer — they can place your bid for you.',
+  ]
+  const tip = tips[Math.floor(now / 10000) % tips.length]
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-[1.5vh] p-[2vw]">
+    <div className="flex min-h-0 flex-1 flex-col gap-[1.4vh] p-[2vw]">
       <div className="flex items-center justify-between gap-[2vw]">
-        <div className="min-w-0">
-          <Logo className="h-[6vh]" />
-        </div>
+        <Logo className="h-[6vh]" />
         <p className="font-heading text-[2vw] tracking-wide text-white/70">YOUR STORY MATTERS.</p>
       </div>
-      <div className="rounded-2xl border border-white/20 bg-white/5 px-[2vw] py-[1.4vh] text-center">
-        <p className="text-[1.6vw] font-bold tracking-[0.25em] text-white/60">TOTAL COMMITTED</p>
-        <p className="tnum font-heading text-[8vw] leading-none text-brand-yellow">{formatCents(committed)}</p>
-      </div>
-      <div className="grid min-h-0 flex-1 grid-cols-3 gap-[1.2vw]">
-        <Panel title="LAST CHANCE" accent>
-          {state.lastChance.length + state.reopened.length === 0 ? <Empty>No items in their last-chance window.</Empty> : null}
-          {[...state.reopened, ...state.lastChance].slice(0, 5).map((i) => {
-            const secs = secsUntil(i.provisionalUntil, now)
-            return (
-              <Row key={i.id} left={<><b className="text-brand-yellow">#{i.number}</b> {i.title}</>} right={<><span className="tnum font-bold">{formatCents(i.currentBidCents)}</span> <span className="tnum ml-2 text-brand-yellow">{mmss(secs)}</span></>} sub={`Provisional: bidder #${i.leaderNumber ?? '—'}${i.status === 'reopened' ? ' · REOPENED' : ''}`} />
-            )
-          })}
-        </Panel>
-        <Panel title="CLOSING SOON">
-          {state.closingSoon.length === 0 ? <Empty>No silent items closing in the next 20 minutes.</Empty> : null}
-          {state.closingSoon.map((i) => (
-            <Row key={i.id} left={<><b className="text-brand-yellow">#{i.number}</b> {i.title}</>} right={<span className="tnum text-brand-yellow">{mmss(secsUntil(i.closesAt, now))}</span>} sub={formatCents(i.currentBidCents)} />
-          ))}
-          {state.nextLive ? (
-            <div className="mt-3 rounded-xl border border-brand-yellow/60 p-[0.8vw]">
-              <p className="text-[1.1vw] font-bold tracking-[0.2em] text-brand-yellow">UP NEXT LIVE</p>
-              <p className="text-[1.9vw] font-bold">#{state.nextLive.number} {state.nextLive.title}</p>
-              <p className="text-[1.2vw] text-white/60">Opens at {formatCents(state.nextLive.startingBidCents)}</p>
+
+      <div className="grid grid-cols-[1.6fr_1fr] gap-[1.2vw]">
+        <div className="rounded-2xl border border-white/20 bg-white/5 px-[2vw] py-[1.2vh]">
+          <div className="flex items-baseline justify-between">
+            <p className="text-[1.7vw] font-bold tracking-[0.25em] text-white/60">TOTAL COMMITTED</p>
+            <p className="text-[1.7vw] font-bold text-white/70">{state.bidsTonight} bids tonight</p>
+          </div>
+          <p className="tnum font-heading text-[7.5vw] leading-none text-brand-yellow">{formatCents(committed)}</p>
+          {goal ? (
+            <div className="mt-[1vh]">
+              <div className="h-[2.4vh] overflow-hidden rounded-full bg-white/15" role="progressbar" aria-valuenow={Math.round(pct)} aria-valuemin={0} aria-valuemax={100} aria-label="Progress toward the fundraising goal">
+                <div className="h-full rounded-full bg-brand-yellow transition-all duration-1000" style={{ width: `${pct}%` }} />
+              </div>
+              <p className="mt-[0.4vh] text-[1.7vw] font-bold text-white/80">{Math.floor(pct)}% of our {formatCents(goal)} goal</p>
             </div>
           ) : null}
-        </Panel>
-        <Panel title="HOTTEST SILENT ITEMS">
-          {state.hot.length === 0 ? <Empty>Bids will show up here.</Empty> : null}
-          {state.hot.map((i) => (
-            <Row key={i.id} left={<><b className="text-brand-yellow">#{i.number}</b> {i.title}</>} right={<span className="tnum font-bold">{formatCents(i.currentBidCents)}</span>} sub={`${i.bidCount} bids · bidder #${i.leaderNumber ?? '—'} leads`} />
+        </div>
+        <div className={`flex flex-col items-center justify-center rounded-2xl border-2 px-[1.5vw] py-[1.2vh] text-center ${finalStretch ? 'sc-glow border-brand-yellow bg-brand-yellow/10' : 'border-white/20 bg-white/5'}`}>
+          <p className="text-[1.6vw] font-bold tracking-[0.2em] text-white/60">{closed ? 'SILENT AUCTION' : 'SILENT AUCTION CLOSES IN'}</p>
+          <p className={`tnum font-heading leading-none ${finalStretch ? 'text-[8vw] text-brand-yellow' : 'text-[6vw]'}`}>{closeSecs == null ? '—' : closed ? 'CLOSED' : hms(closeSecs)}</p>
+          {finalStretch ? <p className="mt-1 text-[1.8vw] font-bold text-brand-yellow">FINAL CALL FOR SILENT BIDS!</p> : null}
+        </div>
+      </div>
+
+      {chance.length ? (
+        <div className="sc-pop rounded-2xl bg-brand-yellow px-[2vw] py-[1vh] text-ink">
+          <p className="font-heading text-[2vw]">LAST CHANCE — NOT FINAL YET!</p>
+          {chance.map((i) => (
+            <p key={i.id} className="flex justify-between gap-4 text-[2vw] font-bold">
+              <span className="truncate">#{i.number} {i.title} — {formatCents(i.currentBidCents)} (bidder #{i.leaderNumber ?? '—'}{i.status === 'reopened' ? ', REOPENED' : ''})</span>
+              <span className="tnum shrink-0">{mmss(secsUntil(i.status === 'reopened' ? i.deadlineAt : i.provisionalUntil, now))}</span>
+            </p>
           ))}
-        </Panel>
+        </div>
+      ) : null}
+
+      <div className="grid min-h-0 flex-1 grid-cols-[2fr_1fr] gap-[1.2vw]">
+        <div className="min-h-0 overflow-hidden rounded-2xl border border-white/20 bg-white/5">
+          {spot ? (
+            <div key={spot.id} className="sc-slide grid h-full grid-cols-[1.05fr_1fr]">
+              <div className="relative bg-charcoal">
+                {img(spot.imagePath) ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={img(spot.imagePath)!} alt={spot.title} className="size-full object-cover" />
+                ) : (
+                  <div className="flex size-full items-center justify-center font-heading text-[8vw] text-white/20">#{spot.number}</div>
+                )}
+                <div className="absolute left-0 top-0 rounded-br-2xl bg-brand-yellow px-[1.2vw] py-[0.4vh] font-heading text-[2.2vw] text-ink">ITEM {spot.number}</div>
+              </div>
+              <div className="flex min-h-0 flex-col justify-center gap-[1vh] p-[1.8vw]">
+                <p className="text-[1.5vw] font-bold tracking-[0.22em] text-brand-yellow">HOT RIGHT NOW</p>
+                <h2 className="font-heading text-[3.2vw] leading-[1.05]">{spot.title}</h2>
+                <p className="tnum font-heading text-[6.5vw] leading-none text-brand-yellow">{formatCents(spot.currentBidCents)}</p>
+                <p className="text-[2vw] font-bold">Bidder <span className="text-brand-yellow">#{spot.leaderNumber ?? '—'}</span> leads · {spot.bidCount} bids</p>
+                {spot.closesAt ? <p className="text-[1.7vw] text-white/70">Closes in <b className="tnum text-white">{hms(secsUntil(spot.closesAt, now))}</b></p> : null}
+              </div>
+            </div>
+          ) : (
+            <Center>
+              <Logo className="h-[12vh]" />
+              <p className="mt-[3vh] font-heading text-[4vw] text-brand-yellow">BIDS WILL SHOW UP HERE</p>
+              <p className="mt-2 text-[2vw] text-white/70">Scan the code and place the first bid!</p>
+            </Center>
+          )}
+        </div>
+        <div className="flex min-h-0 flex-col gap-[1.2vh]">
+          <QrCard qr={qr} joinUrl={joinUrl} />
+          <div key={tip} className="sc-slide flex flex-1 items-center rounded-2xl border border-brand-yellow/60 bg-brand-yellow/10 px-[1.4vw] py-[1vh]">
+            <p className="text-[1.8vw] font-bold leading-snug">{tip}</p>
+          </div>
+        </div>
       </div>
     </div>
   )
 }
 
-const Panel = ({ title, children, accent }: { title: string; children: React.ReactNode; accent?: boolean }) => (
-  <section className={`flex min-h-0 flex-col overflow-hidden rounded-2xl border p-[1vw] ${accent ? 'border-brand-yellow bg-brand-yellow/5' : 'border-white/20 bg-white/5'}`}>
-    <h2 className="mb-[1vh] font-heading text-[1.7vw] tracking-wide text-brand-yellow">{title}</h2>
-    <div className="min-h-0 flex-1 space-y-[0.8vh] overflow-hidden">{children}</div>
-  </section>
-)
-const Empty = ({ children }: { children: React.ReactNode }) => <p className="text-[1.3vw] text-white/40">{children}</p>
-const Row = ({ left, right, sub }: { left: React.ReactNode; right: React.ReactNode; sub?: string }) => (
-  <div className="border-b border-white/10 pb-[0.6vh]">
-    <div className="flex items-baseline justify-between gap-3 text-[1.6vw]"><span className="truncate">{left}</span><span className="shrink-0">{right}</span></div>
-    {sub ? <p className="text-[1.1vw] text-white/50">{sub}</p> : null}
-  </div>
-)
+// ───────────────────────── host-selected screens ─────────────────────────
+function Welcome({ state, qr, joinUrl }: { state: GameState; qr: string; joinUrl: string }) {
+  const close = clockTime(state.event.silentCloseAt, state.event.timezone)
+  return (
+    <div className="grid min-h-0 flex-1 grid-cols-[1.3fr_1fr] items-center gap-[3vw] px-[4vw]">
+      <div>
+        <Logo className="h-[11vh]" />
+        <p className="mt-[3vh] font-heading text-[9vw] leading-[0.95] text-brand-yellow">WELCOME!</p>
+        <p className="mt-[2vh] text-[2.8vw] font-bold leading-snug">Scan the code to register and start bidding from your phone.</p>
+        {close ? <p className="mt-[1.5vh] text-[2.2vw] text-white/75">The silent auction closes at <b className="text-white">{close}</b>.</p> : null}
+        <p className="mt-[3vh] font-heading text-[2.2vw] tracking-wide text-white/70">YOUR STORY MATTERS.</p>
+      </div>
+      <QrCard qr={qr} joinUrl={joinUrl} big />
+    </div>
+  )
+}
+
+function Thanks({ state }: { state: GameState }) {
+  const tt = state.totals
+  const committed = tt.leadingCents + tt.finalizedCents + tt.powerupCents
+  return (
+    <Center>
+      <Logo className="h-[9vh]" />
+      <p className="sc-pop mt-[3vh] font-heading text-[10vw] leading-none text-brand-yellow">THANK YOU!</p>
+      <p className="mt-[2vh] text-[2.8vw] font-bold">Together we raised</p>
+      <p className="tnum font-heading text-[11vw] leading-none">{formatCents(committed)}</p>
+      <p className="mt-[3vh] max-w-[80vw] whitespace-pre-line text-[2.4vw] font-bold leading-snug">{state.event.pickup.trim() || 'Please visit the checkout table to pay and pick up your items.'}</p>
+      <p className="mt-[2vh] font-heading text-[2.2vw] tracking-wide text-white/70">YOUR STORY MATTERS.</p>
+    </Center>
+  )
+}
 
 // ───────────────────────── Mode D: Room Events ─────────────────────────
 function LightningView({ state, now }: { state: GameState; now: number }) {

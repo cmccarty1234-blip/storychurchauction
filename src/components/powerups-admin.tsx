@@ -11,7 +11,7 @@ import { formatCents, parseDollars } from '@/lib/money'
 
 export type DefRow = { code: string; name: string; description: string; price_cents: number; enabled: boolean; kinds: string[]; max_per_bidder_item: number | null; max_per_item: number | null; max_per_bidder: number | null; seconds: number | null }
 export type RoomRow = { code: string; name: string; enabled: boolean; prize: string; reward: string; seconds: number | null }
-export type GameSettings = { gameMode: boolean; autoAcceptLive: boolean; provisionalSilent: boolean; provisionalSeconds: number; liveInitialSeconds: number; liveInactivitySeconds: number; liveWarningSeconds: number; liveMaxSeconds: number | null; minReopenSeconds: number }
+export type GameSettings = { gameMode: boolean; autoAcceptLive: boolean; provisionalSilent: boolean; provisionalSeconds: number; liveInitialSeconds: number; liveInactivitySeconds: number; liveWarningSeconds: number; liveMaxSeconds: number | null; minReopenSeconds: number; goalCents: number | null }
 export type ItemRow = { id: string; number: number; title: string; kind: string; minQ: number | null }
 
 const call = (body: Record<string, unknown>) => post('/api/admin/powerups', body)
@@ -150,7 +150,7 @@ function DefRowEditor({ d }: { d: DefRow }) {
 // ───────────────────────── game settings ─────────────────────────
 export function GameSettingsForm({ s }: { s: GameSettings }) {
   const { busy, msg, run } = useAction()
-  const [v, setV] = useState({ ...s, liveMaxSeconds: s.liveMaxSeconds?.toString() ?? '' })
+  const [v, setV] = useState({ ...s, liveMaxSeconds: s.liveMaxSeconds?.toString() ?? '', goal: s.goalCents != null ? String(s.goalCents / 100) : '' })
   const set = (k: keyof typeof v, val: unknown) => setV((x) => ({ ...x, [k]: val }))
   const n = (k: keyof typeof v) => (
     <Input inputMode="numeric" value={String(v[k] ?? '')} onChange={(e) => set(k, e.target.value)} className="mt-1 h-11" />
@@ -171,6 +171,7 @@ export function GameSettingsForm({ s }: { s: GameSettings }) {
         <label className="text-xs font-semibold">Max live item length (s, blank = none){n('liveMaxSeconds')}</label>
         <label className="text-xs font-semibold">Last-chance window (s){n('provisionalSeconds')}</label>
         <label className="text-xs font-semibold">Smallest reopen allowed (s){n('minReopenSeconds')}</label>
+        <label className="text-xs font-semibold">Fundraising goal $ (blank = no bar){n('goal')}</label>
       </div>
       <Button
         className="mt-4 h-11"
@@ -181,7 +182,7 @@ export function GameSettingsForm({ s }: { s: GameSettings }) {
               post('/api/admin/game-settings', {
                 gameMode: v.gameMode, autoAcceptLive: v.autoAcceptLive, provisionalSilent: v.provisionalSilent,
                 provisionalSeconds: +v.provisionalSeconds, liveInitialSeconds: +v.liveInitialSeconds, liveInactivitySeconds: +v.liveInactivitySeconds,
-                liveWarningSeconds: +v.liveWarningSeconds, liveMaxSeconds: String(v.liveMaxSeconds).trim() === '' ? null : +v.liveMaxSeconds, minReopenSeconds: +v.minReopenSeconds,
+                liveWarningSeconds: +v.liveWarningSeconds, goalCents: v.goal.trim() === '' ? null : parseDollars(v.goal), liveMaxSeconds: String(v.liveMaxSeconds).trim() === '' ? null : +v.liveMaxSeconds, minReopenSeconds: +v.minReopenSeconds,
               }),
             'Game settings saved.',
           )

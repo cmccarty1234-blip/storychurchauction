@@ -162,6 +162,22 @@ describe('totals & ticker', () => {
     expect(st.totals).toMatchObject({ paymentsCents: 5000, outstandingCents: 15000, powerupCents: 3000 })
   })
 
+  it('reports the goal, the silent closing time, and counts every accepted bid once (silent + live, not voided)', async () => {
+    const [a, b] = await makeBidders(ev.id, 2)
+    await query('update events set goal_cents = 600000 where id = $1', [ev.id])
+    const silent = await makeItem(ev.id, { num: 1, start: 4000 })
+    const live = await makeItem(ev.id, { kind: 'live', start: 5000 })
+    await startLiveItem(live.id, admin.id)
+    await sbid(a.id, silent.id, 4000, null)
+    await sbid(b.id, silent.id, 4500, 4000)
+    await requestLiveBid({ bidderId: a.id, itemId: live.id, amountCents: 5000, idempotencyKey: key() })
+    const st = await gameState(ev.id)
+    expect(st.bidsTonight).toBe(3)
+    expect(st.event.goalCents).toBe(600000)
+    expect(st.event.silentCloseAt).not.toBeNull()
+    expect(st.hot[0]).toMatchObject({ number: 1, bidCount: 2 })
+  })
+
   it('announcements come only from real events', async () => {
     const [a] = await makeBidders(ev.id, 1)
     expect((await gameState(ev.id)).announcements).toHaveLength(0)

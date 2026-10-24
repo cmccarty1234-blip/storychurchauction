@@ -264,8 +264,8 @@ export function HostConsole({ isAdmin }: { isAdmin: boolean }) {
         <div className="rounded-2xl border bg-card p-4">
           <h2 className="mb-2 flex items-center gap-2 text-2xl"><Megaphone className="size-6" /> Projector</h2>
           <div className="flex flex-wrap gap-2">
-            {(['auto', 'dashboard', 'live'] as const).map((m) => (
-              <button key={m} className={state.event.displayMode === m ? gold : ghost} disabled={busy} onClick={() => show({ action: 'display', mode: m })}>{m === 'auto' ? 'Automatic' : m === 'dashboard' ? 'Dashboard' : 'Live item'}</button>
+            {([['welcome', 'Welcome'], ['dashboard', 'Auction'], ['live', 'Live item'], ['thanks', 'Thank you'], ['auto', 'Automatic']] as const).map(([m, label]) => (
+              <button key={m} className={state.event.displayMode === m ? gold : ghost} aria-pressed={state.event.displayMode === m} disabled={busy} onClick={() => show({ action: 'display', mode: m })}>{label}</button>
             ))}
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
