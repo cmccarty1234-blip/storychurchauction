@@ -13,7 +13,7 @@ import { pgConfig } from './pgconfig'
  * AUCTION_DATABASE_URL to the transaction pooler and AUCTION_LISTEN_DATABASE_URL to the session pooler; if the
  * latter is unset the main URL is used for both (fine locally).
  */
-export type RealtimeMsg = { t: 'item' | 'live' | 'bidder'; id?: string }
+export type RealtimeMsg = { t: 'item' | 'live' | 'bidder' | 'game'; id?: string }
 
 export async function notify(db: pg.PoolClient | pg.Pool, msg: RealtimeMsg) {
   await db.query('select pg_notify($1, $2)', ['auction', JSON.stringify(msg)])

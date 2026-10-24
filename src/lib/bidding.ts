@@ -11,6 +11,7 @@ import { audit } from './audit'
 import { notify } from './realtime'
 import { formatCents, MAX_BID_CENTS } from './money'
 import { getEvent } from './events'
+import { advance, closeToProvisional, recordWinner, resetCountdown, transition } from './lifecycle'
 
 export type ItemLock = {
   id: string
@@ -18,7 +19,15 @@ export type ItemLock = {
   item_number: number
   kind: 'silent' | 'live'
   title: string
-  status: 'draft' | 'upcoming' | 'open' | 'paused' | 'closed' | 'finalized'
+  status: 'draft' | 'upcoming' | 'open' | 'paused' | 'closed' | 'finalized' | 'provisional' | 'reopened' | 'cancelled'
+  timed: boolean
+  timer_phase: string | null
+  deadline_at: Date | null
+  provisional_until: Date | null
+  game_mode: boolean
+  auto_accept_live: boolean
+  live_initial_seconds: number
+  emergency_stop_at: Date | null
   starting_bid_cents: number
   increment_cents: number
   current_bid_cents: number | null
@@ -29,17 +38,23 @@ export type ItemLock = {
   effective_close: Date | null
 }
 
+const LOCK_SQL = `select i.*, clock_timestamp() as db_now, e.silent_start_at, e.game_mode, e.auto_accept_live, e.live_initial_seconds, e.emergency_stop_at,
+         case when i.status = 'reopened' then i.deadline_at else coalesce(i.closes_at, e.silent_close_at) end as effective_close
+    from auction_items i join events e on e.id = i.event_id
+   where i.id = $1`
+
+/** Locks the item row, then performs any lifecycle transition that is already due, so every rule below sees current state. */
 async function lockItem(c: pg.PoolClient, itemId: string): Promise<ItemLock> {
   if (!/^[0-9a-f-]{36}$/i.test(itemId)) throw new AppError('ITEM_NOT_FOUND', 'Item not found.', 404)
-  const item = await one<ItemLock>(
-    `select i.*, now() as db_now, e.silent_start_at, coalesce(i.closes_at, e.silent_close_at) as effective_close
-       from auction_items i join events e on e.id = i.event_id
-      where i.id = $1 for update of i`,
-    [itemId],
-    c,
-  )
+  let item = await one<ItemLock>(LOCK_SQL + ' for update of i', [itemId], c)
   if (!item) throw new AppError('ITEM_NOT_FOUND', 'Item not found.', 404)
+  if (await advance(c, itemId)) item = (await one<ItemLock>(LOCK_SQL, [itemId], c))!
   return item
+}
+
+const biddable = (i: Pick<ItemLock, 'status'>) => i.status === 'open' || i.status === 'reopened'
+function assertRunning(i: Pick<ItemLock, 'emergency_stop_at'>) {
+  if (i.emergency_stop_at) throw new AppError('HALTED', 'Bidding is paused for a moment. Please stand by.', 409)
 }
 
 export function minNextBid(i: Pick<ItemLock, 'current_bid_cents' | 'starting_bid_cents' | 'increment_cents'>) {
@@ -91,7 +106,8 @@ export async function placeSilentBid(i: SilentBidInput) {
 
     if (item.kind !== 'silent') throw new AppError('WRONG_KIND', 'This is a live auction item — bid requests go to the clerk.')
     if (item.status === 'draft') throw new AppError('ITEM_NOT_FOUND', 'Item not found.', 404)
-    if (item.status !== 'open') throw new AppError('CLOSED', 'Bidding on this item is closed.', 409)
+    assertRunning(item)
+    if (!biddable(item)) throw new AppError('CLOSED', 'Bidding on this item is closed.', 409)
     if (item.silent_start_at && item.db_now < item.silent_start_at) throw new AppError('NOT_STARTED', 'Bidding has not opened yet.', 409)
     if (item.effective_close && item.db_now >= item.effective_close) throw new AppError('CLOSED', 'Bidding on this item has closed.', 409)
 
@@ -135,15 +151,16 @@ export async function finalizeDueSilentItems(adminId: string | null = null) {
   const ev = await getEvent()
   const due = await query<{ id: string }>(
     `select i.id from auction_items i join events e on e.id = i.event_id
-      where i.event_id = $1 and i.kind = 'silent' and i.status in ('open', 'closed')
-        and (i.status = 'closed' or coalesce(i.closes_at, e.silent_close_at) <= now())`,
+      where i.event_id = $1 and i.kind = 'silent' and i.status in ('open', 'closed', 'provisional', 'reopened')
+        and (i.status in ('closed', 'provisional', 'reopened') or coalesce(i.closes_at, e.silent_close_at) <= now())`,
     [ev.id],
   )
   let finalized = 0
   for (const { id } of due) {
     const done = await tx(async (c) => {
       const item = await lockItem(c, id)
-      if (item.status === 'finalized' || item.status === 'draft') return false
+      if (item.status === 'finalized') return false
+      if (item.status !== 'open' && item.status !== 'closed') return false // still inside its last-chance window
       const stillDue = item.status === 'closed' || (item.effective_close != null && item.db_now >= item.effective_close)
       if (!stillDue) return false
       const top = await one<{ id: string; bidder_id: string; amount_cents: number }>(
@@ -159,17 +176,6 @@ export async function finalizeDueSilentItems(adminId: string | null = null) {
     if (done) finalized++
   }
   return finalized
-}
-
-async function recordWinner(c: pg.PoolClient, item: ItemLock, bidderId: string, amountCents: number, source: 'silent_bid' | 'live_bid', sourceBidId: string, adminId: string | null) {
-  const wr = await one<{ id: string }>(
-    `insert into winning_results (item_id, bidder_id, amount_cents, source, source_bid_id, finalized_by_admin_id)
-     values ($1,$2,$3,$4,$5,$6) returning id`,
-    [item.id, bidderId, amountCents, source, sourceBidId, adminId],
-    c,
-  )
-  await c.query('insert into item_collections (winning_result_id) values ($1)', [wr!.id])
-  await audit({ eventId: item.event_id, actorType: adminId ? 'admin' : 'system', actorId: adminId, action: 'item.finalized', entityType: 'auction_item', entityId: item.id, details: { bidderId, amountCents, source } }, c)
 }
 
 /** Admin manually ends bidding on a silent item early. Winner is recorded immediately. */
@@ -196,8 +202,14 @@ export async function startLiveItem(itemId: string, adminId: string) {
     const item = await lockItem(c, itemId)
     await requireLive(item)
     if (item.status !== 'upcoming') throw new AppError('NOT_UPCOMING', 'Only an upcoming item can be brought to the block.', 409)
+    assertRunning(item)
     try {
-      await c.query(`update auction_items set status = 'open', updated_at = now() where id = $1`, [item.id])
+      // In game mode the item runs on the automated timer: an initial bidding period, then the inactivity countdown.
+      const set = item.game_mode
+        ? { timed: true, timer_phase: 'initial', deadline_at: new Date(item.db_now.getTime() + item.live_initial_seconds * 1000), started_at: item.db_now, halt_kind: null, pause_remaining_ms: null }
+        : {}
+      await transition(c, item, 'open', { reason: 'host started the item', actor: { type: 'admin', id: adminId }, set: set as never })
+      if (item.game_mode) await c.query('update auction_items set timed = true where id = $1', [item.id])
     } catch (e: any) {
       if (e.code === '23505') throw new AppError('LIVE_ITEM_ACTIVE', 'Another live item is still on the block. Close it first.', 409)
       throw e
@@ -213,18 +225,27 @@ export async function setLiveRunState(itemId: string, action: 'pause' | 'resume'
     await requireLive(item)
     if (action === 'pause') {
       if (item.status !== 'open') throw new AppError('BAD_STATE', 'Only an open item can be paused.', 409)
-      await c.query(`update auction_items set status = 'paused', updated_at = now() where id = $1`, [item.id])
+      // A routine pause freezes the effective countdown: the time left is stored and restored on resume.
+      const remaining = item.timed && item.deadline_at ? Math.max(0, item.deadline_at.getTime() - item.db_now.getTime()) : null
+      await transition(c, item, 'paused', { reason: 'host paused', actor: { type: 'admin', id: adminId }, set: { halt_kind: 'pause', pause_remaining_ms: remaining } })
     } else if (action === 'resume') {
       if (item.status !== 'paused') throw new AppError('BAD_STATE', 'Only a paused item can be resumed.', 409)
-      await c.query(`update auction_items set status = 'open', updated_at = now() where id = $1`, [item.id])
+      assertRunning(item)
+      const row = await one<{ pause_remaining_ms: number | null }>('select pause_remaining_ms from auction_items where id = $1', [item.id], c)
+      const set = item.timed && row?.pause_remaining_ms != null ? { deadline_at: new Date(item.db_now.getTime() + row.pause_remaining_ms), pause_remaining_ms: null, halt_kind: null } : { halt_kind: null }
+      await transition(c, item, 'open', { reason: 'host resumed', actor: { type: 'admin', id: adminId }, set })
     } else {
       if (!confirmed) throw new AppError('CONFIRM_REQUIRED', 'Closing an item requires confirmation.')
       if (item.status !== 'open' && item.status !== 'paused') throw new AppError('BAD_STATE', 'This item is not on the block.', 409)
-      await c.query(`update auction_items set status = 'closed', updated_at = now() where id = $1`, [item.id])
-      await c.query(
-        `update live_bid_requests set status = 'expired', resolved_at = now(), resolution_note = 'item closed' where item_id = $1 and status = 'pending'`,
-        [item.id],
-      )
+      if (item.timed) {
+        await closeToProvisional(c, item.id, 'host ended bidding', { type: 'admin', id: adminId })
+      } else {
+        await transition(c, item, 'closed', { reason: 'host closed the item', actor: { type: 'admin', id: adminId } })
+        await c.query(
+          `update live_bid_requests set status = 'expired', resolved_at = now(), resolution_note = 'item closed' where item_id = $1 and status = 'pending'`,
+          [item.id],
+        )
+      }
     }
     await audit({ eventId: item.event_id, actorType: 'admin', actorId: adminId, action: `live.${action}`, entityType: 'auction_item', entityId: item.id }, c)
     await notify(c, { t: 'live', id: item.id })
@@ -246,7 +267,8 @@ export async function requestLiveBid(i: { bidderId: string; itemId: string; amou
 
     await requireLive(item)
     if (item.status === 'paused') throw new AppError('PAUSED', 'The auctioneer has paused bidding for a moment.', 409)
-    if (item.status !== 'open') throw new AppError('NOT_OPEN', 'This item is not currently on the block.', 409)
+    assertRunning(item)
+    if (!biddable(item)) throw new AppError('NOT_OPEN', 'This item is not currently on the block.', 409)
     const bidder = await bidderInEvent(c, i.bidderId, item.event_id)
     if (item.current_bidder_id === bidder.id) throw new AppError('ALREADY_LEADING', 'You already have the highest bid.', 409)
     const minNext = minNextBid(item)
@@ -262,6 +284,12 @@ export async function requestLiveBid(i: { bidderId: string; itemId: string; amou
       [item.id, bidder.id, i.amountCents, i.idempotencyKey],
       c,
     )
+    if (item.auto_accept_live) {
+      // Same acceptance engine as the clerk's paddle entry — just without a human in the loop.
+      const bid = await appendAcceptedBid(c, item, { bidderId: bidder.id, amountCents: i.amountCents, source: 'mobile', requestId: r!.id, adminId: null })
+      await c.query(`update live_bid_requests set status = 'accepted', resolved_at = now(), resolution_note = 'accepted automatically' where id = $1`, [r!.id])
+      return { replay: false, requestId: r!.id, accepted: true, seq: bid.seq, minNextCents: i.amountCents + item.increment_cents }
+    }
     await notify(c, { t: 'live', id: item.id })
     return { replay: false, requestId: r!.id, minNextCents: minNext }
   })
@@ -270,7 +298,7 @@ export async function requestLiveBid(i: { bidderId: string; itemId: string; amou
 async function appendAcceptedBid(
   c: pg.PoolClient,
   item: ItemLock,
-  p: { bidderId: string; amountCents: number; source: 'paddle' | 'mobile'; requestId?: string; adminId: string },
+  p: { bidderId: string; amountCents: number; source: 'paddle' | 'mobile'; requestId?: string; adminId: string | null },
 ) {
   const seq = await one<{ n: number }>('select coalesce(max(seq), 0) + 1 as n from live_accepted_bids where item_id = $1', [item.id], c)
   const bid = await one<{ id: string; seq: number }>(
@@ -283,6 +311,7 @@ async function appendAcceptedBid(
     `update auction_items set current_bid_cents = $2, current_bidder_id = $3, bid_count = bid_count + 1, updated_at = now() where id = $1`,
     [item.id, p.amountCents, p.bidderId],
   )
+  await resetCountdown(c, item.id) // a bid during the inactivity countdown restarts it
   // Any other pending request that is now at or below the accepted bid can no longer win.
   await c.query(
     `update live_bid_requests set status = 'expired', resolved_at = now(), resolution_note = 'outbid'
@@ -294,7 +323,8 @@ async function appendAcceptedBid(
 }
 
 function assertAcceptable(item: ItemLock, amountCents: number) {
-  if (item.status !== 'open') {
+  assertRunning(item)
+  if (!biddable(item)) {
     throw new AppError(item.status === 'paused' ? 'PAUSED' : 'NOT_OPEN', item.status === 'paused' ? 'Bidding is paused — resume before taking bids.' : 'This item is not open for bids.', 409)
   }
   if (item.current_bid_cents == null) {
@@ -342,7 +372,7 @@ export async function acceptLiveRequest(requestId: string, adminId: string) {
     )
     if (!r) throw new AppError('REQUEST_NOT_FOUND', 'Request not found.', 404)
     if (r.status !== 'pending') throw new AppError('ALREADY_RESOLVED', `This request was already ${r.status}.`, 409)
-    if (item.status === 'open' && item.current_bid_cents != null && r.amount_cents <= item.current_bid_cents) {
+    if (biddable(item) && item.current_bid_cents != null && r.amount_cents <= item.current_bid_cents) {
       await c.query(`update live_bid_requests set status = 'expired', resolved_at = now(), resolved_by_admin_id = $2, resolution_note = 'outbid' where id = $1`, [r.id, adminId])
       await c.query('commit')
       await c.query('begin')
