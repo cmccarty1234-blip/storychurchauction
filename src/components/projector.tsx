@@ -225,11 +225,8 @@ function LiveView({ state, item, now }: { state: GameState; item: StageItem; now
 // ───────────────────────── Mode A: dashboard ─────────────────────────
 function Dashboard({ state, now }: { state: GameState; now: number }) {
   const tt = state.totals
-  const tiles = [
-    { l: 'TOTAL COMMITTED (bids)', v: tt.leadingCents + tt.finalizedCents, sub: 'leading + won bids — not yet collected' },
-    { l: 'PAYMENTS RECEIVED', v: tt.paymentsCents, sub: 'auction items, actually paid' },
-    { l: 'POWER-UP SALES', v: tt.powerupCents, sub: 'collected at the bidding desk' },
-  ]
+  // One headline number: every winning/leading bid plus Power-Up sales.
+  const committed = tt.leadingCents + tt.finalizedCents + tt.powerupCents
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-[1.5vh] p-[2vw]">
       <div className="flex items-center justify-between gap-[2vw]">
@@ -238,14 +235,9 @@ function Dashboard({ state, now }: { state: GameState; now: number }) {
         </div>
         <p className="font-heading text-[2vw] tracking-wide text-white/70">YOUR STORY MATTERS.</p>
       </div>
-      <div className="grid grid-cols-3 gap-[1.2vw]">
-        {tiles.map((x) => (
-          <div key={x.l} className="rounded-2xl border border-white/20 bg-white/5 p-[1.2vw]">
-            <p className="text-[1.2vw] font-bold tracking-[0.18em] text-white/60">{x.l}</p>
-            <p className="tnum font-heading text-[5vw] leading-none text-brand-yellow">{formatCents(x.v)}</p>
-            <p className="text-[1vw] text-white/50">{x.sub}</p>
-          </div>
-        ))}
+      <div className="rounded-2xl border border-white/20 bg-white/5 px-[2vw] py-[1.4vh] text-center">
+        <p className="text-[1.6vw] font-bold tracking-[0.25em] text-white/60">TOTAL COMMITTED</p>
+        <p className="tnum font-heading text-[8vw] leading-none text-brand-yellow">{formatCents(committed)}</p>
       </div>
       <div className="grid min-h-0 flex-1 grid-cols-3 gap-[1.2vw]">
         <Panel title="LAST CHANCE" accent>
