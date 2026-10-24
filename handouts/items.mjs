@@ -33,8 +33,10 @@ function parseCsv(text) {
   return rows.map((r) => Object.fromEntries(head.map((h, i) => [h.trim(), (r[i] ?? '').trim()])))
 }
 
+const MODE = process.argv[2] === 'live' ? 'live' : 'silent'
 const all = parseCsv(readFileSync('data/auction-import.csv', 'utf8'))
-const silent = all.filter((r) => r.kind === 'silent').map((r, i) => ({ ...r, n: i + 1 }))
+// Item numbers follow the import: silent items 1, 2, 3 … and live items 101, 102 … in file order.
+const silent = all.filter((r) => r.kind === MODE).map((r, i) => ({ ...r, n: (MODE === 'live' ? 101 : 1) + i }))
 
 const imgDir = 'data/images'
 const photoFiles = new Map(readdirSync(imgDir).filter((f) => /^\d+\.(jpe?g|png|webp)$/i.test(f)).map((f) => [parseInt(f, 10), f]))
@@ -106,14 +108,15 @@ for (let i = 0; i < silent.length; i += PER) {
   const cards = await Promise.all(chunk.map(card))
   const first = chunk[0].n, last = chunk.at(-1).n
   pages.push(`<div class="page"><div class="bar"></div>
-<header><img src="${logo}" alt="Story Church"><span class="t">Silent auction · items ${first}–${last}</span></header>
+<header><img src="${logo}" alt="Story Church"><span class="t">${MODE === 'live' ? 'Live auction' : 'Silent auction'} · items ${first}–${last}</span></header>
 <div class="grid">${cards.join('')}</div>
-<footer><span>Scan a code or visit ${SITE.replace(/^https?:\/\//, '')} to bid · Silent auction closes ${CLOSE_TIME}</span><span>Your story matters.</span></footer></div>`)
+<footer><span>${MODE === 'live' ? `Live items are called from the stage — raise your paddle or tap Live on your phone (${SITE.replace(/^https?:\/\//, '')})` : `Scan a code or visit ${SITE.replace(/^https?:\/\//, '')} to bid · Silent auction closes ${CLOSE_TIME}`}</span><span>Your story matters.</span></footer></div>`)
 }
-const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Silent auction items</title><style>${css}</style></head><body>${pages.join('\n')}</body></html>`
-const f = path.join(out, 'Silent-Auction-Items.html')
+const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>${MODE === 'live' ? 'Live' : 'Silent'} auction items</title><style>${css}</style></head><body>${pages.join('\n')}</body></html>`
+const base = MODE === 'live' ? 'Live-Auction-Items' : 'Silent-Auction-Items'
+const f = path.join(out, `${base}.html`)
 writeFileSync(f, html)
-const pdf = path.join(out, 'Silent-Auction-Items.pdf')
+const pdf = path.join(out, `${base}.pdf`)
 const edge = ['C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', 'C:/Program Files/Microsoft/Edge/Application/msedge.exe'].find((p) => { try { readFileSync(p, { flag: 'r' }); return true } catch { return false } })
 const r = spawnSync(edge ?? 'msedge', ['--headless=new', '--disable-gpu', '--no-pdf-header-footer', '--virtual-time-budget=20000', `--print-to-pdf=${pdf}`, 'file:///' + f.replace(/\\/g, '/')], { stdio: 'ignore' })
-console.log(`${silent.length} silent items, ${pages.length} pages, ${[...photoFiles.keys()].filter((n) => n <= silent.length).length} with photos → ${r.status === 0 ? pdf : 'PDF FAILED'}`)
+console.log(`${silent.length} ${MODE} items, ${pages.length} pages, ${silent.filter((i) => photoFiles.has(i.n)).length} with photos → ${r.status === 0 ? pdf : 'PDF FAILED'}`)

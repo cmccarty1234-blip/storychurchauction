@@ -143,7 +143,7 @@ const bidDesk = async () => `${head('Bid Desk', 'Volunteer guide · Bid Desk')}
   </ol></section>
 <div class="two">
   <section class="panel"><span class="pill k">Keep it fast</span>
-    <ul class="chk" style="margin-top:8px"><li>Take bids <b>on the spot</b>, not at a desk.</li><li>Paper slips are only a backup. A runner collects them <b>every 3 minutes</b>.</li><li>Silent bidding <b>closes at ${CLOSE_TIME}</b>. The system refuses anything later.</li><li><b>Slip cutoff: 8:20 PM.</b> After that, bid only on the spot.</li></ul></section>
+    <ul class="chk" style="margin-top:8px"><li>Take bids <b>on the spot</b>, not at a desk.</li><li>Paper slips are only a backup. A runner collects them <b>every 3 minutes</b>.</li><li>Silent bidding <b>closes at ${CLOSE_TIME}</b>. The system refuses anything later.</li><li><b>Slip cutoff: 8:20 PM.</b> After that, bid only on the spot.</li><li><b>Power-Ups are sold here too</b> &mdash; see the &ldquo;Selling Power-Ups&rdquo; sheet.</li></ul></section>
   <section class="panel"><span class="pill y">If something goes wrong</span>
     <ul class="chk" style="margin-top:8px"><li>No green message = <b>no bid</b>. Try again; it never double-bids.</li><li>&ldquo;Bid just changed&rdquo;: someone beat it. Show the guest the new minimum.</li><li>Wrong guest or amount? Tell an <b>administrator</b>. Don&rsquo;t retype it.</li></ul></section>
 </div>
@@ -160,9 +160,9 @@ const slips = async () => `${head('Bid slips', 'Cut along the dashed lines')}
 <div class="slips">${Array.from({ length: 8 }, slip).join('')}</div>
 </div></body></html>`
 
-// ───────────────── Power-Up desk (volunteers) ─────────────────
-const puDesk = async () => `${head('Power-Up Desk', 'Volunteer guide · Power-Up desk')}
-<div><h1>Power-Up Desk</h1><p class="sub">Guests buy Power-Ups <b>in person</b>. There is no online payment &mdash; you take the money, then record it.</p></div>
+// ───────────────── Selling Power-Ups at the Bid Desk (volunteers) ─────────────────
+const puDesk = async () => `${head('Selling Power-Ups', 'Volunteer guide · Bid Desk')}
+<div><h1>Selling<br>Power-Ups</h1><p class="sub">Power-Ups are sold <b>only at the Bid Desk</b>, in person. There is no online payment &mdash; you take the money, record it, and it is added to the guest&rsquo;s account.</p></div>
 <section class="panel"><span class="pill y">Selling one</span>
   <ol style="margin-top:8px">
     <li>Sign in at <b>${host}/admin</b>. Tap <b>Power-Ups</b>.</li>
@@ -180,11 +180,11 @@ const puDesk = async () => `${head('Power-Up Desk', 'Volunteer guide · Power-Up
 
 // ───────────────── Power-Ups (guests) ─────────────────
 const puGuest = async () => `${head('Power-Ups', 'Community auction · Fri Oct 30')}
-<div><h1>Power-Ups</h1><p class="sub">Change how an auction ends. Buy them at the <b>Power-Up Desk</b> and use them from your phone.</p></div>
+<div><h1>Power-Ups</h1><p class="sub">Change how an auction ends. Buy them at the <b>Bid Desk</b> and use them from your phone.</p></div>
 <section class="panel"><table class="t"><tr><th>Power-Up</th><th>Price</th><th>What it does</th></tr>${puRows}</table></section>
 <section class="panel"><span class="pill y">How to use one</span>
   <ol style="margin-top:8px">
-    <li>Buy it at the <b>Power-Up Desk</b> (cash, check or card). Tell them your <b>paddle number</b>.</li>
+    <li>Buy it <b>only at the Bid Desk</b> (cash, check or card). Tell the volunteer your <b>paddle number</b> &mdash; it&rsquo;s added to your account right away.</li>
     <li>On your phone, tap <b>Live &#9889;</b>. Your Power-Ups are under <b>My Power-Ups</b>.</li>
     <li>When one can be used, a <b>&ldquo;Use &hellip;&rdquo;</b> button appears. Tap it to see <b>exactly what will happen</b>, then confirm.</li>
   </ol>
@@ -205,7 +205,7 @@ const checkout = async () => `${head('Checkout', 'Volunteer guide · Checkout ta
   </ol></section>
 <div class="two">
   <section class="panel"><span class="pill k">Good to know</span>
-    <ul class="chk" style="margin-top:8px"><li>Items in a <b>Last Chance</b> window aren&rsquo;t won yet &mdash; they appear when final.</li><li>Partial payments are fine; the balance stays on screen.</li><li><b>Power-Ups are not part of checkout</b> &mdash; they were paid for at the Power-Up Desk.</li></ul></section>
+    <ul class="chk" style="margin-top:8px"><li>Items in a <b>Last Chance</b> window aren&rsquo;t won yet &mdash; they appear when final.</li><li>Partial payments are fine; the balance stays on screen.</li><li><b>Power-Ups are not part of checkout</b> &mdash; they were paid for at the Bid Desk.</li></ul></section>
   <section class="panel"><span class="pill y">Can&rsquo;t stay tonight?</span>
     <p style="margin-top:8px;font-size:11pt;line-height:1.35">Guests who can&rsquo;t attend call the church at <b>${CHURCH_PHONE}</b>. We&rsquo;ll call back and set a pickup time. Don&rsquo;t promise a time yourself.</p></section>
 </div>
@@ -231,7 +231,7 @@ const hostSheet = async () => `${head('Host run of show', 'Host guide')}
 </div></body></html>`
 
 const edge = ['C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', 'C:/Program Files/Microsoft/Edge/Application/msedge.exe'].find((p) => { try { readFileSync(p, { flag: 'r' }); return true } catch { return false } })
-for (const [name, html] of [['How-To-Bid', await bid()], ['How-To-Register', await reg()], ['How-To-Use-Power-Ups', await puGuest()], ['Volunteer-Bid-Desk', await bidDesk()], ['Volunteer-Bid-Slips', await slips()], ['Volunteer-Power-Up-Desk', await puDesk()], ['Volunteer-Checkout-Table', await checkout()], ['Host-Run-Of-Show', await hostSheet()]]) {
+for (const [name, html] of [['How-To-Bid', await bid()], ['How-To-Register', await reg()], ['How-To-Use-Power-Ups', await puGuest()], ['Volunteer-Bid-Desk', await bidDesk()], ['Volunteer-Bid-Slips', await slips()], ['Volunteer-Bid-Desk-Selling-Power-Ups', await puDesk()], ['Volunteer-Checkout-Table', await checkout()], ['Host-Run-Of-Show', await hostSheet()]]) {
   const f = path.join(out, `${name}.html`)
   writeFileSync(f, html)
   const pdf = path.join(out, `${name}.pdf`)
