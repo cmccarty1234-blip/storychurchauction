@@ -44,7 +44,7 @@ export default async function AdminBidderPage({ params }: { params: Promise<{ id
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <EditBidderForm id={b.id} name={b.name} phone={formatPhone(b.phone)} email={b.email ?? ''} />
         <div className="space-y-6">
           <section className="rounded-xl border bg-card p-5 shadow-sm">

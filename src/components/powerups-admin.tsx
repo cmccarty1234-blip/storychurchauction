@@ -81,7 +81,7 @@ export function SellForm({ defs }: { defs: DefRow[] }) {
     <form onSubmit={submit} className="rounded-2xl border bg-card p-5">
       <h2 className="text-2xl">Sell a Power-Up</h2>
       <p className="mt-1 text-sm text-muted-foreground">Take the payment first, then record it. The guest sees it in their inventory immediately.</p>
-      <div className="mt-4 grid gap-3 md:grid-cols-5">
+      <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-5">
         <label className="text-sm font-semibold">Paddle #<Input inputMode="numeric" value={paddle} onChange={(e) => setPaddle(e.target.value)} className="mt-1 h-12 text-lg" /></label>
         <label className="text-sm font-semibold md:col-span-2">Power-Up
           <select value={code} onChange={(e) => setCode(e.target.value)} className="mt-1 h-12 w-full rounded-lg border bg-white px-2 text-lg">
@@ -131,17 +131,17 @@ function DefRowEditor({ d }: { d: DefRow }) {
         <div><p className="text-lg font-bold">{d.name}</p><p className="text-sm text-muted-foreground">{d.description}</p></div>
         <label className="flex items-center gap-2 font-semibold"><input type="checkbox" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} className="size-5" /> Enabled</label>
       </div>
-      <div className="mt-3 grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        <label className="text-xs font-semibold">Price $<Input value={price} onChange={(e) => setPrice(e.target.value)} inputMode="decimal" className="mt-1" /></label>
-        <label className="text-xs font-semibold">Max uses per item<Input value={perItem} onChange={(e) => setPerItem(e.target.value)} inputMode="numeric" placeholder="∞" className="mt-1" /></label>
-        <label className="text-xs font-semibold">Max per guest per item<Input value={perBI} onChange={(e) => setPerBI(e.target.value)} inputMode="numeric" placeholder="∞" className="mt-1" /></label>
-        <label className="text-xs font-semibold">Max owned per guest<Input value={perBidder} onChange={(e) => setPerBidder(e.target.value)} inputMode="numeric" placeholder="∞" className="mt-1" /></label>
-        {d.seconds != null ? <label className="text-xs font-semibold">Seconds<Input value={secs} onChange={(e) => setSecs(e.target.value)} inputMode="numeric" className="mt-1" /></label> : null}
+      <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        <label className="text-xs font-semibold">Price $<Input value={price} onChange={(e) => setPrice(e.target.value)} inputMode="decimal" className="mt-1 h-11" /></label>
+        <label className="text-xs font-semibold">Max uses per item<Input value={perItem} onChange={(e) => setPerItem(e.target.value)} inputMode="numeric" placeholder="∞" className="mt-1 h-11" /></label>
+        <label className="text-xs font-semibold">Max per guest per item<Input value={perBI} onChange={(e) => setPerBI(e.target.value)} inputMode="numeric" placeholder="∞" className="mt-1 h-11" /></label>
+        <label className="text-xs font-semibold">Max owned per guest<Input value={perBidder} onChange={(e) => setPerBidder(e.target.value)} inputMode="numeric" placeholder="∞" className="mt-1 h-11" /></label>
+        {d.seconds != null ? <label className="text-xs font-semibold">Seconds<Input value={secs} onChange={(e) => setSecs(e.target.value)} inputMode="numeric" className="mt-1 h-11" /></label> : null}
         <fieldset className="text-xs font-semibold"><legend>Allowed on</legend>
           {['silent', 'live'].map((k) => <label key={k} className="mr-3 inline-flex items-center gap-1"><input type="checkbox" checked={kinds.includes(k)} onChange={() => toggle(k)} /> {k}</label>)}
         </fieldset>
       </div>
-      <Button className="mt-3" disabled={busy} onClick={() => run(() => call({ action: 'update-def', code: d.code, priceCents: parseDollars(price) ?? undefined, enabled, kinds, maxPerItem: num(perItem), maxPerBidderItem: num(perBI), maxPerBidder: num(perBidder), seconds: d.seconds != null ? num(secs) ?? undefined : undefined }), `${d.name} saved.`)}>Save {d.name}</Button>
+      <Button className="mt-3 h-11" disabled={busy} onClick={() => run(() => call({ action: 'update-def', code: d.code, priceCents: parseDollars(price) ?? undefined, enabled, kinds, maxPerItem: num(perItem), maxPerBidderItem: num(perBI), maxPerBidder: num(perBidder), seconds: d.seconds != null ? num(secs) ?? undefined : undefined }), `${d.name} saved.`)}>Save {d.name}</Button>
       <Msg m={msg} />
     </div>
   )
@@ -153,18 +153,18 @@ export function GameSettingsForm({ s }: { s: GameSettings }) {
   const [v, setV] = useState({ ...s, liveMaxSeconds: s.liveMaxSeconds?.toString() ?? '' })
   const set = (k: keyof typeof v, val: unknown) => setV((x) => ({ ...x, [k]: val }))
   const n = (k: keyof typeof v) => (
-    <Input inputMode="numeric" value={String(v[k] ?? '')} onChange={(e) => set(k, e.target.value)} className="mt-1" />
+    <Input inputMode="numeric" value={String(v[k] ?? '')} onChange={(e) => set(k, e.target.value)} className="mt-1 h-11" />
   )
   return (
     <section className="rounded-2xl border bg-card p-5">
       <h2 className="text-2xl">Game settings</h2>
       <p className="mt-1 text-sm text-muted-foreground">Everything here is OFF until you switch game mode on, so the auction behaves exactly as before until then.</p>
-      <div className="mt-4 grid gap-3 sm:grid-cols-3">
+      <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
         <label className="flex items-center gap-2 font-semibold"><input type="checkbox" className="size-5" checked={v.gameMode} onChange={(e) => set('gameMode', e.target.checked)} /> Game mode (timers, Power-Ups, Room Events)</label>
         <label className="flex items-center gap-2 font-semibold"><input type="checkbox" className="size-5" checked={v.autoAcceptLive} onChange={(e) => set('autoAcceptLive', e.target.checked)} /> Accept phone bids on live items automatically</label>
         <label className="flex items-center gap-2 font-semibold"><input type="checkbox" className="size-5" checked={v.provisionalSilent} onChange={(e) => set('provisionalSilent', e.target.checked)} /> Silent items also get the last-chance window</label>
       </div>
-      <div className="mt-4 grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         <label className="text-xs font-semibold">Opening bidding period (s){n('liveInitialSeconds')}</label>
         <label className="text-xs font-semibold">Inactivity countdown (s){n('liveInactivitySeconds')}</label>
         <label className="text-xs font-semibold">Warning threshold (s){n('liveWarningSeconds')}</label>
@@ -173,7 +173,7 @@ export function GameSettingsForm({ s }: { s: GameSettings }) {
         <label className="text-xs font-semibold">Smallest reopen allowed (s){n('minReopenSeconds')}</label>
       </div>
       <Button
-        className="mt-4"
+        className="mt-4 h-11"
         disabled={busy}
         onClick={() =>
           run(
@@ -213,12 +213,12 @@ function RoomEditor({ r }: { r: RoomRow }) {
   return (
     <div className="rounded-xl border p-4">
       <div className="flex items-center justify-between"><p className="text-lg font-bold">{r.name}</p><label className="flex items-center gap-2 font-semibold"><input type="checkbox" className="size-5" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} /> Enabled</label></div>
-      <div className="mt-2 grid gap-3 sm:grid-cols-3">
-        {r.code === 'jackpot' ? <label className="text-xs font-semibold sm:col-span-2">Prize<Input value={prize} onChange={(e) => setPrize(e.target.value)} className="mt-1" /></label> : null}
-        {r.code === 'battle' ? <label className="text-xs font-semibold sm:col-span-2">Reward for the winning team<Input value={reward} onChange={(e) => setReward(e.target.value)} className="mt-1" /></label> : null}
-        {r.code !== 'jackpot' ? <label className="text-xs font-semibold">Length (seconds)<Input value={secs} onChange={(e) => setSecs(e.target.value)} inputMode="numeric" className="mt-1" /></label> : null}
+      <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-3">
+        {r.code === 'jackpot' ? <label className="text-xs font-semibold sm:col-span-2">Prize<Input value={prize} onChange={(e) => setPrize(e.target.value)} className="mt-1 h-11" /></label> : null}
+        {r.code === 'battle' ? <label className="text-xs font-semibold sm:col-span-2">Reward for the winning team<Input value={reward} onChange={(e) => setReward(e.target.value)} className="mt-1 h-11" /></label> : null}
+        {r.code !== 'jackpot' ? <label className="text-xs font-semibold">Length (seconds)<Input value={secs} onChange={(e) => setSecs(e.target.value)} inputMode="numeric" className="mt-1 h-11" /></label> : null}
       </div>
-      <Button className="mt-3" disabled={busy} onClick={() => run(() => call({ action: 'update-room', code: r.code, enabled, ...(r.code === 'jackpot' ? { prize } : {}), ...(r.code === 'battle' ? { reward } : {}), ...(r.code !== 'jackpot' && secs ? { seconds: +secs } : {}) }), `${r.name} saved.`)}>Save</Button>
+      <Button className="mt-3 h-11" disabled={busy} onClick={() => run(() => call({ action: 'update-room', code: r.code, enabled, ...(r.code === 'jackpot' ? { prize } : {}), ...(r.code === 'battle' ? { reward } : {}), ...(r.code !== 'jackpot' && secs ? { seconds: +secs } : {}) }), `${r.name} saved.`)}>Save</Button>
       <Msg m={msg} />
     </div>
   )
@@ -240,8 +240,8 @@ function KnockoutRow({ i }: { i: ItemRow }) {
   return (
     <div className="flex flex-wrap items-center gap-3 px-3 py-2">
       <span className="min-w-0 flex-1 truncate"><b>#{i.number}</b> {i.title} <span className="text-xs text-muted-foreground">({i.kind})</span></span>
-      <Input value={v} onChange={(e) => setV(e.target.value)} inputMode="decimal" placeholder="off" className="h-10 w-28" aria-label={`Knockout minimum for item ${i.number}`} />
-      <Button size="sm" disabled={busy} onClick={() => run(() => call({ action: 'set-knockout', itemId: i.id, cents: v.trim() === '' ? null : parseDollars(v) }), 'Saved.')}>Save</Button>
+      <Input value={v} onChange={(e) => setV(e.target.value)} inputMode="decimal" placeholder="off" className="h-11 w-28" aria-label={`Knockout minimum for item ${i.number}`} />
+      <Button className="h-11" disabled={busy} onClick={() => run(() => call({ action: 'set-knockout', itemId: i.id, cents: v.trim() === '' ? null : parseDollars(v) }), 'Saved.')}>Save</Button>
       {msg ? <span className={`text-xs font-semibold ${msg.ok ? 'text-green-700' : 'text-red-700'}`}>{msg.text}</span> : null}
     </div>
   )
@@ -249,5 +249,5 @@ function KnockoutRow({ i }: { i: ItemRow }) {
 
 // ───────────────────────── void a sale ─────────────────────────
 export function VoidSale({ id }: { id: string }) {
-  return <ConfirmAction label="Void" size="sm" variant="outline" title="Void this Power-Up sale?" description="The units are removed from the guest’s inventory and the money drops out of Power-Up sales. Refused if they already used them." confirmLabel="Void sale" reasonLabel="Reason (required)" action={(reason) => call({ action: 'void', purchaseId: id, reason })} />
+  return <ConfirmAction label="Void" className="h-11" variant="outline" title="Void this Power-Up sale?" description="The units are removed from the guest’s inventory and the money drops out of Power-Up sales. Refused if they already used them." confirmLabel="Void sale" reasonLabel="Reason (required)" action={(reason) => call({ action: 'void', purchaseId: id, reason })} />
 }

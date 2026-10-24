@@ -92,7 +92,7 @@ export default async function ItemPage({ params }: { params: Promise<{ itemId: s
         <ArrowLeft className="size-4" /> All {isLive ? 'live' : 'silent'} items
       </Link>
 
-      <div className="grid gap-6 md:grid-cols-2 md:gap-10">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-10">
         <div>
           <div className="relative aspect-[4/3] overflow-hidden rounded-2xl border bg-secondary shadow-sm">
             <ItemImage path={item.image_path} title={item.title} />

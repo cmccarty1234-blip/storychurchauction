@@ -112,7 +112,7 @@ export function ItemForm({ initial, defaultIncrement }: { initial?: ItemFormValu
       <Field label="Description" htmlFor="desc">
         <Textarea id="desc" value={v.description} onChange={(e) => set('description', e.target.value)} rows={4} />
       </Field>
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <Field label="Starting bid ($)" htmlFor="start" hint={v.locked ? 'Locked — bidding has started.' : undefined}>
           <Input id="start" inputMode="decimal" value={v.startingBid} onChange={(e) => set('startingBid', e.target.value)} disabled={v.locked} />
         </Field>

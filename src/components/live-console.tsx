@@ -171,7 +171,7 @@ export function LiveConsole(p: {
 
           {msg ? <Notice kind={msg.kind}>{msg.text}</Notice> : null}
 
-          <div className="grid gap-6 lg:grid-cols-2">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <form onSubmit={recordPaddle} className="space-y-4 rounded-xl border bg-card p-5 shadow-sm" noValidate>
               <h2 className="text-lg font-bold">Record a paddle bid</h2>
               <p className="text-sm text-muted-foreground">The auctioneer calls the bid → type the paddle number → press Enter.</p>

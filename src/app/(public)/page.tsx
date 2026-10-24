@@ -66,7 +66,7 @@ export default async function HomePage() {
 
       <section aria-labelledby="how">
         <h2 id="how" className="text-[28px] uppercase sm:text-4xl">How it works</h2>
-        <ol className="mt-5 grid gap-5 sm:grid-cols-3">
+        <ol className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-3">
           {[
             { icon: UserRound, t: '1. Register', d: 'Enter your name and a phone number or email. You get a bidder number and a PIN right away.' },
             { icon: Gavel, t: '2. Bid', d: `Browse ${silent.length} silent auction items. Tap one, enter your bid, and watch it update live.` },
@@ -83,7 +83,7 @@ export default async function HomePage() {
 
       <section id="event" aria-labelledby="details" className="scroll-mt-24">
         <h2 id="details" className="text-[28px] uppercase sm:text-4xl">Event details</h2>
-        <dl className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <dl className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
           <div className="rounded-xl border bg-card p-6 shadow-sm">
             <dt className="flex items-center gap-2 text-sm font-semibold text-muted-foreground"><CalendarDays className="size-4" aria-hidden /> Event date</dt>
             <dd className="mt-2 text-lg font-bold">{eventDay ?? 'To be announced'}</dd>

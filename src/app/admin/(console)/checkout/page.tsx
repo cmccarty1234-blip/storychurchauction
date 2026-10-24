@@ -59,8 +59,8 @@ export default async function CheckoutSearch({ searchParams }: { searchParams: P
 
       <form className="flex gap-2" role="search">
         {filter !== 'all' ? <input type="hidden" name="f" value={filter} /> : null}
-        <input name="q" defaultValue={q} autoFocus placeholder="Name or bidder #" aria-label="Search winners" className="h-14 flex-1 rounded-xl border border-input bg-white px-4 text-lg" />
-        <button className="h-14 rounded-xl bg-brand-yellow px-6 text-lg font-semibold text-ink">Find</button>
+        <input name="q" defaultValue={q} autoFocus placeholder="Name or bidder #" aria-label="Search winners" className="h-14 min-w-0 flex-1 rounded-xl border border-input bg-white px-4 text-lg" />
+        <button className="h-14 shrink-0 rounded-xl bg-brand-yellow px-6 text-lg font-semibold text-ink">Find</button>
       </form>
       <div className="flex flex-wrap items-center gap-2">
         {chip('all', 'All winners')}{chip('unpaid', 'Unpaid')}{chip('partial', 'Partly paid')}{chip('paid', 'Paid')}

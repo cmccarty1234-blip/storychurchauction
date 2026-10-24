@@ -31,8 +31,8 @@ export default async function AdminBidders({ searchParams }: { searchParams: Pro
     <div className="space-y-6">
       <LiveRefresh />
       <h1 className="text-3xl font-extrabold">Bidders</h1>
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="space-y-4 lg:col-span-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="min-w-0 space-y-4 lg:col-span-2">
           <form className="flex gap-2" role="search">
             <input name="q" defaultValue={q} placeholder="Search by name, bidder #, phone or email" aria-label="Search bidders" className="h-11 flex-1 rounded-lg border border-input bg-white px-3 text-base" />
             <button className="h-11 rounded-lg bg-brand-yellow px-5 font-semibold text-ink">Search</button>

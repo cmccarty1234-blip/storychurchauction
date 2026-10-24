@@ -48,7 +48,7 @@ export function EventSettingsForm({ initial }: { initial: EventFormValues }) {
     <form onSubmit={submit} className="space-y-4 rounded-xl border bg-card p-5 shadow-sm" noValidate>
       <h2 className="text-lg font-bold">Event</h2>
       <Field label="Event name" htmlFor="ev-name"><Input id="ev-name" value={v.name} onChange={(e) => set('name', e.target.value)} /></Field>
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field label="Event date" htmlFor="ev-date"><Input id="ev-date" type="date" value={v.eventDate} onChange={(e) => set('eventDate', e.target.value)} /></Field>
         <Field label="Time zone" htmlFor="ev-tz" hint="All times below use this zone, e.g. America/Denver."><Input id="ev-tz" value={v.timezone} onChange={(e) => set('timezone', e.target.value)} /></Field>
         <Field label="Silent auction opens" htmlFor="ev-start"><Input id="ev-start" type="datetime-local" value={v.silentStart} onChange={(e) => set('silentStart', e.target.value)} /></Field>
@@ -87,7 +87,7 @@ export function StaffForm() {
     <form onSubmit={submit} className="space-y-3 rounded-xl border bg-card p-5 shadow-sm" noValidate>
       <h2 className="text-lg font-bold">Add a staff or volunteer account</h2>
       <p className="text-sm text-muted-foreground">Volunteers can run the live console, record bids and payments. Administrators can also correct payments, reopen items, and change settings.</p>
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Field label="Name" htmlFor="st-name"><Input id="st-name" value={name} onChange={(e) => setName(e.target.value)} /></Field>
         <Field label="Email" htmlFor="st-email"><Input id="st-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} /></Field>
         <Field label="Temporary password (8+ characters)" htmlFor="st-pw"><Input id="st-pw" type="text" autoComplete="off" value={password} onChange={(e) => setPassword(e.target.value)} /></Field>

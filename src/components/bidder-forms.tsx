@@ -67,7 +67,7 @@ export function EditBidderForm({ id, name: n0, phone: p0, email: e0 }: { id: str
     <form onSubmit={submit} className="space-y-3 rounded-xl border bg-card p-5 shadow-sm" noValidate>
       <h2 className="font-bold">Contact details</h2>
       <Field label="Full name" htmlFor="eb-name"><Input id="eb-name" value={name} onChange={(e) => setName(e.target.value)} /></Field>
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Field label="Phone" htmlFor="eb-phone"><Input id="eb-phone" inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} /></Field>
         <Field label="Email" htmlFor="eb-email"><Input id="eb-email" inputMode="email" value={email} onChange={(e) => setEmail(e.target.value)} /></Field>
       </div>

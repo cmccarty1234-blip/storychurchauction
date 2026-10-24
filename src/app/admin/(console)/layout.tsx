@@ -24,7 +24,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   return (
     <div className="min-h-screen bg-background">
       {ev?.is_demo ? <div className="no-print bg-amber-300 px-4 py-1 text-center text-xs font-bold tracking-wide text-amber-950">DEMO DATA — not a real auction</div> : null}
-      <header className="no-print sticky top-0 z-40 border-b bg-white">
+      <header className="no-print z-40 border-b bg-white sm:sticky sm:top-0">
         <div className="h-1 bg-brand-yellow" aria-hidden />
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-2">
           <Link href="/admin" className="flex min-h-11 items-center gap-3">

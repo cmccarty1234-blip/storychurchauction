@@ -64,7 +64,7 @@ export function PaymentForm({ bidderId, balanceCents }: { bidderId: string; bala
           ))}
         </div>
       </fieldset>
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Field label="Amount received ($)" htmlFor="pay-amt" hint={`Balance due: ${formatCents(balanceCents)}. A partial payment is fine.`}>
           <Input id="pay-amt" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} className="h-12 text-xl font-bold tnum md:text-xl" />
         </Field>

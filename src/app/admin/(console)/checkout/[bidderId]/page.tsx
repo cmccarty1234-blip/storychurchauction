@@ -81,7 +81,7 @@ export default async function CheckoutBidder({ params }: { params: Promise<{ bid
         </div>
       </section>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <PaymentForm bidderId={b.id} balanceCents={t.balanceCents} />
         <section className="rounded-xl border bg-card shadow-sm" aria-label="Payment history">
           <h2 className="border-b p-4 font-bold">Payment history</h2>

@@ -11,7 +11,7 @@ export type NavItem = { href: string; label: string; icon: keyof typeof ICONS }
 export function AdminNav({ items }: { items: NavItem[] }) {
   const path = usePathname()
   return (
-    <nav aria-label="Staff" className="mx-auto flex max-w-7xl gap-1 overflow-x-auto px-3 pb-2 text-sm font-semibold">
+    <nav aria-label="Staff" className="mx-auto flex max-w-7xl flex-wrap gap-1 px-3 pb-2 text-sm font-semibold sm:flex-nowrap sm:overflow-x-auto">
       {items.map(({ href, label, icon }) => {
         const Icon = ICONS[icon]
         const active = href === '/admin' ? path === '/admin' : path.startsWith(href)
@@ -20,7 +20,7 @@ export function AdminNav({ items }: { items: NavItem[] }) {
             key={href}
             href={href}
             aria-current={active ? 'page' : undefined}
-            className={`flex min-h-11 shrink-0 items-center gap-1.5 rounded-lg px-3 ${active ? 'bg-brand-yellow text-ink' : 'hover:bg-ivory'}`}
+            className={`flex min-h-11 shrink-0 items-center gap-1.5 rounded-lg px-2.5 sm:px-3 ${active ? 'bg-brand-yellow text-ink' : 'hover:bg-ivory'}`}
           >
             <Icon className="size-4" aria-hidden /> {label}
           </Link>

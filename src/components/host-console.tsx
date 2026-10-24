@@ -143,7 +143,7 @@ export function HostConsole({ isAdmin }: { isAdmin: boolean }) {
       <section className="rounded-2xl border-2 border-ink bg-white p-4">
         <h2 className="mb-2 flex items-center gap-2 text-2xl"><Radio className="size-6" /> On the block</h2>
         {stage ? (
-          <div className="grid gap-4 lg:grid-cols-[1fr_auto]">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_auto]">
             <div>
               <p className="text-3xl font-extrabold">#{stage.number} {stage.title}</p>
               <p className="tnum mt-1 text-5xl font-extrabold">{stage.currentBidCents != null ? formatCents(stage.currentBidCents) : 'No bids yet'}</p>
@@ -167,7 +167,7 @@ export function HostConsole({ isAdmin }: { isAdmin: boolean }) {
               <button className={danger} disabled={busy || !!state.event.emergency} onClick={() => confirmed('stop', () => show({ action: 'emergency-stop', reason: reason || 'Host stop' }, 'EMERGENCY STOP in force.'))}>
                 <AlertOctagon className="mr-1 inline size-5" /> {armed === 'stop' ? 'Tap again to STOP EVERYTHING' : 'Emergency stop'}
               </button>
-              <input aria-label="Emergency stop reason" placeholder="Reason (optional)" className="h-14 flex-1 rounded-xl border px-3" value={reason} onChange={(e) => setReason(e.target.value)} />
+              <input aria-label="Emergency stop reason" placeholder="Reason (optional)" className="h-14 min-w-0 flex-1 rounded-xl border px-3" value={reason} onChange={(e) => setReason(e.target.value)} />
             </div>
             <form onSubmit={sendPaddle} className="flex flex-wrap items-end gap-3 rounded-xl bg-secondary p-3 lg:col-span-2">
               <label className="font-semibold">Paddle #<input inputMode="numeric" value={paddle} onChange={(e) => setPaddle(e.target.value)} className="mt-1 block h-14 w-32 rounded-xl border px-3 text-2xl font-bold" /></label>
@@ -178,7 +178,7 @@ export function HostConsole({ isAdmin }: { isAdmin: boolean }) {
               <div className="lg:col-span-2">
                 <p className="font-bold">Phone bids waiting for you (auto-accept is off):</p>
                 {data.pending.map((p) => (
-                  <div key={p.id} className="mt-1 flex items-center gap-2">
+                  <div key={p.id} className="mt-2 flex flex-wrap items-center gap-2">
                     <span className="tnum text-lg">#{p.bidder_number} {p.name} — {formatCents(p.amount_cents)}</span>
                     <button className={gold} onClick={() => live({ action: 'accept', requestId: p.id })}>Accept</button>
                     <button className={ghost} onClick={() => live({ action: 'reject', requestId: p.id })}><X className="inline size-5" /></button>
@@ -237,7 +237,7 @@ export function HostConsole({ isAdmin }: { isAdmin: boolean }) {
               {room.code === 'jackpot' ? (
                 <>
                   <button className={gold} disabled={busy} onClick={() => show({ action: 'jackpot-draw', sessionId: room.id }, 'Winner drawn — see the projector.')}>Draw winner</button>
-                  <input aria-label="Redraw reason" placeholder="Reason for a redraw" className="h-14 rounded-xl border px-3" value={reason} onChange={(e) => setReason(e.target.value)} />
+                  <input aria-label="Redraw reason" placeholder="Reason for a redraw" className="h-14 min-w-0 rounded-xl border px-3" value={reason} onChange={(e) => setReason(e.target.value)} />
                   <button className={ghost} disabled={busy || !reason.trim()} onClick={() => show({ action: 'jackpot-draw', sessionId: room.id, reason }, 'Redrawn.')}>Redraw</button>
                 </>
               ) : null}
@@ -248,7 +248,7 @@ export function HostConsole({ isAdmin }: { isAdmin: boolean }) {
           <div className="flex flex-wrap items-center gap-2">
             <button className={gold} disabled={busy || !sessionRoom('lightning')?.enabled} onClick={() => show({ action: 'room-start', code: 'lightning' }, 'Lightning Round started!')}>⚡ Lightning Round</button>
             <button className={gold} disabled={busy || !sessionRoom('battle')?.enabled} onClick={() => show({ action: 'room-start', code: 'battle' }, 'Battle of the Room started!')}>Battle of the Room</button>
-            <input aria-label="Jackpot prize" placeholder="Jackpot prize" className="h-14 rounded-xl border px-3" value={prize} onChange={(e) => setPrize(e.target.value)} />
+            <input aria-label="Jackpot prize" placeholder="Jackpot prize" className="h-14 min-w-0 rounded-xl border px-3" value={prize} onChange={(e) => setPrize(e.target.value)} />
             <button className={gold} disabled={busy || !sessionRoom('jackpot')?.enabled} onClick={() => show({ action: 'room-start', code: 'jackpot', prize: prize || undefined }, 'Mystery Jackpot ready — press Draw winner.')}>Mystery Jackpot</button>
           </div>
         )}
@@ -256,7 +256,7 @@ export function HostConsole({ isAdmin }: { isAdmin: boolean }) {
       </section>
 
       {/* ── Power-Ups & projector ── */}
-      <section className="grid gap-4 lg:grid-cols-2">
+      <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <div className="rounded-2xl border bg-card p-4">
           <h2 className="mb-2 text-2xl">Power-Ups just played</h2>
           {data?.recentActs.length ? data.recentActs.map((a, i) => <p key={i} className="text-lg">{a.name} — bidder #{a.bidder_number} on item #{a.item_number}</p>) : <p className="text-muted-foreground">None yet.</p>}
@@ -268,8 +268,8 @@ export function HostConsole({ isAdmin }: { isAdmin: boolean }) {
               <button key={m} className={state.event.displayMode === m ? gold : ghost} disabled={busy} onClick={() => show({ action: 'display', mode: m })}>{m === 'auto' ? 'Automatic' : m === 'dashboard' ? 'Dashboard' : 'Live item'}</button>
             ))}
           </div>
-          <div className="mt-3 flex gap-2">
-            <input aria-label="Announcement" placeholder="Type an announcement…" maxLength={140} className="h-14 flex-1 rounded-xl border px-3" value={announce} onChange={(e) => setAnnounce(e.target.value)} />
+          <div className="mt-3 flex flex-wrap gap-2">
+            <input aria-label="Announcement" placeholder="Type an announcement…" maxLength={140} className="h-14 min-w-0 flex-1 rounded-xl border px-3" value={announce} onChange={(e) => setAnnounce(e.target.value)} />
             <button className={gold} disabled={busy || !announce.trim()} onClick={async () => { const r = await show({ action: 'announce', headline: announce.trim() }, 'Announcement sent.'); if (r.ok) setAnnounce('') }}>Flash it</button>
             <button className={ghost} disabled={busy || !announce.trim()} onClick={() => show({ action: 'display', mode: 'message', message: announce.trim() }, 'Message pinned on the projector.')}><Plus className="inline size-5" /> Pin</button>
           </div>
