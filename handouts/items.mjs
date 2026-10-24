@@ -64,18 +64,18 @@ header img { height: 0.34in; filter: brightness(0) }
 header .t { font-weight: 800; font-size: 10pt; letter-spacing: .08em; text-transform: uppercase; color: #686868 }
 .grid { flex: 1; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(3, 1fr); gap: 0.12in; min-height: 0 }
 .card { border: 2px solid #101010; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; background: #fff; min-height: 0 }
-.ph { position: relative; height: 1.62in; background: #101010; flex: none; display: grid; place-items: center }
+.ph { position: relative; height: 1.4in; background: #101010; flex: none; display: grid; place-items: center }
 .ph img.p { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover }
 .ph .noimg img { height: 0.42in; opacity: .9 }
 .num { position: absolute; left: 0; top: 0; background: #f5c518; color: #101010; font-family: 'Archivo Black', Impact, sans-serif; font-size: 17pt; line-height: 1; padding: 6px 12px 5px; border-bottom-right-radius: 12px }
 .body { padding: 0.09in 0.13in 0.08in; display: flex; flex-direction: column; gap: 3px; flex: 1; min-height: 0 }
 h2 { font-family: 'Archivo Black', Impact, sans-serif; font-weight: 400; font-size: 14.5pt; line-height: 1.04; text-transform: uppercase }
-.desc { font-size: 8.8pt; line-height: 1.28; color: #292929; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden }
+.desc { flex: none; font-size: 8.8pt; line-height: 1.28; color: #292929; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden }
 .donor { font-size: 8pt; color: #686868; font-weight: 600 }
 .meta { margin-top: auto; display: flex; align-items: flex-end; justify-content: space-between; gap: 8px }
 .price b { font-size: 11pt; font-weight: 800 } .price span { display: block; font-size: 8.3pt; color: #444; line-height: 1.3 }
 .blank { display: inline-block; width: 0.7in; border-bottom: 1.5px solid #101010; height: 12px; vertical-align: bottom }
-.qr { width: 0.62in; height: 0.62in; flex: none } .qr svg { width: 100%; height: 100% }
+.qr { width: 0.56in; height: 0.56in; flex: none } .qr svg { width: 100%; height: 100% }
 footer { display: flex; justify-content: space-between; font-size: 8.5pt; color: #555; font-weight: 600 }
 `
 
