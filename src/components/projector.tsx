@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
+import Image from 'next/image'
 import { Maximize2, Volume2, VolumeX, Zap } from 'lucide-react'
 import { formatCents } from '@/lib/money'
 import { liveClock, mmss, secsUntil, useGameState, useTicker } from '@/lib/game-client'
@@ -150,6 +151,11 @@ export function Projector() {
   )
 }
 
+/** The church's white wordmark, shown as-is on the dark projector. */
+function Logo({ className = 'h-[5vh]' }: { className?: string }) {
+  return <Image src="/brand/storychurch-banner.png" alt="Story Church" width={1562} height={286} priority className={`${className} w-auto`} />
+}
+
 function Shell({ children, reduced }: { children: React.ReactNode; reduced: boolean }) {
   return (
     <div data-reduce={reduced} className="relative flex h-screen w-screen flex-col overflow-hidden bg-ink text-white">
@@ -191,6 +197,7 @@ function LiveView({ state, item, now }: { state: GameState; item: StageItem; now
       </div>
       <div className="flex min-h-0 flex-col justify-between">
         <div>
+          <Logo className="mb-[1vh] h-[3.6vh] opacity-80" />
           <h1 className="font-heading text-[4.4vw] leading-[1.02]">{item.title}</h1>
           {reopened ? <p className="sc-pop mt-2 inline-block rounded-full bg-brand-yellow px-4 py-1 text-[2vw] font-bold text-ink">{item.timerPhase === 'challenge' ? 'CHALLENGE — everyone can respond!' : 'RESURRECTED — this auction is back!'}</p> : null}
         </div>
@@ -225,8 +232,11 @@ function Dashboard({ state, now }: { state: GameState; now: number }) {
   ]
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-[1.5vh] p-[2vw]">
-      <div className="flex items-end justify-between">
-        <h1 className="font-heading text-[3.6vw] text-brand-yellow">{state.event.name}</h1>
+      <div className="flex items-center justify-between gap-[2vw]">
+        <div className="min-w-0">
+          <Logo className="h-[6vh]" />
+          <h1 className="mt-[0.6vh] truncate font-heading text-[2.4vw] text-brand-yellow">{state.event.name}</h1>
+        </div>
         <p className="font-heading text-[2vw] tracking-wide text-white/70">YOUR STORY MATTERS.</p>
       </div>
       <div className="grid grid-cols-3 gap-[1.2vw]">
@@ -335,6 +345,7 @@ function Overlay({ a, state }: { a: Ann; state: GameState }) {
   const item = a.itemId ? [...state.lastChance, ...state.reopened, state.stage].find((i) => i?.id === a.itemId) : null
   return (
     <div className="fixed inset-0 z-40 flex flex-col items-center justify-center bg-ink/95 px-[5vw] text-center" role="alert">
+      <div className="absolute top-[3vh]"><Logo className="h-[6vh]" /></div>
       {isSold ? <Confetti /> : null}
       {isJackpot ? (
         <Jackpot a={a} />
