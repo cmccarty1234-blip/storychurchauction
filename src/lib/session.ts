@@ -41,10 +41,11 @@ export async function requireBidder(): Promise<BidderRow> {
 }
 
 /** For API routes. Authorization is always enforced here, server-side — never only in the UI. */
-export async function requireAdmin(role: 'admin' | 'volunteer' = 'volunteer'): Promise<AdminRow> {
+export async function requireAdmin(role: 'admin' | 'host' | 'volunteer' = 'volunteer'): Promise<AdminRow> {
   const a = await getAdmin()
   if (!a) throw new AppError('UNAUTHENTICATED', 'Staff sign-in required.', 401)
   if (role === 'admin' && a.role !== 'admin') throw new AppError('FORBIDDEN', 'Only an administrator can do this.', 403)
+  if (role === 'host' && a.role === 'volunteer') throw new AppError('FORBIDDEN', 'Only a host or administrator can do this.', 403)
   return a
 }
 

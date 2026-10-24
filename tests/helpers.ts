@@ -38,8 +38,8 @@ export async function makeBidders(eventId: string, count: number) {
     const r = await one<{ id: string; bidder_number: number }>(
       `with nn as (update events set next_bidder_number = next_bidder_number + 1 where id = $1 returning next_bidder_number - 1 as num)
        insert into bidders (event_id, bidder_number, name, phone, assisted)
-       select $1, num, $2, $3, false from nn returning id, bidder_number`,
-      [eventId, `Test Bidder ${i + 1}`, `+1719555${String(1000 + i).padStart(4, '0')}`],
+       select $1, num, $2, '+1719' || lpad(num::text, 7, '0'), false from nn returning id, bidder_number`,
+      [eventId, `Test Bidder ${i + 1}`],
     )
     rows.push(r!)
   }

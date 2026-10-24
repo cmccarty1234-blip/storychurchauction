@@ -156,7 +156,7 @@ export async function bidderFromToken(token: string | undefined) {
   )
 }
 
-export type AdminRow = { id: string; email: string; name: string; role: 'admin' | 'volunteer' }
+export type AdminRow = { id: string; email: string; name: string; role: 'admin' | 'host' | 'volunteer' }
 
 export async function adminFromToken(token: string | undefined) {
   if (!token) return null
@@ -182,7 +182,7 @@ export async function adminLogin(email: string, password: string) {
   return { token, admin: { id: row.id, email: row.email, name: row.name, role: row.role } }
 }
 
-export async function createAdminUser(p: { email: string; name: string; password: string; role: 'admin' | 'volunteer' }) {
+export async function createAdminUser(p: { email: string; name: string; password: string; role: 'admin' | 'host' | 'volunteer' }) {
   if (p.password.length < 8) throw new AppError('WEAK_PASSWORD', 'Password must be at least 8 characters.')
   try {
     return await one<AdminRow>(

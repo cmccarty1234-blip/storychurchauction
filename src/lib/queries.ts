@@ -15,7 +15,14 @@ export type ItemView = {
   donor_name: string | null
   starting_bid_cents: number
   increment_cents: number
-  status: 'draft' | 'upcoming' | 'open' | 'paused' | 'closed' | 'finalized'
+  status: 'draft' | 'upcoming' | 'open' | 'paused' | 'closed' | 'finalized' | 'provisional' | 'reopened' | 'cancelled'
+  timed: boolean
+  timer_phase: string | null
+  deadline_at: Date | null
+  provisional_until: Date | null
+  pause_remaining_ms: number | null
+  reopened_at: Date | null
+  min_qualifying_bid_cents: number | null
   closes_at: Date | null
   live_order: number | null
   current_bid_cents: number | null
@@ -28,12 +35,16 @@ export type ItemView = {
   // derived
   phase: ItemPhase
   min_next_cents: number
+  lightning_increment_cents: number | null
   sold: boolean
 }
 
 const SELECT = `
   select i.*, b.bidder_number as leader_number,
-         coalesce(i.closes_at, e.silent_close_at) as effective_close, e.silent_start_at, now() as db_now,
+         (select (rs.config->>'incrementCents')::int from room_event_sessions rs
+           where rs.event_id = i.event_id and rs.code = 'lightning' and rs.status = 'active' and rs.ends_at > clock_timestamp()
+             and (rs.config->'itemIds') @> to_jsonb(i.id::text) limit 1) as lightning_increment_cents,
+         case when i.status = 'reopened' then i.deadline_at else coalesce(i.closes_at, e.silent_close_at) end as effective_close, e.silent_start_at, clock_timestamp() as db_now,
          exists (select 1 from winning_results w where w.item_id = i.id and w.voided_at is null) as sold
     from auction_items i
     join events e on e.id = i.event_id
@@ -41,7 +52,8 @@ const SELECT = `
 
 function derive(r: any): ItemView {
   let phase: ItemPhase
-  if (r.status === 'closed' || r.status === 'finalized') phase = 'closed'
+  // A provisionally closed item takes no more bids (it is shown on the Last Chance board instead).
+  if (r.status === 'closed' || r.status === 'finalized' || r.status === 'provisional' || r.status === 'cancelled') phase = 'closed'
   else if (r.status === 'paused') phase = 'paused'
   else if (r.status === 'upcoming' || r.status === 'draft') phase = 'upcoming'
   else {
@@ -129,7 +141,7 @@ export async function dashboardStats(eventId: string): Promise<DashboardStats> {
        (select count(*) from auction_items where event_id = $1 and kind = 'silent' and status <> 'draft')::int as "silentItems",
        (select count(*) from auction_items where event_id = $1 and kind = 'live' and status <> 'draft')::int as "liveItems",
        (select count(*) from auction_items where event_id = $1 and status <> 'draft' and bid_count = 0 and (status in ('closed','finalized') or kind = 'silent'))::int as "noBidItems",
-       (select coalesce(sum(current_bid_cents),0) from auction_items where event_id = $1 and status in ('open','paused','closed'))::int as "unfinalizedLeadingCents",
+       (select coalesce(sum(current_bid_cents),0) from auction_items where event_id = $1 and status in ('open','paused','closed','provisional','reopened'))::int as "unfinalizedLeadingCents",
        (select coalesce(sum(w.amount_cents),0) from winning_results w join auction_items i on i.id = w.item_id where i.event_id = $1 and w.voided_at is null)::int as "finalizedCents",
        (select count(*) from winning_results w join auction_items i on i.id = w.item_id where i.event_id = $1 and w.voided_at is null)::int as "itemsSold",
        (select coalesce(sum(a.amount_cents),0) from payment_allocations a join payments p on p.id = a.payment_id

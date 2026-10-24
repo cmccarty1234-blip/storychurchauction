@@ -12,6 +12,7 @@ import { notify } from './realtime'
 import { formatCents, MAX_BID_CENTS } from './money'
 import { getEvent } from './events'
 import { advance, closeToProvisional, recordWinner, resetCountdown, transition } from './lifecycle'
+import { scoreBid } from './rooms'
 
 export type ItemLock = {
   id: string
@@ -28,6 +29,7 @@ export type ItemLock = {
   auto_accept_live: boolean
   live_initial_seconds: number
   emergency_stop_at: Date | null
+  lightning_increment_cents: number | null
   starting_bid_cents: number
   increment_cents: number
   current_bid_cents: number | null
@@ -39,12 +41,15 @@ export type ItemLock = {
 }
 
 const LOCK_SQL = `select i.*, clock_timestamp() as db_now, e.silent_start_at, e.game_mode, e.auto_accept_live, e.live_initial_seconds, e.emergency_stop_at,
+         (select (rs.config->>'incrementCents')::int from room_event_sessions rs
+           where rs.event_id = i.event_id and rs.code = 'lightning' and rs.status = 'active' and rs.ends_at > clock_timestamp()
+             and (rs.config->'itemIds') @> to_jsonb(i.id::text) limit 1) as lightning_increment_cents,
          case when i.status = 'reopened' then i.deadline_at else coalesce(i.closes_at, e.silent_close_at) end as effective_close
     from auction_items i join events e on e.id = i.event_id
    where i.id = $1`
 
 /** Locks the item row, then performs any lifecycle transition that is already due, so every rule below sees current state. */
-async function lockItem(c: pg.PoolClient, itemId: string): Promise<ItemLock> {
+export async function lockItem(c: pg.PoolClient, itemId: string): Promise<ItemLock> {
   if (!/^[0-9a-f-]{36}$/i.test(itemId)) throw new AppError('ITEM_NOT_FOUND', 'Item not found.', 404)
   let item = await one<ItemLock>(LOCK_SQL + ' for update of i', [itemId], c)
   if (!item) throw new AppError('ITEM_NOT_FOUND', 'Item not found.', 404)
@@ -52,13 +57,15 @@ async function lockItem(c: pg.PoolClient, itemId: string): Promise<ItemLock> {
   return item
 }
 
-const biddable = (i: Pick<ItemLock, 'status'>) => i.status === 'open' || i.status === 'reopened'
-function assertRunning(i: Pick<ItemLock, 'emergency_stop_at'>) {
+export const biddable = (i: Pick<ItemLock, 'status'>) => i.status === 'open' || i.status === 'reopened'
+export function assertRunning(i: Pick<ItemLock, 'emergency_stop_at'>) {
   if (i.emergency_stop_at) throw new AppError('HALTED', 'Bidding is paused for a moment. Please stand by.', 409)
 }
 
-export function minNextBid(i: Pick<ItemLock, 'current_bid_cents' | 'starting_bid_cents' | 'increment_cents'>) {
-  return i.current_bid_cents == null ? Math.max(i.starting_bid_cents, 100) : i.current_bid_cents + i.increment_cents
+export function minNextBid(i: Pick<ItemLock, 'current_bid_cents' | 'starting_bid_cents' | 'increment_cents'> & { lightning_increment_cents?: number | null }) {
+  // During a Lightning Round the step is smaller; the current high bid is never lowered.
+  const step = i.lightning_increment_cents ? Math.min(i.lightning_increment_cents, i.increment_cents) : i.increment_cents
+  return i.current_bid_cents == null ? Math.max(i.starting_bid_cents, 100) : i.current_bid_cents + step
 }
 
 function checkAmount(amountCents: unknown): asserts amountCents is number {
@@ -74,6 +81,17 @@ async function bidderInEvent(c: pg.PoolClient, bidderId: string, eventId: string
   )
   if (!b) throw new AppError('BIDDER_NOT_FOUND', 'Bidder not found.', 404)
   return b
+}
+
+/** A bidder under an active Block (Power-Up) cannot bid on that item until it ends or they use Back-In. */
+export async function assertNotBlocked(c: pg.PoolClient, itemId: string, bidderId: string) {
+  const b = await one<{ ends_at: Date; blocker: number }>(
+    `select k.ends_at, r.bidder_number as blocker from item_blocks k join bidders r on r.id = k.blocker_id
+      where k.item_id = $1 and k.blocked_id = $2 and k.cleared_at is null and k.ends_at > clock_timestamp()`,
+    [itemId, bidderId],
+    c,
+  )
+  if (b) throw new AppError('BLOCKED', `Bidder #${b.blocker} used a Block on you for this item. You can bid again at ${b.ends_at.toISOString()}, or use a Back-In to bid right now.`, 409, { until: b.ends_at.toISOString() })
 }
 
 // ═════════════════════════ SILENT AUCTION ═════════════════════════
@@ -128,10 +146,12 @@ export async function placeSilentBid(i: SilentBidInput) {
       throw new AppError('TOO_LOW', `The minimum bid is ${formatCents(minNext)}.`, 422, { currentCents: item.current_bid_cents, minNextCents: minNext })
     }
 
-    await c.query(
-      'insert into silent_bids (item_id, bidder_id, amount_cents, placed_by_admin_id, idempotency_key) values ($1,$2,$3,$4,$5)',
+    const sb = await one<{ id: string }>(
+      'insert into silent_bids (item_id, bidder_id, amount_cents, placed_by_admin_id, idempotency_key) values ($1,$2,$3,$4,$5) returning id',
       [item.id, bidder.id, i.amountCents, i.adminId ?? null, i.idempotencyKey],
+      c,
     )
+    await scoreBid(c, { eventId: item.event_id, kind: 'silent', bidId: sb!.id, bidderId: bidder.id, amountCents: i.amountCents, previousCents: item.current_bid_cents, startingCents: item.starting_bid_cents })
     const upd = await one<ItemLock>(
       `update auction_items set current_bid_cents = $2, current_bidder_id = $3, bid_count = bid_count + 1, updated_at = now()
         where id = $1 returning *`,
@@ -271,6 +291,7 @@ export async function requestLiveBid(i: { bidderId: string; itemId: string; amou
     if (!biddable(item)) throw new AppError('NOT_OPEN', 'This item is not currently on the block.', 409)
     const bidder = await bidderInEvent(c, i.bidderId, item.event_id)
     if (item.current_bidder_id === bidder.id) throw new AppError('ALREADY_LEADING', 'You already have the highest bid.', 409)
+    await assertNotBlocked(c, item.id, bidder.id)
     const minNext = minNextBid(item)
     if (i.amountCents < minNext) throw new AppError('TOO_LOW', `The next bid must be at least ${formatCents(minNext)}.`, 422, { currentCents: item.current_bid_cents, minNextCents: minNext })
 
@@ -295,11 +316,12 @@ export async function requestLiveBid(i: { bidderId: string; itemId: string; amou
   })
 }
 
-async function appendAcceptedBid(
+export async function appendAcceptedBid(
   c: pg.PoolClient,
   item: ItemLock,
   p: { bidderId: string; amountCents: number; source: 'paddle' | 'mobile'; requestId?: string; adminId: string | null },
 ) {
+  await assertNotBlocked(c, item.id, p.bidderId)
   const seq = await one<{ n: number }>('select coalesce(max(seq), 0) + 1 as n from live_accepted_bids where item_id = $1', [item.id], c)
   const bid = await one<{ id: string; seq: number }>(
     `insert into live_accepted_bids (item_id, seq, bidder_id, amount_cents, source, request_id, entered_by_admin_id)
@@ -311,6 +333,7 @@ async function appendAcceptedBid(
     `update auction_items set current_bid_cents = $2, current_bidder_id = $3, bid_count = bid_count + 1, updated_at = now() where id = $1`,
     [item.id, p.amountCents, p.bidderId],
   )
+  await scoreBid(c, { eventId: item.event_id, kind: 'live', bidId: bid!.id, bidderId: p.bidderId, amountCents: p.amountCents, previousCents: item.current_bid_cents, startingCents: item.starting_bid_cents })
   await resetCountdown(c, item.id) // a bid during the inactivity countdown restarts it
   // Any other pending request that is now at or below the accepted bid can no longer win.
   await c.query(
@@ -322,7 +345,7 @@ async function appendAcceptedBid(
   return bid!
 }
 
-function assertAcceptable(item: ItemLock, amountCents: number) {
+export function assertAcceptable(item: ItemLock, amountCents: number) {
   assertRunning(item)
   if (!biddable(item)) {
     throw new AppError(item.status === 'paused' ? 'PAUSED' : 'NOT_OPEN', item.status === 'paused' ? 'Bidding is paused — resume before taking bids.' : 'This item is not open for bids.', 409)
