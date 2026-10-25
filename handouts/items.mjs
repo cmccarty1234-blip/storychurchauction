@@ -35,8 +35,8 @@ function parseCsv(text) {
 
 const MODE = process.argv[2] === 'live' ? 'live' : 'silent'
 const all = parseCsv(readFileSync('data/auction-import.csv', 'utf8'))
-// Numbers follow the live site: silent 1, 2, 3 … in file order; live items start at 102 (Worship Piano moved to silent as #54).
-const silent = all.filter((r) => r.kind === MODE).map((r, i) => ({ ...r, n: (MODE === 'live' ? 102 : 1) + i }))
+// Numbers come from the item_no column (the item numbers on the live site), so moving an item never renumbers the others.
+const silent = all.filter((r) => r.kind === MODE).map((r, i) => ({ ...r, n: r.item_no ? parseInt(r.item_no, 10) : (MODE === 'live' ? 102 : 1) + i })).sort((x, y) => x.n - y.n)
 
 const imgDir = 'data/images'
 const photoFiles = new Map(readdirSync(imgDir).filter((f) => /^\d+\.(jpe?g|png|webp)$/i.test(f)).map((f) => [parseInt(f, 10), f]))
