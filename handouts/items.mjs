@@ -9,7 +9,7 @@ import path from 'node:path'
 import QRCode from 'qrcode'
 import sharp from 'sharp'
 
-const SITE = process.env.HANDOUT_SITE ?? 'https://storychurchauction.vercel.app'
+const SITE = process.env.HANDOUT_SITE ?? 'https://auction.storychurch.co'
 const CLOSE_TIME = '8:30 PM'
 const out = path.resolve('handouts/out')
 mkdirSync(out, { recursive: true })

@@ -6,7 +6,7 @@ import { spawnSync } from 'node:child_process'
 import path from 'node:path'
 import QRCode from 'qrcode'
 
-const SITE = process.env.HANDOUT_SITE ?? 'https://storychurchauction.vercel.app'
+const SITE = process.env.HANDOUT_SITE ?? 'https://auction.storychurch.co'
 const CLOSE_TIME = '8:30 PM'
 const CHURCH_PHONE = '719.776.0473'
 const out = path.resolve('handouts/out')
