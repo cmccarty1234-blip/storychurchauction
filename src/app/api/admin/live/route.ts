@@ -2,8 +2,9 @@ import { z } from 'zod'
 import { body, route, uuid } from '@/lib/api'
 import {
   acceptLiveRequest, finalizeLiveItem, recordPaddleBid, rejectLiveRequest, reopenItem,
-  setLiveRunState, startLiveItem, voidLastLiveBid,
+  setLiveRunState, voidLastLiveBid,
 } from '@/lib/bidding'
+import { startItemWithCommercial } from '@/lib/commercial-start'
 import { requireAdmin } from '@/lib/session'
 
 const Body = z.discriminatedUnion('action', [
@@ -26,8 +27,7 @@ export const POST = route(async (req) => {
   if (b.action === 'reopen') admin = await requireAdmin('admin')
   switch (b.action) {
     case 'start':
-      await startLiveItem(b.itemId, admin.id)
-      return { ok: true }
+      return { ok: true, ...(await startItemWithCommercial(b.itemId, admin.id)) }
     case 'pause':
     case 'resume':
       await setLiveRunState(b.itemId, b.action, admin.id)

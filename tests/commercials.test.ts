@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { query } from '@/lib/db'
 import { gameState } from '@/lib/game-state'
 import { COMMERCIALS } from '@/lib/commercials'
+import { advanceCommercialStart, startItemWithCommercial } from '@/lib/commercial-start'
 import { makeEvent, makeItem, resetDb } from './helpers'
 
 let ev: { id: string }
@@ -34,5 +35,57 @@ describe('commercial breaks', () => {
     expect((await gameState(ev.id)).commercial!.item).toBeNull()
     await query(`update events set commercial_key = 'gone' where id = $1`, [ev.id])
     expect((await gameState(ev.id)).commercial).toBeNull()
+  })
+})
+
+describe('commercial before a live item opens', () => {
+  async function setup() {
+    const [admin] = await query<{ id: string }>(`insert into admin_users (email, name, password_hash, role) values ('h@test', 'Host', 'x', 'host') returning id`)
+    await query(`update events set game_mode = true where id = $1`, [ev.id])
+    const it = await makeItem(ev.id, { kind: 'live', title: 'The Broadmoor Stay', start: 20000, inc: 2500, num: 104 })
+    return { admin, it }
+  }
+  const status = async (id: string) => (await query<{ status: string }>('select status from auction_items where id = $1', [id]))[0].status
+
+  it('plays the commercial first, keeps the item closed to bids, then opens it when the clip is over', async () => {
+    const { admin, it } = await setup()
+    expect(await startItemWithCommercial(it.id, admin.id)).toEqual({ commercial: true })
+    expect(await status(it.id)).toBe('upcoming')
+    const s = (await gameState(ev.id)).commercial!
+    expect(s.opensItem).toBe(true)
+    expect(s.item!.kind).toBe('live')
+
+    await advanceCommercialStart(ev.id) // too early: still playing
+    expect(await status(it.id)).toBe('upcoming')
+
+    await query(`update events set commercial_started_at = now() - interval '60 seconds' where id = $1`, [ev.id])
+    await Promise.all([advanceCommercialStart(ev.id), advanceCommercialStart(ev.id)]) // two screens asking at once
+    expect(await status(it.id)).toBe('open')
+    expect((await query('select 1 from item_transitions where item_id = $1 and to_status = $2', [it.id, 'open'])).length).toBe(1)
+    expect((await gameState(ev.id)).commercial).toBeNull()
+  })
+
+  it('stopping the commercial opens bidding straight away', async () => {
+    const { admin, it } = await setup()
+    await startItemWithCommercial(it.id, admin.id)
+    await query(`update events set commercial_started_at = null where id = $1`, [ev.id])
+    await advanceCommercialStart(ev.id)
+    expect(await status(it.id)).toBe('open')
+  })
+
+  it('an item without a commercial just starts, and a busy block is reported instead of playing a clip', async () => {
+    const { admin, it } = await setup()
+    const plain = await makeItem(ev.id, { kind: 'live', title: 'Plain Chairs', num: 105 })
+    expect(await startItemWithCommercial(plain.id, admin.id)).toEqual({ commercial: false })
+    await expect(startItemWithCommercial(it.id, admin.id)).rejects.toThrow(/Another live item/)
+    expect((await gameState(ev.id)).commercial).toBeNull()
+  })
+
+  it('holds the start during an emergency stop', async () => {
+    const { admin, it } = await setup()
+    await startItemWithCommercial(it.id, admin.id)
+    await query(`update events set commercial_started_at = now() - interval '60 seconds', emergency_stop_at = now() where id = $1`, [ev.id])
+    await advanceCommercialStart(ev.id)
+    expect(await status(it.id)).toBe('upcoming')
   })
 })

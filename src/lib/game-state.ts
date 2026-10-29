@@ -9,6 +9,7 @@ import { activeSession, advanceRooms, battleScore } from './rooms'
 import { minNextBid } from './bidding'
 import { pieLine, pieSummary, type PieSummary } from './pies'
 import { commercialByKey } from './commercials'
+import { advanceCommercialStart } from './commercial-start'
 
 export type StageItem = {
   id: string
@@ -62,6 +63,7 @@ export type GameState = {
     tagline: string
     startedAt: string
     endsAt: string
+    opensItem: boolean
     item: { id: string; number: number; kind: 'silent' | 'live'; title: string; imagePath: string | null; currentBidCents: number | null } | null
   }
   room: null | {
@@ -78,7 +80,8 @@ export type GameState = {
 export async function gameTick(eventId: string) {
   const a = await advanceDue(eventId)
   const b = await advanceRooms(eventId)
-  return a + b
+  const c = await advanceCommercialStart(eventId)
+  return a + b + c
 }
 
 const ITEM_COLS = `i.id, i.item_number, i.kind, i.title, i.image_path, i.status, i.timer_phase, i.deadline_at, i.pause_remaining_ms, i.halt_kind,
@@ -167,7 +170,7 @@ export async function gameState(eventId: string): Promise<GameState> {
   let commercial: GameState['commercial'] = null
   try {
     const c = await one<any>(
-      `select e.commercial_key, e.commercial_started_at, i.id, i.item_number, i.kind, i.title, i.image_path, i.current_bid_cents
+      `select e.commercial_key, e.commercial_started_at, e.commercial_start_item_id, i.id, i.item_number, i.kind, i.title, i.image_path, i.current_bid_cents
          from events e left join auction_items i on i.id = e.commercial_item_id where e.id = $1 and e.commercial_started_at is not null`,
       [eventId],
     )
@@ -182,6 +185,7 @@ export async function gameState(eventId: string): Promise<GameState> {
           tagline: clip.tagline,
           startedAt: c.commercial_started_at.toISOString(),
           endsAt: endsAt.toISOString(),
+          opensItem: !!c.commercial_start_item_id && c.commercial_start_item_id === c.id,
           item: c.id ? { id: c.id, number: c.item_number, kind: c.kind, title: c.title, imagePath: c.image_path, currentBidCents: c.current_bid_cents } : null,
         }
       }

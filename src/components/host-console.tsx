@@ -210,7 +210,7 @@ export function HostConsole({ isAdmin }: { isAdmin: boolean }) {
             {data.queue.map((q, i) => (
               <li key={q.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border p-3">
                 <span className="text-lg font-semibold">#{q.item_number} {q.title} <span className="font-normal text-muted-foreground">· opens at {formatCents(q.starting_bid_cents)}{q.min_qualifying_bid_cents != null ? ` · Knockout unlocks at ${formatCents(q.min_qualifying_bid_cents)}` : ''}</span></span>
-                <button className={i === 0 ? gold : ghost} disabled={busy || !!stage || !!state.event.emergency} onClick={() => live({ action: 'start', itemId: q.id }, `Started #${q.item_number}`)}><Play className="mr-1 inline size-5" /> Start</button>
+                <button className={i === 0 ? gold : ghost} disabled={busy || !!stage || !!state.event.emergency} onClick={() => live({ action: 'start', itemId: q.id }, `Started #${q.item_number} — if it has a commercial, bidding opens when it ends.`)}><Play className="mr-1 inline size-5" /> Start</button>
               </li>
             ))}
           </ul>
@@ -295,7 +295,7 @@ export function HostConsole({ isAdmin }: { isAdmin: boolean }) {
         {state.commercial ? (
           <div className="mb-3 flex flex-wrap items-center gap-3 rounded-xl bg-brand-yellow px-4 py-3 text-ink">
             <p className="min-w-0 flex-1 font-bold">On the projector now: {state.commercial.title} · {mmss(secsUntil(state.commercial.endsAt, t))} left</p>
-            <button className={dark} disabled={busy} onClick={() => show({ action: 'commercial-stop' }, 'Commercial stopped.')}>Stop it</button>
+            <button className={dark} disabled={busy} onClick={() => show({ action: 'commercial-stop' }, state.commercial?.opensItem ? 'Skipped — bidding is open.' : 'Commercial stopped.')}>{state.commercial.opensItem ? 'Skip it & open bidding' : 'Stop it'}</button>
           </div>
         ) : null}
         <ul className="space-y-3">
