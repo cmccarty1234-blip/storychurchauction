@@ -43,6 +43,11 @@ export function Projector({ qr, joinUrl }: { qr: string; joinUrl: string }) {
         const saved = localStorage.getItem('sc-reduce-motion')
         setReduced(saved != null ? saved === '1' : window.matchMedia('(prefers-reduced-motion: reduce)').matches)
       } catch {}
+      // If this browser already lets the page play sound without a click (site allowed, or launched with the autoplay flag), start with sound on.
+      try {
+        const policy = (navigator as Navigator & { getAutoplayPolicy?: (t: string) => string }).getAutoplayPolicy?.('mediaelement')
+        if (policy === 'allowed') setMuted(false)
+      } catch {}
     }, 0)
     return () => clearTimeout(id)
   }, [])
