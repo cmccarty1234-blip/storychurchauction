@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic'
 
 /** The signed-in guest's Power-Up inventory + activation history. Signed-out visitors just get the store. */
 export const GET = route(async () => {
-  const defs = (await listDefs()).map((d) => ({ code: d.code, name: d.name, description: d.description, icon: d.icon, priceCents: d.price_cents, enabled: d.enabled, kinds: d.kinds, seconds: d.config.seconds ?? null }))
+  const defs = (await listDefs()).map((d) => ({ code: d.code, name: d.name, description: d.description, icon: d.icon, priceCents: d.price_cents, enabled: d.enabled, category: d.category, kinds: d.kinds, seconds: d.config.seconds ?? null }))
   const bidder = await getBidder()
   if (!bidder) return Response.json({ signedIn: false, defs, inventory: [], history: [] }, { headers: { 'Cache-Control': 'no-store' } })
   const [inv, history] = await Promise.all([

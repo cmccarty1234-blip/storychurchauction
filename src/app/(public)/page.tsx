@@ -8,6 +8,7 @@ import { formatInTz, nowMs } from '@/lib/time'
 import { linkButton } from '@/components/ui/button'
 import { LiveRefresh } from '@/components/live-refresh'
 import { Countdown } from '@/components/countdown'
+import { PiePromo } from '@/components/pie-promo'
 
 export default async function HomePage() {
   const ev = await getEvent()
@@ -49,6 +50,8 @@ export default async function HomePage() {
           </p>
         )}
       </section>
+
+      <PiePromo eventId={ev.id} />
 
       {live ? (
         <Link href={`/auction/${live.id}`} className="flex items-center justify-between gap-4 rounded-xl border-2 border-ink bg-white p-5 shadow-sm transition hover:bg-ivory">

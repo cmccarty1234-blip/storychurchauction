@@ -125,6 +125,7 @@ export async function placeSilentBid(i: SilentBidInput) {
     if (item.kind !== 'silent') throw new AppError('WRONG_KIND', 'This is a live auction item — bid requests go to the clerk.')
     if (item.status === 'draft') throw new AppError('ITEM_NOT_FOUND', 'Item not found.', 404)
     assertRunning(item)
+    if (item.status === 'upcoming') throw new AppError('NOT_STARTED', 'Bidding on this item hasn’t opened yet — it opens the night of the event.', 409)
     if (!biddable(item)) throw new AppError('CLOSED', 'Bidding on this item is closed.', 409)
     if (item.silent_start_at && item.db_now < item.silent_start_at) throw new AppError('NOT_STARTED', 'Bidding has not opened yet.', 409)
     if (item.effective_close && item.db_now >= item.effective_close) throw new AppError('CLOSED', 'Bidding on this item has closed.', 409)

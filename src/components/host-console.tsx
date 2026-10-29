@@ -12,6 +12,8 @@ type HostData = {
   pending: { id: string; amount_cents: number; bidder_number: number; name: string }[]
   recentActs: { name: string; bidder_number: number; item_number: number; created_at: string }[]
   rooms: { code: string; name: string; enabled: boolean; config: Record<string, unknown> }[]
+  wheelbarrow: { totalCents: number; floorCents: number; noBidItems: number; items: number }
+  pies: { smallSold: number; largeSold: number; smallLeft: number; largeLeft: number; thrown: number; cents: number; line: { bidderNumber: number; name: string; size: 'small' | 'large'; code: string }[] }
 }
 
 const big = 'min-h-14 rounded-xl px-5 text-lg font-bold transition active:scale-[0.98] disabled:opacity-40'
@@ -127,6 +129,12 @@ export function HostConsole({ isAdmin }: { isAdmin: boolean }) {
       {!online ? <p className="rounded-xl bg-amber-200 p-3 font-bold text-amber-950">Connection lost — reconnecting. Controls may not work until it returns.</p> : null}
       {msg ? <p role="status" className={`rounded-xl p-3 text-lg font-semibold ${msg.ok ? 'bg-green-100 text-green-900' : 'bg-red-100 text-red-900'}`}>{msg.text}</p> : null}
 
+      {data?.wheelbarrow ? (
+        <p className="rounded-xl bg-brand-yellow p-3 text-lg font-bold" title="The least we raise if every item sells for at least its minimum, plus Power-Up and pie sales">
+          Wheelbarrow (minimum if every item sells): <span className="tnum">{formatCents(data.wheelbarrow.totalCents)}</span>
+          <span className="block text-sm font-semibold">{data.wheelbarrow.items} items · {data.wheelbarrow.noBidItems} with no bids yet</span>
+        </p>
+      ) : null}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
         {[
           ['Committed (bids)', state.totals.leadingCents + state.totals.finalizedCents],
@@ -256,6 +264,29 @@ export function HostConsole({ isAdmin }: { isAdmin: boolean }) {
       </section>
 
       {/* ── Power-Ups & projector ── */}
+      {/* ── Pie Brandon in the Face (finale) ── */}
+      <section className="rounded-2xl border-2 border-ink bg-brand-yellow p-4">
+        <h2 className="mb-1 text-2xl">🥧 Pie Brandon in the Face</h2>
+        {data?.pies ? (
+          <>
+            <p className="text-lg font-bold">{data.pies.smallLeft + data.pies.largeLeft} pies still to throw ({data.pies.smallLeft} small, {data.pies.largeLeft} large) · {formatCents(data.pies.cents)} raised · {data.pies.thrown} thrown</p>
+            {data.pies.line.length === 0 ? <p className="mt-2">Nobody is waiting yet. Sign-ups are sold at the Bid Desk all night.</p> : null}
+            <ul className="mt-2 space-y-2">
+              {data.pies.line.map((p, i) => (
+                <li key={`${p.bidderNumber}-${p.code}-${i}`} className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-white p-3">
+                  <span className="text-lg font-bold">{i === 0 ? 'NEXT: ' : ''}#{p.bidderNumber} {p.name} — {p.size === 'large' ? 'LARGE pie' : 'small pie'}</span>
+                  <button className={i === 0 ? dark : ghost} disabled={busy} onClick={() => show({ action: 'pie-throw', bidderNumber: p.bidderNumber, code: p.code }, `SPLAT! #${p.bidderNumber} threw a ${p.size} pie.`)}>Splat!</button>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button className={dark} disabled={busy} onClick={() => show({ action: 'display', mode: 'pie' }, 'Projector: pie finale.')}>Show the pie screen</button>
+            </div>
+            <p className="mt-2 text-sm font-semibold">People are called up in the order they signed up. Tap Splat! as each pie is thrown — it can&rsquo;t be thrown twice.</p>
+          </>
+        ) : <p>Loading…</p>}
+      </section>
+
       <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <div className="rounded-2xl border bg-card p-4">
           <h2 className="mb-2 text-2xl">Power-Ups just played</h2>
@@ -264,7 +295,7 @@ export function HostConsole({ isAdmin }: { isAdmin: boolean }) {
         <div className="rounded-2xl border bg-card p-4">
           <h2 className="mb-2 flex items-center gap-2 text-2xl"><Megaphone className="size-6" /> Projector</h2>
           <div className="flex flex-wrap gap-2">
-            {([['welcome', 'Welcome'], ['dashboard', 'Auction'], ['live', 'Live item'], ['thanks', 'Thank you'], ['auto', 'Automatic']] as const).map(([m, label]) => (
+            {([['welcome', 'Welcome'], ['dashboard', 'Auction'], ['live', 'Live item'], ['pie', 'Pie finale'], ['thanks', 'Thank you'], ['auto', 'Automatic']] as const).map(([m, label]) => (
               <button key={m} className={state.event.displayMode === m ? gold : ghost} aria-pressed={state.event.displayMode === m} disabled={busy} onClick={() => show({ action: 'display', mode: m })}>{label}</button>
             ))}
           </div>

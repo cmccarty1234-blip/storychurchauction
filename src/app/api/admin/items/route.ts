@@ -5,7 +5,7 @@ import { AppError } from '@/lib/errors'
 import { audit } from '@/lib/audit'
 import { getEvent } from '@/lib/events'
 import { closeSilentItem, finalizeDueSilentItems, reopenItem } from '@/lib/bidding'
-import { changeItemKind, setItemsPublished } from '@/lib/items'
+import { changeItemKind, setItemsComingSoon, setItemsPublished } from '@/lib/items'
 import { notify } from '@/lib/realtime'
 import { pool } from '@/lib/db'
 import { localInputToUtc } from '@/lib/time'
@@ -31,6 +31,7 @@ const Body = z.discriminatedUnion('action', [
   z.object({ action: z.literal('reopen'), id: uuid, reason: z.string(), newCloseAt: z.string().optional() }),
   z.object({ action: z.literal('publish'), id: uuid, published: z.boolean() }),
   z.object({ action: z.literal('publish-many'), ids: z.array(uuid).min(1).max(300), published: z.boolean() }),
+  z.object({ action: z.literal('coming-soon'), ids: z.array(uuid).min(1).max(300) }),
   z.object({ action: z.literal('reorder'), id: uuid, direction: z.enum(['up', 'down']) }),
   z.object({ action: z.literal('finalize-due') }),
 ])
@@ -128,6 +129,8 @@ export const POST = route(async (req) => {
     }
     case 'publish-many':
       return await setItemsPublished(ev.id, b.ids, b.published, admin.id)
+    case 'coming-soon':
+      return await setItemsComingSoon(ev.id, b.ids, admin.id)
     case 'reorder': {
       // Live program order: renumber the not-yet-run live items 10,20,30… in their current order, then swap with the neighbour.
       await tx(async (c) => {

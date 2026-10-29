@@ -8,6 +8,8 @@ import { notify } from '@/lib/realtime'
 import { emergencyRelease, emergencyStop, extendTimer, finalizeNow } from '@/lib/lifecycle'
 import { drawJackpot, endRoomEvent, startRoomEvent } from '@/lib/rooms'
 import { requireAdmin } from '@/lib/session'
+import { pieLine, pieSummary, throwPie } from '@/lib/pies'
+import { wheelbarrow } from '@/lib/wheelbarrow'
 
 const Body = z.discriminatedUnion('action', [
   z.object({ action: z.literal('extend'), itemId: uuid, seconds: z.number().int() }),
@@ -15,9 +17,10 @@ const Body = z.discriminatedUnion('action', [
   z.object({ action: z.literal('emergency-stop'), reason: z.string().max(200) }),
   z.object({ action: z.literal('emergency-release') }),
   z.object({ action: z.literal('announce'), headline: z.string().min(1).max(140), body: z.string().max(300).optional() }),
-  z.object({ action: z.literal('display'), mode: z.enum(['auto', 'dashboard', 'live', 'message', 'welcome', 'thanks']), message: z.string().max(200).optional() }),
+  z.object({ action: z.literal('display'), mode: z.enum(['auto', 'dashboard', 'live', 'message', 'welcome', 'thanks', 'pie']), message: z.string().max(200).optional() }),
   z.object({ action: z.literal('room-start'), code: z.enum(['lightning', 'jackpot', 'battle']), itemIds: z.array(uuid).optional(), prize: z.string().max(120).optional(), reward: z.string().max(120).optional(), seconds: z.number().int().optional() }),
   z.object({ action: z.literal('room-end'), sessionId: uuid }),
+  z.object({ action: z.literal('pie-throw'), bidderNumber: z.number().int(), code: z.enum(['pie_small', 'pie_large']) }),
   z.object({ action: z.literal('jackpot-draw'), sessionId: uuid, reason: z.string().max(200).optional() }),
 ])
 
@@ -53,6 +56,8 @@ export const POST = route(async (req) => {
       return { ok: true }
     case 'room-start':
       return await startRoomEvent(ev.id, b.code, admin.id, { itemIds: b.itemIds, prize: b.prize, reward: b.reward, seconds: b.seconds })
+    case 'pie-throw':
+      return await throwPie({ eventId: ev.id, bidderNumber: b.bidderNumber, code: b.code, adminId: admin.id })
     case 'room-end':
       await endRoomEvent(b.sessionId, admin.id)
       return { ok: true }
@@ -78,5 +83,6 @@ export const GET = route(async () => {
     [ev.id],
   )
   const rooms = await query('select code, name, enabled, config from room_event_defs order by code')
-  return Response.json({ queue, silent, pending, recentActs, rooms }, { headers: { 'Cache-Control': 'no-store' } })
+  const pies = { ...(await pieSummary(ev.id)), line: (await pieLine(ev.id)).slice(0, 12).map((p) => ({ bidderNumber: p.bidderNumber, name: p.name, size: p.size, code: p.code })) }
+  return Response.json({ queue, silent, pending, recentActs, rooms, pies, wheelbarrow: await wheelbarrow(ev.id) }, { headers: { 'Cache-Control': 'no-store' } })
 })

@@ -8,6 +8,7 @@ import { formatCents } from '@/lib/money'
 import { formatInTz } from '@/lib/time'
 import { ItemCard } from '@/components/item-card'
 import { LiveRefresh } from '@/components/live-refresh'
+import { PiePromo } from '@/components/pie-promo'
 import { finalizeDueSilentItems } from '@/lib/bidding'
 
 export const metadata = { title: 'Auction items' }
@@ -59,6 +60,8 @@ export default async function AuctionPage({ searchParams }: { searchParams: Prom
           {tab('live', 'Live auction')}
         </div>
       </div>
+
+      <PiePromo eventId={ev.id} compact />
 
       {live ? (
         <Link href={`/auction/${live.id}`} className="flex items-center gap-4 rounded-xl border-2 border-danger bg-white p-4 shadow-sm">

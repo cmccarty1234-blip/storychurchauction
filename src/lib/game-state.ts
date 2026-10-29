@@ -7,6 +7,7 @@ import { one, query } from './db'
 import { advanceDue } from './lifecycle'
 import { activeSession, advanceRooms, battleScore } from './rooms'
 import { minNextBid } from './bidding'
+import { pieLine, pieSummary, type PieSummary } from './pies'
 
 export type StageItem = {
   id: string
@@ -50,7 +51,8 @@ export type GameState = {
   closingSoon: { id: string; number: number; title: string; currentBidCents: number | null; closesAt: string }[]
   recentBids: { itemNumber: number; title: string; bidderNumber: number; amountCents: number; at: string }[]
   bidsTonight: number
-  totals: { leadingCents: number; finalizedCents: number; powerupCents: number; paymentsCents: number; outstandingCents: number; itemsSold: number }
+  pies: PieSummary & { next: { bidderNumber: number; size: 'small' | 'large' }[] }
+  totals: { leadingCents: number; finalizedCents: number; powerupCents: number; pieCents: number; paymentsCents: number; outstandingCents: number; itemsSold: number }
   announcements: { id: string; kind: string; headline: string; body: string | null; interrupt: boolean; at: string; itemId: string | null; payload: Record<string, unknown> }[]
   room: null | {
     id: string
@@ -133,7 +135,8 @@ export async function gameState(eventId: string): Promise<GameState> {
          (select coalesce(sum(current_bid_cents), 0) from auction_items where event_id = $1 and status in ('open','paused','closed','provisional','reopened'))::int as leading,
          (select coalesce(sum(w.amount_cents), 0) from winning_results w join auction_items i on i.id = w.item_id where i.event_id = $1 and w.voided_at is null)::int as finalized,
          (select count(*) from winning_results w join auction_items i on i.id = w.item_id where i.event_id = $1 and w.voided_at is null)::int as sold,
-         (select coalesce(sum(total_cents), 0) from powerup_purchases where event_id = $1 and voided_at is null)::int as powerups,
+         (select coalesce(sum(p.total_cents), 0) from powerup_purchases p join powerup_defs d on d.code = p.powerup_code and d.category = 'powerup' where p.event_id = $1 and p.voided_at is null)::int as powerups,
+         (select coalesce(sum(p.total_cents), 0) from powerup_purchases p join powerup_defs d on d.code = p.powerup_code and d.category = 'pie' where p.event_id = $1 and p.voided_at is null)::int as pies,
          (select coalesce(sum(a.amount_cents), 0) from payment_allocations a join payments p on p.id = a.payment_id where p.event_id = $1 and p.voided_at is null)::int as paid,
          ((select count(*) from silent_bids s join auction_items i on i.id = s.item_id where i.event_id = $1)
           + (select count(*) from live_accepted_bids a join auction_items i on i.id = a.item_id where i.event_id = $1 and not exists (select 1 from live_bid_voids v where v.accepted_bid_id = a.id)))::int as bids`,
@@ -173,7 +176,8 @@ export async function gameState(eventId: string): Promise<GameState> {
     closingSoon: closing.map((h: any) => ({ id: h.id, number: h.item_number, title: h.title, currentBidCents: h.current_bid_cents, closesAt: h.closes_at.toISOString() })),
     recentBids: bids.map((b: any) => ({ itemNumber: b.item_number, title: b.title, bidderNumber: b.bidder_number, amountCents: b.amount_cents, at: b.created_at.toISOString() })),
     bidsTonight: totals.bids,
-    totals: { leadingCents: totals.leading, finalizedCents: totals.finalized, powerupCents: totals.powerups, paymentsCents: totals.paid, outstandingCents: totals.finalized - totals.paid, itemsSold: totals.sold },
+    pies: { ...(await pieSummary(eventId)), next: (await pieLine(eventId)).slice(0, 4).map((p) => ({ bidderNumber: p.bidderNumber, size: p.size })) },
+    totals: { leadingCents: totals.leading, finalizedCents: totals.finalized, powerupCents: totals.powerups, pieCents: totals.pies, paymentsCents: totals.paid, outstandingCents: totals.finalized - totals.paid, itemsSold: totals.sold },
     announcements: ann.map((a: any) => ({ id: a.id, kind: a.kind, headline: a.headline, body: a.body, interrupt: a.interrupt, at: a.created_at.toISOString(), itemId: a.item_id, payload: a.payload })),
     room: roomOut,
   }

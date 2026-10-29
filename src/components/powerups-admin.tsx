@@ -9,7 +9,7 @@ import { ConfirmAction } from '@/components/admin-ui'
 import { newKey, post } from '@/lib/client'
 import { formatCents, parseDollars } from '@/lib/money'
 
-export type DefRow = { code: string; name: string; description: string; price_cents: number; enabled: boolean; kinds: string[]; max_per_bidder_item: number | null; max_per_item: number | null; max_per_bidder: number | null; seconds: number | null }
+export type DefRow = { code: string; name: string; description: string; category: string; price_cents: number; enabled: boolean; kinds: string[]; max_per_bidder_item: number | null; max_per_item: number | null; max_per_bidder: number | null; seconds: number | null }
 export type RoomRow = { code: string; name: string; enabled: boolean; prize: string; reward: string; seconds: number | null }
 export type GameSettings = { gameMode: boolean; autoAcceptLive: boolean; provisionalSilent: boolean; provisionalSeconds: number; liveInitialSeconds: number; liveInactivitySeconds: number; liveWarningSeconds: number; liveMaxSeconds: number | null; minReopenSeconds: number; goalCents: number | null }
 export type ItemRow = { id: string; number: number; title: string; kind: string; minQ: number | null }
@@ -133,13 +133,13 @@ function DefRowEditor({ d }: { d: DefRow }) {
       </div>
       <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         <label className="text-xs font-semibold">Price $<Input value={price} onChange={(e) => setPrice(e.target.value)} inputMode="decimal" className="mt-1 h-11" /></label>
-        <label className="text-xs font-semibold">Max uses per item<Input value={perItem} onChange={(e) => setPerItem(e.target.value)} inputMode="numeric" placeholder="∞" className="mt-1 h-11" /></label>
-        <label className="text-xs font-semibold">Max per guest per item<Input value={perBI} onChange={(e) => setPerBI(e.target.value)} inputMode="numeric" placeholder="∞" className="mt-1 h-11" /></label>
+        {d.category === 'pie' ? null : <label className="text-xs font-semibold">Max uses per item<Input value={perItem} onChange={(e) => setPerItem(e.target.value)} inputMode="numeric" placeholder="∞" className="mt-1 h-11" /></label>}
+        {d.category === 'pie' ? null : <label className="text-xs font-semibold">Max per guest per item<Input value={perBI} onChange={(e) => setPerBI(e.target.value)} inputMode="numeric" placeholder="∞" className="mt-1 h-11" /></label>}
         <label className="text-xs font-semibold">Max owned per guest<Input value={perBidder} onChange={(e) => setPerBidder(e.target.value)} inputMode="numeric" placeholder="∞" className="mt-1 h-11" /></label>
         {d.seconds != null ? <label className="text-xs font-semibold">Seconds<Input value={secs} onChange={(e) => setSecs(e.target.value)} inputMode="numeric" className="mt-1 h-11" /></label> : null}
-        <fieldset className="text-xs font-semibold"><legend>Allowed on</legend>
+        {d.category === 'pie' ? null : <fieldset className="text-xs font-semibold"><legend>Allowed on</legend>
           {['silent', 'live'].map((k) => <label key={k} className="mr-3 inline-flex items-center gap-1"><input type="checkbox" checked={kinds.includes(k)} onChange={() => toggle(k)} /> {k}</label>)}
-        </fieldset>
+        </fieldset>}
       </div>
       <Button className="mt-3 h-11" disabled={busy} onClick={() => run(() => call({ action: 'update-def', code: d.code, priceCents: parseDollars(price) ?? undefined, enabled, kinds, maxPerItem: num(perItem), maxPerBidderItem: num(perBI), maxPerBidder: num(perBidder), seconds: d.seconds != null ? num(secs) ?? undefined : undefined }), `${d.name} saved.`)}>Save {d.name}</Button>
       <Msg m={msg} />

@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { getEvent } from '@/lib/events'
 import { dashboardStats } from '@/lib/queries'
+import { wheelbarrow } from '@/lib/wheelbarrow'
 import { finalizeDueSilentItems } from '@/lib/bidding'
 import { query } from '@/lib/db'
 import { formatCents } from '@/lib/money'
@@ -25,6 +26,7 @@ export default async function AdminDashboard() {
   const ev = await getEvent()
   await finalizeDueSilentItems()
   const s = await dashboardStats(ev.id)
+  const wb = await wheelbarrow(ev.id)
   const recent = await query<{ id: number; action: string; created_at: Date; details: any; actor: string | null }>(
     `select l.id, l.action, l.created_at, l.details, a.name as actor from audit_logs l left join admin_users a on a.id = l.actor_id
       where l.event_id = $1 or l.event_id is null order by l.id desc limit 8`,
@@ -44,6 +46,18 @@ export default async function AdminDashboard() {
           <Link href="/admin/checkout" className={buttonVariants({ variant: 'outline' })}>Checkout</Link>
         </div>
       </div>
+
+      <section aria-labelledby="wb" className="rounded-2xl border-2 border-ink bg-brand-yellow p-5">
+        <h2 id="wb" className="text-2xl">What&rsquo;s in the wheelbarrow</h2>
+        <p className="mt-1 text-sm font-semibold">The least we raise if every item sells for at least its minimum. It&rsquo;s a floor, not a forecast — and none of it is collected until guests pay.</p>
+        <p className="tnum mt-3 text-5xl font-extrabold">{formatCents(wb.totalCents)}</p>
+        <dl className="mt-3 grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
+          <div><dt className="font-semibold">Items at their minimum or better</dt><dd className="tnum text-xl font-extrabold">{formatCents(wb.floorCents)}</dd><dd className="text-xs">{wb.items} items · {formatCents(wb.startingCents)} in starting bids{wb.raisedAboveStartCents > 0 ? ` + ${formatCents(wb.raisedAboveStartCents)} bid above` : ''}</dd></div>
+          <div><dt className="font-semibold">Power-Up sales</dt><dd className="tnum text-xl font-extrabold">{formatCents(wb.powerupCents)}</dd></div>
+          <div><dt className="font-semibold">Pie sign-ups</dt><dd className="tnum text-xl font-extrabold">{formatCents(wb.pieCents)}</dd></div>
+          <div><dt className="font-semibold">Items with no bids yet</dt><dd className="tnum text-xl font-extrabold">{wb.noBidItems}</dd><dd className="text-xs">each one only counts if it sells</dd></div>
+        </dl>
+      </section>
 
       <section aria-labelledby="part">
         <h2 id="part" className="mb-3 text-sm font-bold uppercase tracking-wider text-muted-foreground">Participation</h2>

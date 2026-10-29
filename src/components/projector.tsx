@@ -107,6 +107,8 @@ export function Projector({ qr, joinUrl }: { qr: string; joinUrl: string }) {
     main = <Welcome state={state} qr={qr} joinUrl={joinUrl} />
   } else if (state.event.displayMode === 'thanks') {
     main = <Thanks state={state} />
+  } else if (state.event.displayMode === 'pie') {
+    main = <PieFinale state={state} />
   } else if (room?.code === 'lightning') {
     main = <LightningView state={state} now={t} />
   } else if (room?.code === 'battle') {
@@ -127,6 +129,11 @@ export function Projector({ qr, joinUrl }: { qr: string; joinUrl: string }) {
   return (
     <Shell reduced={reduced}>
       {main}
+      {state.pies.enabled && ['live', 'lightning', 'battle'].includes(room?.code ?? (state.stage || state.reopened[0] ? 'live' : '')) && !state.event.emergency ? (
+        <div className="flex shrink-0 items-center justify-center gap-[2vw] bg-brand-yellow py-[0.6vh] text-ink">
+          <p className="font-heading text-[2.2vw]">🥧 PIE BRANDON IN THE FACE — sign up at the Bid Desk! Small {formatCents(state.pies.smallPriceCents)} · LARGE {formatCents(state.pies.largePriceCents)}</p>
+        </div>
+      ) : null}
       <Ticker state={state} reduced={reduced} />
       {overlay ? <Overlay a={overlay} state={state} /> : null}
       {!online ? <div className="fixed left-4 top-4 rounded bg-amber-500 px-3 py-1 text-sm font-bold text-black">Reconnecting…</div> : null}
@@ -253,7 +260,7 @@ function QrCard({ qr, joinUrl, big = false }: { qr: string; joinUrl: string; big
 function Dashboard({ state, now, qr, joinUrl }: { state: GameState; now: number; qr: string; joinUrl: string }) {
   const tt = state.totals
   // One headline number: every winning/leading bid plus Power-Up sales.
-  const committed = tt.leadingCents + tt.finalizedCents + tt.powerupCents
+  const committed = tt.leadingCents + tt.finalizedCents + tt.powerupCents + tt.pieCents
   const goal = state.event.goalCents
   const pct = goal ? Math.min(100, (committed / goal) * 100) : 0
   const closeSecs = state.event.silentCloseAt ? secsUntil(state.event.silentCloseAt, now) : null
@@ -265,6 +272,7 @@ function Dashboard({ state, now, qr, joinUrl }: { state: GameState; now: number;
   const tz = state.event.timezone
   const tips = [
     'POWER-UPS! Buy one at the bidding desk to reopen, extend or end an auction.',
+    `🥧 PIE BRANDON IN THE FACE! Sign up at the Bid Desk all night — small $100, large $200.${state.pies.smallSold + state.pies.largeSold > 0 ? ` ${state.pies.smallSold + state.pies.largeSold} pies pledged so far!` : ''}`,
     ...(closeSecs != null && !closed ? [`The silent auction closes at ${clockTime(state.event.silentCloseAt, tz)}. Get your final bids in!`] : []),
     ...(state.nextLive ? [`UP NEXT LIVE: #${state.nextLive.number} ${state.nextLive.title} — opens at ${formatCents(state.nextLive.startingBidCents)}`] : []),
     'Checkout opens after the silent auction closes. Pay by cash, check or card.',
@@ -300,6 +308,16 @@ function Dashboard({ state, now, qr, joinUrl }: { state: GameState; now: number;
           {finalStretch ? <p className="mt-1 text-[1.8vw] font-bold text-brand-yellow">FINAL CALL FOR SILENT BIDS!</p> : null}
         </div>
       </div>
+
+      {state.pies.enabled ? (
+        <div className="flex items-center justify-between gap-[2vw] rounded-2xl bg-brand-yellow px-[2vw] py-[1vh] text-ink">
+          <p className="font-heading text-[3.4vw] leading-none">🥧 PIE BRANDON IN THE FACE!</p>
+          <p className="text-right text-[2vw] font-extrabold leading-tight">
+            Small {formatCents(state.pies.smallPriceCents)} · LARGE {formatCents(state.pies.largePriceCents)}
+            <span className="block text-[1.7vw] font-bold">{state.pies.smallSold + state.pies.largeSold > 0 ? `${state.pies.smallSold + state.pies.largeSold} pies pledged · ${formatCents(state.pies.cents)} raised` : 'Sign up at the Bid Desk!'}</span>
+          </p>
+        </div>
+      ) : null}
 
       {chance.length ? (
         <div className="sc-pop rounded-2xl bg-brand-yellow px-[2vw] py-[1vh] text-ink">
@@ -370,9 +388,31 @@ function Welcome({ state, qr, joinUrl }: { state: GameState; qr: string; joinUrl
   )
 }
 
+function PieFinale({ state }: { state: GameState }) {
+  const p = state.pies
+  const left = p.smallLeft + p.largeLeft
+  return (
+    <Center>
+      <Logo className="h-[8vh]" />
+      <p className="sc-pop mt-[2vh] font-heading text-[7vw] leading-[0.95] text-brand-yellow">🥧 PIE BRANDON IN THE FACE!</p>
+      <p className="mt-[2vh] text-[3vw] font-bold">{left > 0 ? `${left} pies waiting` : p.thrown > 0 ? 'Every pie has been thrown!' : 'Sign up at the Bid Desk!'} · {formatCents(p.cents)} raised</p>
+      {p.next.length ? (
+        <div className="mt-[3vh] w-[70vw] rounded-3xl border-4 border-brand-yellow bg-white/5 p-[2vw]">
+          <p className="text-[1.8vw] font-bold tracking-[0.25em] text-brand-yellow">UP NEXT</p>
+          {p.next.map((n, i) => (
+            <p key={i} className={`font-heading ${i === 0 ? 'text-[5.5vw] text-white' : 'text-[2.8vw] text-white/70'}`}>
+              Bidder #{n.bidderNumber} — {n.size === 'large' ? 'LARGE' : 'small'} pie
+            </p>
+          ))}
+        </div>
+      ) : null}
+    </Center>
+  )
+}
+
 function Thanks({ state }: { state: GameState }) {
   const tt = state.totals
-  const committed = tt.leadingCents + tt.finalizedCents + tt.powerupCents
+  const committed = tt.leadingCents + tt.finalizedCents + tt.powerupCents + tt.pieCents
   return (
     <Center>
       <Logo className="h-[9vh]" />

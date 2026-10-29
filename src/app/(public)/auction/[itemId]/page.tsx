@@ -81,7 +81,9 @@ export default async function ItemPage({ params }: { params: Promise<{ itemId: s
         ? 'The auctioneer has paused bidding for a moment. Hang tight.'
         : isLive && item.phase === 'upcoming'
           ? 'This item hasn’t come up in the live auction yet. Check back when it’s on the block.'
-          : item.phase === 'upcoming'
+          : item.phase === 'upcoming' && item.status === 'upcoming'
+            ? 'Bidding on this item opens the night of the event. Look it over now and come ready to bid!'
+            : item.phase === 'upcoming'
             ? `Bidding opens ${formatInTz(item.silent_start_at, ev.timezone)}.`
             : undefined
 

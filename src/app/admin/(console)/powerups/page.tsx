@@ -2,6 +2,7 @@ import { getEvent } from '@/lib/events'
 import { query } from '@/lib/db'
 import { requireAdminPage } from '@/lib/session'
 import { listDefs, powerupRevenue } from '@/lib/powerups'
+import { pieSummary } from '@/lib/pies'
 import { listRoomDefs } from '@/lib/rooms'
 import { formatCents } from '@/lib/money'
 import { DefsEditor, GameSettingsForm, KnockoutEditor, RoomDefsEditor, SellForm, VoidSale } from '@/components/powerups-admin'
@@ -12,7 +13,7 @@ export default async function PowerUpsPage() {
   const admin = await requireAdminPage()
   const isAdmin = admin.role === 'admin'
   const ev = await getEvent()
-  const [defs, rooms, rev] = await Promise.all([listDefs(), listRoomDefs(), powerupRevenue(ev.id)])
+  const [defs, rooms, rev, pies] = await Promise.all([listDefs(), listRoomDefs(), powerupRevenue(ev.id), pieSummary(ev.id)])
   const e = (await query<any>('select * from events where id = $1', [ev.id]))[0]
   const purchases = await query<any>(
     `select p.id, p.quantity, p.total_cents, p.method, p.reference, p.created_at, p.voided_at, p.void_reason, d.name, b.bidder_number, b.name as bidder, a.name as sold_by
@@ -46,9 +47,10 @@ export default async function PowerUpsPage() {
           <div key={l as string} className="rounded-xl border bg-card p-3"><p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">{l}</p><p className="tnum text-2xl font-extrabold">{formatCents(v as number)}</p></div>
         ))}
         <div className="rounded-xl border bg-card p-3"><p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Units sold</p><p className="tnum text-2xl font-extrabold">{rev.units}{rev.complimentaryUnits ? <span className="text-sm font-medium text-muted-foreground"> ({rev.complimentaryUnits} free)</span> : null}</p></div>
+        <div className="rounded-xl border-2 border-ink bg-brand-yellow p-3"><p className="text-xs font-bold uppercase tracking-wide">🥧 Pie sign-ups (separate)</p><p className="tnum text-2xl font-extrabold">{formatCents(pies.cents)}</p><p className="text-xs font-semibold">{pies.smallSold} small · {pies.largeSold} large · {pies.thrown} thrown</p></div>
       </div>
 
-      <SellForm defs={defs.map((d) => ({ code: d.code, name: d.name, description: d.description, price_cents: d.price_cents, enabled: d.enabled, kinds: d.kinds, max_per_bidder_item: d.max_per_bidder_item, max_per_item: d.max_per_item, max_per_bidder: d.max_per_bidder, seconds: d.config.seconds ?? null }))} />
+      <SellForm defs={defs.map((d) => ({ code: d.code, name: d.name, description: d.description, category: d.category, price_cents: d.price_cents, enabled: d.enabled, kinds: d.kinds, max_per_bidder_item: d.max_per_bidder_item, max_per_item: d.max_per_item, max_per_bidder: d.max_per_bidder, seconds: d.config.seconds ?? null }))} />
 
       <section className="rounded-2xl border bg-card p-5">
         <h2 className="text-2xl">Inventory overview</h2>
@@ -59,7 +61,7 @@ export default async function PowerUpsPage() {
       {isAdmin ? (
         <>
           <GameSettingsForm s={{ gameMode: e.game_mode, autoAcceptLive: e.auto_accept_live, provisionalSilent: e.provisional_silent, provisionalSeconds: e.provisional_seconds, liveInitialSeconds: e.live_initial_seconds, liveInactivitySeconds: e.live_inactivity_seconds, liveWarningSeconds: e.live_warning_seconds, liveMaxSeconds: e.live_max_seconds, minReopenSeconds: e.min_reopen_seconds, goalCents: e.goal_cents }} />
-          <DefsEditor defs={defs.map((d) => ({ code: d.code, name: d.name, description: d.description, price_cents: d.price_cents, enabled: d.enabled, kinds: d.kinds, max_per_bidder_item: d.max_per_bidder_item, max_per_item: d.max_per_item, max_per_bidder: d.max_per_bidder, seconds: d.config.seconds ?? null }))} />
+          <DefsEditor defs={defs.map((d) => ({ code: d.code, name: d.name, description: d.description, category: d.category, price_cents: d.price_cents, enabled: d.enabled, kinds: d.kinds, max_per_bidder_item: d.max_per_bidder_item, max_per_item: d.max_per_item, max_per_bidder: d.max_per_bidder, seconds: d.config.seconds ?? null }))} />
           <RoomDefsEditor rooms={rooms.map((r) => ({ code: r.code, name: r.name, enabled: r.enabled, prize: String(r.config.prize ?? ''), reward: String(r.config.reward ?? ''), seconds: (r.config.seconds as number) ?? null }))} />
           <KnockoutEditor items={items.map((i: any) => ({ id: i.id, number: i.item_number, title: i.title, kind: i.kind, minQ: i.min_qualifying_bid_cents }))} />
         </>

@@ -51,6 +51,20 @@ export function ItemsTable({ rows }: { rows: ItemRow[] }) {
     return res
   }
 
+  async function runSoon() {
+    const res = await post<{ changed: number; skipped: { title: string; why: string }[] }>('/api/admin/items', { action: 'coming-soon', ids: [...selected] })
+    if (res.ok) {
+      const { changed, skipped } = res.data
+      setMsg({
+        kind: skipped.length ? 'info' : 'success',
+        text: `${changed} item${changed === 1 ? '' : 's'} now visible as “opens soon” (no bidding yet).` + (skipped.length ? ` Skipped ${skipped.length}: ${skipped.slice(0, 3).map((s) => `${s.title} (${s.why})`).join('; ')}${skipped.length > 3 ? '…' : ''}` : ''),
+      })
+      setSelected(new Set())
+      router.refresh()
+    }
+    return res
+  }
+
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2 rounded-xl border bg-card p-3 shadow-sm" role="toolbar" aria-label="Bulk actions">
@@ -66,6 +80,13 @@ export function ItemsTable({ rows }: { rows: ItemRow[] }) {
           description="Guests will see these items right away. Silent items open for bidding immediately (until the event’s closing time); live items appear as “coming up”. Check prices first — guests see the starting bids."
           confirmLabel={`Show ${count} to guests`}
           action={() => run(true)}
+        />
+        <ConfirmAction
+          size="sm" variant="outline" label={<><Eye className="size-4" /> Opens soon</>} disabled={!count}
+          title={`Show ${count} item${count === 1 ? '' : 's'} as “opens soon”?`}
+          description="Guests can see these silent items now, but can’t bid until you later choose “Show to guests” for them. Items that already have bids are skipped."
+          confirmLabel={`Show ${count} as opens soon`}
+          action={() => runSoon()}
         />
         <ConfirmAction
           size="sm" variant="outline" label={<><EyeOff className="size-4" /> Hide</>} disabled={!count}

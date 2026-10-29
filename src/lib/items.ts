@@ -71,7 +71,7 @@ export async function setItemsPublished(eventId: string, ids: string[], publishe
     let changed = 0
     const skipped: { title: string; why: string }[] = []
     for (const r of rows) {
-      const changeable = r.kind === 'silent' ? ['draft', 'open'] : ['draft', 'upcoming']
+      const changeable = r.kind === 'silent' ? ['draft', 'upcoming', 'open'] : ['draft', 'upcoming']
       if (!changeable.includes(r.status)) {
         skipped.push({ title: r.title, why: 'on the block or already closed' })
         continue
@@ -84,6 +84,33 @@ export async function setItemsPublished(eventId: string, ids: string[], publishe
       }
       await c.query('update auction_items set status = $2, updated_at = now() where id = $1', [r.id, target])
       await audit({ eventId, actorType: 'admin', actorId: adminId, action: published ? 'item.shown' : 'item.hidden', entityType: 'auction_item', entityId: r.id, details: { title: r.title, bulk: true } }, c)
+      changed++
+    }
+    if (changed) await notify(c, { t: 'item' })
+    return { changed, skipped }
+  })
+}
+
+/**
+ * "Coming soon": show silent items to guests NOW, but don't accept bids until staff press "Show to guests" (which opens them).
+ * Only silent items with no bids can be put on hold; live items already wait in the queue as "coming up".
+ */
+export async function setItemsComingSoon(eventId: string, ids: string[], adminId: string) {
+  return tx(async (c) => {
+    const rows = await query<{ id: string; kind: 'silent' | 'live'; status: string; bid_count: number; title: string }>(
+      'select id, kind, status, bid_count, title from auction_items where event_id = $1 and id = any($2::uuid[]) order by item_number for update',
+      [eventId, ids],
+      c,
+    )
+    let changed = 0
+    const skipped: { title: string; why: string }[] = []
+    for (const r of rows) {
+      if (r.kind !== 'silent') { skipped.push({ title: r.title, why: 'live items already wait as “coming up”' }); continue }
+      if (!['draft', 'open', 'upcoming'].includes(r.status)) { skipped.push({ title: r.title, why: 'already closed' }); continue }
+      if (r.bid_count > 0) { skipped.push({ title: r.title, why: 'it already has bids' }); continue }
+      if (r.status === 'upcoming') continue
+      await c.query("update auction_items set status = 'upcoming', updated_at = now() where id = $1", [r.id])
+      await audit({ eventId, actorType: 'admin', actorId: adminId, action: 'item.coming_soon', entityType: 'auction_item', entityId: r.id, details: { title: r.title } }, c)
       changed++
     }
     if (changed) await notify(c, { t: 'item' })

@@ -27,6 +27,7 @@ export type PowerUpDef = {
   max_per_bidder: number | null
   config: Record<string, number>
   sort: number
+  category: 'powerup' | 'pie'
 }
 
 export const PAY_METHODS = ['cash', 'check', 'card_terminal', 'comp'] as const
@@ -56,7 +57,7 @@ export async function updateDef(code: string, p: Partial<{ price_cents: number; 
       max_per_bidder: p.max_per_bidder === undefined ? d.max_per_bidder : p.max_per_bidder,
       config: p.seconds != null ? { ...d.config, seconds: p.seconds } : d.config,
     }
-    if (!next.kinds.length || next.kinds.some((k) => k !== 'silent' && k !== 'live')) throw new AppError('INVALID_REQUEST', 'Choose silent, live, or both.')
+    if (d.category === 'powerup' && (!next.kinds.length || next.kinds.some((k) => k !== 'silent' && k !== 'live'))) throw new AppError('INVALID_REQUEST', 'Choose silent, live, or both.')
     await c.query(
       `update powerup_defs set price_cents=$2, enabled=$3, kinds=$4, max_per_bidder_item=$5, max_per_item=$6, max_per_bidder=$7, config=$8 where code=$1`,
       [code, next.price_cents, next.enabled, next.kinds, next.max_per_bidder_item, next.max_per_item, next.max_per_bidder, JSON.stringify(next.config)],
@@ -74,9 +75,10 @@ export async function inventory(bidderId: string, db?: pg.PoolClient): Promise<I
   return query<InvRow>(
     `select d.code, d.name, d.icon,
             coalesce((select sum(p.quantity) from powerup_purchases p where p.bidder_id = $1 and p.powerup_code = d.code and p.voided_at is null), 0)::int as purchased,
-            (select count(*) from powerup_activations a where a.bidder_id = $1 and a.powerup_code = d.code)::int as used,
+            ((select count(*) from powerup_activations a where a.bidder_id = $1 and a.powerup_code = d.code) + (select count(*) from pie_throws t where t.bidder_id = $1 and t.powerup_code = d.code))::int as used,
             (coalesce((select sum(p.quantity) from powerup_purchases p where p.bidder_id = $1 and p.powerup_code = d.code and p.voided_at is null), 0)
-              - (select count(*) from powerup_activations a where a.bidder_id = $1 and a.powerup_code = d.code))::int as available
+              - (select count(*) from powerup_activations a where a.bidder_id = $1 and a.powerup_code = d.code)
+              - (select count(*) from pie_throws t where t.bidder_id = $1 and t.powerup_code = d.code))::int as available
        from powerup_defs d order by d.sort`,
     [bidderId],
     db,
@@ -131,12 +133,13 @@ export async function voidPurchase(purchaseId: string, adminId: string, reason: 
 /** Power-Up money, reported on its own so it is never mixed with winning bids. */
 export async function powerupRevenue(eventId: string) {
   const r = await one<{ total: number; units: number; cash: number; check: number; card: number; comp_units: number }>(
-    `select coalesce(sum(total_cents), 0)::int total, coalesce(sum(quantity), 0)::int units,
-            coalesce(sum(total_cents) filter (where method = 'cash'), 0)::int cash,
-            coalesce(sum(total_cents) filter (where method = 'check'), 0)::int "check",
-            coalesce(sum(total_cents) filter (where method = 'card_terminal'), 0)::int card,
-            coalesce(sum(quantity) filter (where method = 'comp'), 0)::int comp_units
-       from powerup_purchases where event_id = $1 and voided_at is null`,
+    `select coalesce(sum(p.total_cents), 0)::int total, coalesce(sum(p.quantity), 0)::int units,
+            coalesce(sum(p.total_cents) filter (where p.method = 'cash'), 0)::int cash,
+            coalesce(sum(p.total_cents) filter (where p.method = 'check'), 0)::int "check",
+            coalesce(sum(p.total_cents) filter (where p.method = 'card_terminal'), 0)::int card,
+            coalesce(sum(p.quantity) filter (where p.method = 'comp'), 0)::int comp_units
+       from powerup_purchases p join powerup_defs d on d.code = p.powerup_code and d.category = 'powerup'
+      where p.event_id = $1 and p.voided_at is null`,
     [eventId],
   )
   return { totalCents: r!.total, units: r!.units, cashCents: r!.cash, checkCents: r!.check, cardCents: r!.card, complimentaryUnits: r!.comp_units }
@@ -164,6 +167,7 @@ const secsLeft = (until: Date | null, now: Date) => (until ? Math.floor((until.g
  * the real activation, so the screen a guest confirms can never differ from what the server enforces.
  */
 async function plan(c: pg.PoolClient, item: ItemLock, def: PowerUpDef, a: Activation, bidder: { id: string; bidder_number: number }): Promise<Plan> {
+  if (def.category === 'pie') throw new AppError('NOT_ELIGIBLE', 'Pie sign-ups are used at the finale — the hosts will call you up.', 409)
   if (!item.game_mode) throw new AppError('GAME_OFF', 'Power-Ups are not switched on for this event.', 409)
   assertRunning(item)
   if (!def.enabled) throw new AppError('POWERUP_DISABLED', `${def.name} is not available right now.`, 409)
@@ -354,7 +358,7 @@ export async function activatePowerUp(a: Activation): Promise<ActivationResult> 
 
 /** Which of a guest's owned Power-Ups could be used on this item right now (for the portal's buttons). */
 export async function eligibleFor(bidderId: string, itemId: string) {
-  const defs = (await listDefs()).filter((d) => d.enabled)
+  const defs = (await listDefs()).filter((d) => d.enabled && d.category === 'powerup')
   const out: { code: string; ok: boolean; reason?: string }[] = []
   for (const d of defs) {
     try {

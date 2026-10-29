@@ -11,7 +11,7 @@ import { ItemImage } from '@/components/item-card'
 import { liveClock, mmss, secsUntil, useGameState, useTicker } from '@/lib/game-client'
 import type { StageItem } from '@/lib/game-state'
 
-type Def = { code: string; name: string; description: string; icon: string; priceCents: number; enabled: boolean; kinds: string[]; seconds: number | null }
+type Def = { code: string; name: string; description: string; icon: string; priceCents: number; enabled: boolean; category: 'powerup' | 'pie'; kinds: string[]; seconds: number | null }
 type Inv = { code: string; name: string; purchased: number; used: number; available: number }
 export type Me = { signedIn: boolean; bidderNumber?: number; defs: Def[]; inventory: Inv[]; history: { code: string; name: string; item_number: number; title: string; at: string; headline: string | null }[] }
 
@@ -332,7 +332,7 @@ function Inventory({ me }: { me: Me | null }) {
         {owned.length === 0 ? <p className="mt-2 text-muted-foreground">You don’t have any yet. Buy them at the bidding desk — they show up here instantly.</p> : null}
         <ul className="mt-3 divide-y">
           {owned.map((i) => (
-            <li key={i.code} className="flex items-center justify-between py-2"><span className="font-semibold">{i.name}</span><span className="tnum text-sm">{i.available} available · {i.used} used</span></li>
+            <li key={i.code} className="flex items-center justify-between py-2"><span className="font-semibold">{i.name}</span><span className="tnum text-sm">{i.code.startsWith('pie_') ? `${i.available} to throw — you'll be called up at the end of the night · ${i.used} thrown` : `${i.available} available · ${i.used} used`}</span></li>
           ))}
         </ul>
         <p className="mt-2 text-sm text-muted-foreground">Open an item that is eligible (the live item, or one in Last chance) and tap “Use”.</p>
@@ -350,13 +350,24 @@ function Store({ me }: { me: Me | null }) {
   return (
     <section className="space-y-3">
       <p className="rounded-xl bg-secondary p-4 text-sm font-semibold">Power-Ups are bought in person at the bidding desk (cash, check or card). Tell the volunteer your paddle number{me.bidderNumber ? ` — yours is #${me.bidderNumber}` : ''}. They’ll appear in “My Power-Ups” right away. There is no online payment.</p>
-      {me.defs.map((d) => (
+      {me.defs.filter((d) => d.category !== 'pie').map((d) => (
         <div key={d.code} className={`rounded-2xl border bg-card p-4 ${d.enabled ? '' : 'opacity-60'}`}>
           <div className="flex items-baseline justify-between gap-3"><h3 className="text-xl font-extrabold">{d.name}</h3><span className="tnum text-xl font-extrabold">{formatCents(d.priceCents)}</span></div>
           <p className="mt-1">{d.description}</p>
           <p className="mt-1 text-sm text-muted-foreground">Works on: {d.kinds.join(' & ')} auctions{d.enabled ? '' : ' · not available tonight'}</p>
         </div>
       ))}
+      {me.defs.some((d) => d.category === 'pie') ? (
+        <div className="rounded-2xl border-2 border-ink bg-brand-yellow p-4">
+          <h3 className="text-xl font-extrabold">🥧 Pie Brandon in the Face!</h3>
+          <p className="mt-1 font-semibold">Sign up all night at the Bid Desk. At the end of the night you&rsquo;ll be called up to throw it.</p>
+          <ul className="mt-2 space-y-1">
+            {me.defs.filter((d) => d.category === 'pie' && d.enabled).map((d) => (
+              <li key={d.code} className="flex items-baseline justify-between"><span className="font-bold">{d.code === 'pie_large' ? 'Large pie' : 'Small pie'}</span><span className="tnum text-xl font-extrabold">{formatCents(d.priceCents)}</span></li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
     </section>
   )
 }
