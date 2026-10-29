@@ -90,14 +90,20 @@ describe('commercial before a live item opens', () => {
   })
 })
 
-describe('a promo that matches several items', () => {
-  it('lists the sibling items so the banner can show both', async () => {
+describe('promos that match several items', () => {
+  it('lists the sibling items when one clip covers more than one', async () => {
     const a = await makeItem(ev.id, { num: 7, title: 'Chick-fil-A: 15 Sandwiches (1 of 2)' })
     await makeItem(ev.id, { num: 61, title: 'Chick-fil-A: 15 Sandwiches (2 of 2)' })
     await makeItem(ev.id, { num: 62, title: 'Something else' })
     await query(`update events set commercial_key = 'chickfila-honest', commercial_item_id = $2, commercial_started_at = now() where id = $1`, [ev.id, a.id])
+    // Each Chick-fil-A clip is linked to its own package, so no siblings are listed.
     const s = (await gameState(ev.id)).commercial!
     expect(s.item!.number).toBe(7)
-    expect(s.others).toEqual([61])
+    expect(s.others).toEqual([])
+  })
+
+  it('each Chick-fil-A clip is linked to a different package', () => {
+    const promos = COMMERCIALS.filter((c) => c.key.startsWith('chickfila')).map((c) => c.promote)
+    expect(promos).toEqual(['Sandwiches (2 of 2)', 'Sandwiches (1 of 2)'])
   })
 })
