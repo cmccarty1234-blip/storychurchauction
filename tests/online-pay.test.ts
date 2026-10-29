@@ -59,6 +59,8 @@ describe('starting an online payment', () => {
     expect(sent.order.line_items[0].base_price_money).toEqual({ amount: 10000, currency: 'USD' })
     expect(sent.order.location_id).toBe('LOC1')
     expect(sent.checkout_options.accepted_payment_methods).toEqual({ apple_pay: true, google_pay: true })
+    expect(sent.checkout_options.enable_coupon).toBe(false) // no confusing coupon box on a charity checkout
+    expect(sent.order.line_items[0].note).toContain('checkout table')
     expect(sent.pre_populated_data.buyer_phone_number).toMatch(/^\+1719/) // from the guest's registration
     expect((calls[0].init!.headers as Record<string, string>).Authorization).toBe('Bearer test-token')
     expect(await balance(b.id)).toBe(10000) // nothing is credited just for starting

@@ -62,12 +62,17 @@ export async function createPaymentLink(p: {
       order: {
         location_id: process.env.SQUARE_LOCATION_ID,
         reference_id: p.referenceId,
-        line_items: p.lines.map((l) => ({ name: l.name.slice(0, 250), quantity: '1', base_price_money: { amount: l.amountCents, currency: 'USD' } })),
+        line_items: p.lines.map((l) => ({
+          name: l.name.slice(0, 250),
+          quantity: '1',
+          base_price_money: { amount: l.amountCents, currency: 'USD' },
+          ...(p.minimal ? {} : { note: 'StoryChurch auction — pick up at the checkout table' }),
+        })),
       },
       checkout_options: {
         redirect_url: p.redirectUrl,
         ask_for_shipping_address: false,
-        ...(p.minimal ? {} : { accepted_payment_methods: { apple_pay: true, google_pay: true } }),
+        ...(p.minimal ? {} : { accepted_payment_methods: { apple_pay: true, google_pay: true }, enable_coupon: false }),
         ...(support && !p.minimal ? { merchant_support_email: support } : {}),
       },
       ...(Object.keys(prefill).length ? { pre_populated_data: prefill } : {}),
