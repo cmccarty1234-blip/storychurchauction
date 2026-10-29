@@ -11,7 +11,7 @@ import { formatCents, parseDollars } from '@/lib/money'
 
 export type DefRow = { code: string; name: string; description: string; category: string; price_cents: number; enabled: boolean; kinds: string[]; max_per_bidder_item: number | null; max_per_item: number | null; max_per_bidder: number | null; seconds: number | null }
 export type RoomRow = { code: string; name: string; enabled: boolean; prize: string; reward: string; seconds: number | null }
-export type GameSettings = { gameMode: boolean; autoAcceptLive: boolean; provisionalSilent: boolean; provisionalSeconds: number; liveInitialSeconds: number; liveInactivitySeconds: number; liveWarningSeconds: number; liveMaxSeconds: number | null; minReopenSeconds: number; goalCents: number | null }
+export type GameSettings = { gameMode: boolean; autoAcceptLive: boolean; provisionalSilent: boolean; provisionalSeconds: number; liveInitialSeconds: number; liveInactivitySeconds: number; liveWarningSeconds: number; liveMaxSeconds: number | null; minReopenSeconds: number; goalCents: number | null; onlinePayments: boolean }
 export type ItemRow = { id: string; number: number; title: string; kind: string; minQ: number | null }
 
 const call = (body: Record<string, unknown>) => post('/api/admin/powerups', body)
@@ -148,7 +148,7 @@ function DefRowEditor({ d }: { d: DefRow }) {
 }
 
 // ───────────────────────── game settings ─────────────────────────
-export function GameSettingsForm({ s }: { s: GameSettings }) {
+export function GameSettingsForm({ s, squareReady }: { s: GameSettings; squareReady: boolean }) {
   const { busy, msg, run } = useAction()
   const [v, setV] = useState({ ...s, liveMaxSeconds: s.liveMaxSeconds?.toString() ?? '', goal: s.goalCents != null ? String(s.goalCents / 100) : '' })
   const set = (k: keyof typeof v, val: unknown) => setV((x) => ({ ...x, [k]: val }))
@@ -162,6 +162,7 @@ export function GameSettingsForm({ s }: { s: GameSettings }) {
       <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
         <label className="flex items-center gap-2 font-semibold"><input type="checkbox" className="size-5" checked={v.gameMode} onChange={(e) => set('gameMode', e.target.checked)} /> Game mode (timers, Power-Ups, Room Events)</label>
         <label className="flex items-center gap-2 font-semibold"><input type="checkbox" className="size-5" checked={v.autoAcceptLive} onChange={(e) => set('autoAcceptLive', e.target.checked)} /> Accept phone bids on live items automatically</label>
+        <label className="flex items-center gap-2 font-semibold"><input type="checkbox" className="size-5" checked={v.onlinePayments} onChange={(e) => set('onlinePayments', e.target.checked)} /> Let guests pay online (Square) <span className={`rounded-full px-2 py-0.5 text-xs ${squareReady ? 'bg-[#dff3ee] text-[#0f5c4f]' : 'bg-red-50 text-red-800'}`}>{squareReady ? 'Square keys found' : 'Square keys missing'}</span></label>
         <label className="flex items-center gap-2 font-semibold"><input type="checkbox" className="size-5" checked={v.provisionalSilent} onChange={(e) => set('provisionalSilent', e.target.checked)} /> Silent items also get the last-chance window</label>
       </div>
       <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3 lg:grid-cols-6">
@@ -182,7 +183,7 @@ export function GameSettingsForm({ s }: { s: GameSettings }) {
               post('/api/admin/game-settings', {
                 gameMode: v.gameMode, autoAcceptLive: v.autoAcceptLive, provisionalSilent: v.provisionalSilent,
                 provisionalSeconds: +v.provisionalSeconds, liveInitialSeconds: +v.liveInitialSeconds, liveInactivitySeconds: +v.liveInactivitySeconds,
-                liveWarningSeconds: +v.liveWarningSeconds, goalCents: v.goal.trim() === '' ? null : parseDollars(v.goal), liveMaxSeconds: String(v.liveMaxSeconds).trim() === '' ? null : +v.liveMaxSeconds, minReopenSeconds: +v.minReopenSeconds,
+                liveWarningSeconds: +v.liveWarningSeconds, onlinePayments: v.onlinePayments, goalCents: v.goal.trim() === '' ? null : parseDollars(v.goal), liveMaxSeconds: String(v.liveMaxSeconds).trim() === '' ? null : +v.liveMaxSeconds, minReopenSeconds: +v.minReopenSeconds,
               }),
             'Game settings saved.',
           )

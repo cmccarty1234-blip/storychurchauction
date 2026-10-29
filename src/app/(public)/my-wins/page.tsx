@@ -5,13 +5,18 @@ import { finalizeDueSilentItems } from '@/lib/bidding'
 import { paymentStatus, totals, wonItems } from '@/lib/checkout'
 import { formatCents } from '@/lib/money'
 import { LiveRefresh } from '@/components/live-refresh'
+import { PayOnline } from '@/components/pay-online'
+import { onlinePaymentsAvailable, reconcileBidder } from '@/lib/online-pay'
 
 export const metadata = { title: 'My wins' }
 
-export default async function MyWinsPage() {
+export default async function MyWinsPage({ searchParams }: { searchParams: Promise<{ paid?: string }> }) {
   const bidder = await requireBidderPage('/my-wins')
   const ev = await getEvent()
   await finalizeDueSilentItems()
+  const online = await onlinePaymentsAvailable(ev.id)
+  if (online) await reconcileBidder(bidder.id) // pick up a payment Square has completed but whose webhook is late
+  const justPaid = (await searchParams).paid === '1'
   const items = await wonItems(bidder.id)
   const t = totals(items)
   const status = paymentStatus(t)
@@ -51,8 +56,10 @@ export default async function MyWinsPage() {
               <div className="flex justify-between"><dt>Paid so far</dt><dd className="tnum font-semibold">{formatCents(t.paidCents)}</dd></div>
               <div className="flex justify-between border-t pt-2 text-base"><dt className="font-bold">{status === 'paid' ? 'Balance' : 'Balance due'}</dt><dd className="tnum font-extrabold text-ink">{formatCents(t.balanceCents)}</dd></div>
             </dl>
+            {justPaid ? <p role="status" className="mt-4 rounded-lg bg-[#dff3ee] px-3 py-2 text-sm font-semibold text-[#0f5c4f]">Thank you! If your payment doesn&rsquo;t show above yet, give it a few seconds — this page updates by itself.</p> : null}
+            {online && t.balanceCents > 0 ? <PayOnline balanceCents={t.balanceCents} /> : null}
             <p className="mt-4 text-sm text-muted-foreground">
-              Pay in person at the checkout table (cash, check, or card). Tell the volunteer your bidder number: <strong className="text-foreground">#{bidder.bidder_number}</strong>.
+              {online && t.balanceCents > 0 ? 'Or pay' : 'Pay'} in person at the checkout table (cash, check, or card). Tell the volunteer your bidder number: <strong className="text-foreground">#{bidder.bidder_number}</strong>.
             </p>
             {ev.pickup_instructions ? <p className="mt-2 text-sm text-muted-foreground">{ev.pickup_instructions}</p> : null}
           </div>

@@ -3,6 +3,7 @@ import { query } from '@/lib/db'
 import { requireAdminPage } from '@/lib/session'
 import { listDefs, powerupRevenue } from '@/lib/powerups'
 import { pieSummary } from '@/lib/pies'
+import { squareReady } from '@/lib/square'
 import { listRoomDefs } from '@/lib/rooms'
 import { formatCents } from '@/lib/money'
 import { DefsEditor, GameSettingsForm, KnockoutEditor, RoomDefsEditor, SellForm, VoidSale } from '@/components/powerups-admin'
@@ -60,7 +61,7 @@ export default async function PowerUpsPage() {
 
       {isAdmin ? (
         <>
-          <GameSettingsForm s={{ gameMode: e.game_mode, autoAcceptLive: e.auto_accept_live, provisionalSilent: e.provisional_silent, provisionalSeconds: e.provisional_seconds, liveInitialSeconds: e.live_initial_seconds, liveInactivitySeconds: e.live_inactivity_seconds, liveWarningSeconds: e.live_warning_seconds, liveMaxSeconds: e.live_max_seconds, minReopenSeconds: e.min_reopen_seconds, goalCents: e.goal_cents }} />
+          <GameSettingsForm s={{ gameMode: e.game_mode, autoAcceptLive: e.auto_accept_live, provisionalSilent: e.provisional_silent, provisionalSeconds: e.provisional_seconds, liveInitialSeconds: e.live_initial_seconds, liveInactivitySeconds: e.live_inactivity_seconds, liveWarningSeconds: e.live_warning_seconds, liveMaxSeconds: e.live_max_seconds, minReopenSeconds: e.min_reopen_seconds, goalCents: e.goal_cents, onlinePayments: e.online_payments }} squareReady={squareReady()} />
           <DefsEditor defs={defs.map((d) => ({ code: d.code, name: d.name, description: d.description, category: d.category, price_cents: d.price_cents, enabled: d.enabled, kinds: d.kinds, max_per_bidder_item: d.max_per_bidder_item, max_per_item: d.max_per_item, max_per_bidder: d.max_per_bidder, seconds: d.config.seconds ?? null }))} />
           <RoomDefsEditor rooms={rooms.map((r) => ({ code: r.code, name: r.name, enabled: r.enabled, prize: String(r.config.prize ?? ''), reward: String(r.config.reward ?? ''), seconds: (r.config.seconds as number) ?? null }))} />
           <KnockoutEditor items={items.map((i: any) => ({ id: i.id, number: i.item_number, title: i.title, kind: i.kind, minQ: i.min_qualifying_bid_cents }))} />

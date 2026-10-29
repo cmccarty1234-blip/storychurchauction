@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { Printer } from 'lucide-react'
 import { getEvent } from '@/lib/events'
-import { one } from '@/lib/db'
+import { one, query } from '@/lib/db'
 import { requireAdminPage } from '@/lib/session'
 import { finalizeDueSilentItems } from '@/lib/bidding'
 import { bidderPayments, METHOD_LABEL, paymentStatus, totals, wonItems } from '@/lib/checkout'
@@ -12,6 +12,7 @@ import { formatInTz } from '@/lib/time'
 import { PaymentForm, ReleaseButton, VoidPaymentButton } from '@/components/checkout-forms'
 import { LiveRefresh } from '@/components/live-refresh'
 import { buttonVariants } from '@/components/ui/button'
+import { refundNote, reconcileBidder } from '@/lib/online-pay'
 
 export default async function CheckoutBidder({ params }: { params: Promise<{ bidderId: string }> }) {
   const { bidderId } = await params
@@ -20,6 +21,8 @@ export default async function CheckoutBidder({ params }: { params: Promise<{ bid
   await finalizeDueSilentItems()
   const b = /^[0-9a-f-]{36}$/i.test(bidderId) ? await one<any>('select * from bidders where id = $1 and event_id = $2', [bidderId, ev.id]) : undefined
   if (!b) notFound()
+  await reconcileBidder(b.id)
+  const refunds = await query<{ refund_due_cents: number }>('select refund_due_cents from online_payments where bidder_id = $1 and refund_due_cents > 0', [b.id])
   const [items, payments] = await Promise.all([wonItems(b.id), bidderPayments(b.id)])
   const t = totals(items)
   const status = paymentStatus(t)
@@ -80,6 +83,8 @@ export default async function CheckoutBidder({ params }: { params: Promise<{ bid
           </table>
         </div>
       </section>
+
+      {refunds.map((r, i) => <p key={i} role="alert" className="rounded-xl border-2 border-red-700 bg-red-50 p-3 font-semibold text-red-900">{refundNote(r.refund_due_cents)}</p>)}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <PaymentForm bidderId={b.id} balanceCents={t.balanceCents} />

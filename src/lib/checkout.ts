@@ -21,7 +21,7 @@ export type WonItem = {
 
 export type PaymentRow = {
   id: string
-  method: 'cash' | 'check' | 'card_terminal'
+  method: 'cash' | 'check' | 'card_terminal' | 'online_card'
   amount_cents: number
   reference: string | null
   note: string | null
@@ -31,7 +31,7 @@ export type PaymentRow = {
   void_reason: string | null
 }
 
-export const METHOD_LABEL: Record<string, string> = { cash: 'Cash', check: 'Check', card_terminal: 'Card terminal' }
+export const METHOD_LABEL: Record<string, string> = { cash: 'Cash', check: 'Check', card_terminal: 'Card terminal', online_card: 'Online (Square)' }
 
 /** Items a bidder won, with what has been paid against each (voided payments excluded). */
 export async function wonItems(bidderId: string, db?: Db): Promise<WonItem[]> {
@@ -55,8 +55,8 @@ export async function wonItems(bidderId: string, db?: Db): Promise<WonItem[]> {
 
 export async function bidderPayments(bidderId: string): Promise<PaymentRow[]> {
   return query<PaymentRow>(
-    `select p.id, p.method, p.amount_cents, p.reference, p.note, a.name as received_by, p.created_at, p.voided_at, p.void_reason
-       from payments p join admin_users a on a.id = p.received_by_admin_id
+    `select p.id, p.method, p.amount_cents, p.reference, p.note, coalesce(a.name, 'the guest, online') as received_by, p.created_at, p.voided_at, p.void_reason
+       from payments p left join admin_users a on a.id = p.received_by_admin_id
       where p.bidder_id = $1 order by p.created_at`,
     [bidderId],
   )

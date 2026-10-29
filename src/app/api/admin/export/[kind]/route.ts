@@ -39,8 +39,8 @@ export const GET = route<RouteContext<'/api/admin/export/[kind]'>>(async (_req, 
       rows.map((r) => [r.item_number, r.title, r.kind, r.bidder_number, r.name, dollars(r.amount_cents), dollars(r.paid), dollars(r.amount_cents - r.paid), r.status, r.exception ? 'yes' : '']))
   } else if (kind === 'payments') {
     const rows = await query<any>(
-      `select p.created_at, b.bidder_number, b.name, p.method, p.amount_cents, p.reference, a.name as received_by, p.voided_at, p.void_reason
-         from payments p join bidders b on b.id = p.bidder_id join admin_users a on a.id = p.received_by_admin_id
+      `select p.created_at, b.bidder_number, b.name, p.method, p.amount_cents, p.reference, coalesce(a.name, 'online (Square)') as received_by, p.voided_at, p.void_reason
+         from payments p join bidders b on b.id = p.bidder_id left join admin_users a on a.id = p.received_by_admin_id
         where p.event_id = $1 order by p.created_at`,
       [ev.id],
     )
