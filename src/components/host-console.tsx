@@ -104,6 +104,8 @@ export function HostConsole({ isAdmin }: { isAdmin: boolean }) {
   const t = now()
   const clock = stage ? liveClock(stage, t, !!state.event.emergency) : null
   const room = state.room
+  // The server keeps reporting a break for a while past the video's length (so a late or ad-delayed video isn't cut); the host only cares while it is really running.
+  const playing = state.commercial && secsUntil(state.commercial.endsAt, t) > 0 ? state.commercial : null
   const sessionRoom = (code: string) => data?.rooms.find((r) => r.code === code)
 
   async function sendPaddle(e: React.FormEvent) {
@@ -292,10 +294,10 @@ export function HostConsole({ isAdmin }: { isAdmin: boolean }) {
       <section className="rounded-2xl border bg-card p-4">
         <h2 className="mb-1 flex items-center gap-2 text-2xl"><Tv className="size-6" /> Commercial breaks</h2>
         <p className="mb-3 text-sm text-muted-foreground">Takes over the projector with a retro TV commercial. Pick a silent item to promote underneath it, then tap Play. The projector needs internet.</p>
-        {state.commercial ? (
+        {playing ? (
           <div className="mb-3 flex flex-wrap items-center gap-3 rounded-xl bg-brand-yellow px-4 py-3 text-ink">
-            <p className="min-w-0 flex-1 font-bold">On the projector now: {state.commercial.title} · {mmss(secsUntil(state.commercial.endsAt, t))} left</p>
-            <button className={dark} disabled={busy} onClick={() => show({ action: 'commercial-stop' }, state.commercial?.opensItem ? 'Skipped — bidding is open.' : 'Commercial stopped.')}>{state.commercial.opensItem ? 'Skip it & open bidding' : 'Stop it'}</button>
+            <p className="min-w-0 flex-1 font-bold">On the projector now: {playing.title} · {mmss(secsUntil(playing.endsAt, t))} left</p>
+            <button className={dark} disabled={busy} onClick={() => show({ action: 'commercial-stop' }, playing.opensItem ? 'Skipped — bidding is open.' : 'Commercial stopped.')}>{playing.opensItem ? 'Skip it & open bidding' : 'Stop it'}</button>
           </div>
         ) : null}
         <ul className="space-y-3">
@@ -306,7 +308,7 @@ export function HostConsole({ isAdmin }: { isAdmin: boolean }) {
                 <option value="">{c.promote ? `Auto — promotes the “${c.promote}” item` : 'No item — just the commercial'}</option>
                 {data?.silent.map((s) => <option key={s.id} value={s.id}>Promote #{s.item_number} {s.title}</option>)}
               </select>
-              <button className={gold} disabled={busy || !!state.commercial || !!state.event.emergency} onClick={() => show({ action: 'commercial-play', key: c.key, itemId: promo[c.key] || undefined }, `Playing “${c.title}”.`)}><Play className="inline size-5" /> Play</button>
+              <button className={gold} disabled={busy || !!playing || !!state.event.emergency} onClick={() => show({ action: 'commercial-play', key: c.key, itemId: promo[c.key] || undefined }, `Playing “${c.title}”.`)}><Play className="inline size-5" /> Play</button>
             </li>
           ))}
         </ul>

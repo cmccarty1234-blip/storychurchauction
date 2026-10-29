@@ -566,18 +566,33 @@ function CommercialBreak({ c, now, muted, onSound, reduced, joinUrl }: { c: NonN
   }, [muted])
   // The break ends the moment the video itself finishes (YouTube posts its state to the page), however long it took to load.
   const [ended, setEnded] = useState(false)
+  const expectedMs = new Date(c.endsAt).getTime() - new Date(c.startedAt).getTime()
   useEffect(() => {
+    const t0 = Date.now()
+    let lastSignal = t0
+    let duration = 0
     const onMsg = (e: MessageEvent) => {
       if (e.source !== frame.current?.contentWindow || typeof e.data !== 'string') return
       try {
         const m = JSON.parse(e.data)
-        if ((m.event === 'onStateChange' && m.info === 0) || (m.event === 'infoDelivery' && m.info?.playerState === 0)) setEnded(true)
+        lastSignal = Date.now()
+        if (typeof m.info?.duration === 'number' && m.info.duration > 0) duration = m.info.duration
+        // "Ended" counts only for the commercial itself — a pre-roll ad ending reports a different (shorter) duration.
+        const ended = (m.event === 'onStateChange' && m.info === 0) || (m.event === 'infoDelivery' && m.info?.playerState === 0)
+        if (ended && (duration === 0 ? Date.now() - t0 >= expectedMs - 3000 : duration >= expectedMs / 1000 - 3)) setEnded(true)
       } catch {}
     }
     window.addEventListener('message', onMsg)
-    return () => window.removeEventListener('message', onMsg)
-  }, [])
-  const total = new Date(c.endsAt).getTime() - new Date(c.startedAt).getTime()
+    // If YouTube goes quiet well after the video should be over (blocked, closed, offline), stop waiting for it.
+    const id = setInterval(() => {
+      if (Date.now() - t0 > expectedMs + 6000 && Date.now() - lastSignal > 4000) setEnded(true)
+    }, 1000)
+    return () => {
+      window.removeEventListener('message', onMsg)
+      clearInterval(id)
+    }
+  }, [expectedMs])
+  const total = expectedMs
   const leftMs = Math.max(0, new Date(c.endsAt).getTime() - now)
   const src = `https://www.youtube-nocookie.com/embed/${c.youtubeId}?autoplay=1&mute=${startMuted ? 1 : 0}&controls=0&rel=0&modestbranding=1&playsinline=1&iv_load_policy=3&disablekb=1&fs=0&cc_load_policy=0&enablejsapi=1&origin=${encodeURIComponent(new URL(joinUrl).origin)}`
   const item = c.item
