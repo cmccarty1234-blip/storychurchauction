@@ -66,7 +66,8 @@ describe('commercial before a live item opens', () => {
     await Promise.all([advanceCommercialStart(ev.id), advanceCommercialStart(ev.id)]) // two screens asking at once
     expect(await status(it.id)).toBe('open')
     expect((await query('select 1 from item_transitions where item_id = $1 and to_status = $2', [it.id, 'open'])).length).toBe(1)
-    expect((await gameState(ev.id)).commercial).toBeNull()
+    // The break may still be reported for a while (a late video can finish), but it no longer holds a start.
+    expect((await gameState(ev.id)).commercial?.opensItem ?? false).toBe(false)
   })
 
   it('stopping the commercial opens bidding straight away', async () => {
