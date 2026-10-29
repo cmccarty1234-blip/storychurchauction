@@ -35,7 +35,7 @@ export async function startOnlinePayment(bidderId: string) {
     return { id: op!.id, eventId: b.event_id, number: b.bidder_number, amountCents: balance, lines: owing.map((i) => ({ name: `#${i.item_number} ${i.title}`, amountCents: i.balance_cents })), email: contact?.email ?? null, phone: contact?.phone ?? null }
   })
   try {
-    const link = await createPaymentLink({
+    const args = {
       idempotencyKey: row.id,
       lines: row.lines,
       referenceId: row.id,
@@ -43,11 +43,21 @@ export async function startOnlinePayment(bidderId: string) {
       buyerPhone: row.phone,
       redirectUrl: `${appUrl()}/my-wins?paid=1`,
       note: `Auction balance, bidder #${row.number} (ref ${row.id.slice(0, 8)})`,
-    })
+    }
+    let link
+    try {
+      link = await createPaymentLink(args)
+    } catch (e) {
+      // If Square rejects the optional extras (wallets, pre-filled contact), fall back to the plain request so a guest can still pay.
+      if (e instanceof AppError && e.data?.squareStatus === 400) link = await createPaymentLink({ ...args, minimal: true })
+      else throw e
+    }
     await query('update online_payments set square_link_id = $2, square_order_id = $3 where id = $1', [row.id, link.linkId, link.orderId])
     return { url: link.url, amountCents: row.amountCents }
   } catch (e) {
     await query("update online_payments set status = 'failed' where id = $1", [row.id])
+    // Record Square's reason (codes and details only — no secrets) so staff can read it in the audit log.
+    await audit({ eventId: row.eventId, actorType: 'system', action: 'payment.online_error', entityType: 'bidder', entityId: bidderId, details: { bidderNumber: row.number, ...(e instanceof AppError ? e.data ?? {} : { message: String((e as Error)?.message ?? e).slice(0, 200) }) } }).catch(() => {})
     throw e
   }
 }

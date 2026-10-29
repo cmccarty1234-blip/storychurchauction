@@ -64,6 +64,34 @@ describe('starting an online payment', () => {
     expect(await balance(b.id)).toBe(10000) // nothing is credited just for starting
   })
 
+  it('if Square rejects the optional extras it retries with the plain request, so the guest can still pay', async () => {
+    const b = await winner()
+    let n = 0
+    vi.stubGlobal('fetch', vi.fn(async (url: string, init?: RequestInit) => {
+      calls.push({ url, init })
+      n++
+      if (n === 1) return new Response(JSON.stringify({ errors: [{ category: 'INVALID_REQUEST_ERROR', code: 'INVALID_VALUE', detail: 'bad optional field' }] }), { status: 400 })
+      return new Response(JSON.stringify({ payment_link: { id: 'pl2', url: 'https://square.test/pay/2', order_id: 'ord2' } }), { status: 200 })
+    }))
+    const r = await startOnlinePayment(b.id)
+    expect(r.url).toBe('https://square.test/pay/2')
+    expect(calls).toHaveLength(2)
+    const second = JSON.parse(String(calls[1].init!.body))
+    expect(second.checkout_options.accepted_payment_methods).toBeUndefined()
+    expect(second.pre_populated_data).toBeUndefined()
+    expect(second.order.line_items[0].base_price_money.amount).toBe(10000) // same amount either way
+  })
+
+  it('records Square’s reason in the audit log when it refuses outright (no secrets)', async () => {
+    const b = await winner()
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ errors: [{ category: 'AUTHENTICATION_ERROR', code: 'UNAUTHORIZED', detail: 'The token is not valid' }] }), { status: 401 })))
+    await expectError(startOnlinePayment(b.id), 'PAYMENT_PROVIDER')
+    const log = await one<{ details: any }>(`select details from audit_logs where action = 'payment.online_error'`)
+    expect(log!.details.squareStatus).toBe(401)
+    expect(log!.details.squareErrors[0].code).toBe('UNAUTHORIZED')
+    expect(JSON.stringify(log!.details)).not.toContain('test-token')
+  })
+
   it('refuses when switched off, when nothing is owed, and records a failure when Square is down', async () => {
     const b = await winner()
     await query('update events set online_payments = false')

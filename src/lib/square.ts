@@ -28,14 +28,19 @@ async function sq<T>(path: string, init: { method?: string; body?: unknown } = {
   }
   const json = (await res.json().catch(() => ({}))) as T & { errors?: { code?: string; detail?: string }[] }
   if (!res.ok) {
-    console.error('[square] error', res.status, JSON.stringify(json.errors ?? []).slice(0, 400)) // never includes our token
-    throw new AppError('PAYMENT_PROVIDER', 'The payment system declined the request. Nothing was charged — please pay at the checkout table.', 502)
+    // Square's own error codes/details (never our token) are kept on the error so staff can see WHY, not just that it failed.
+    const errors = (json.errors ?? []).slice(0, 5).map((e) => ({ code: e.code, detail: e.detail?.slice(0, 200), field: (e as { field?: string }).field }))
+    console.error('[square] error', res.status, JSON.stringify(errors).slice(0, 400))
+    throw new AppError('PAYMENT_PROVIDER', 'The payment system declined the request. Nothing was charged — please pay at the checkout table.', 502, { squareStatus: res.status, squareErrors: errors })
   }
   return json
 }
 
 /** A hosted Square checkout page for an exact amount. */
 export async function createPaymentLink(p: {
+  /** Retry mode: send only what Square strictly needs (no Apple/Google Pay, no pre-filled contact). */
+  minimal?: boolean
+
   idempotencyKey: string
   /** One line per item the guest is paying for; the lines add up to the amount charged. */
   lines: { name: string; amountCents: number }[]
@@ -45,7 +50,7 @@ export async function createPaymentLink(p: {
   buyerEmail?: string | null
   buyerPhone?: string | null
 }) {
-  const prefill = {
+  const prefill = p.minimal ? {} : {
     ...(p.buyerEmail ? { buyer_email: p.buyerEmail } : {}),
     ...(p.buyerPhone && /^\+[1-9]\d{7,14}$/.test(p.buyerPhone) ? { buyer_phone_number: p.buyerPhone } : {}),
   }
@@ -53,7 +58,7 @@ export async function createPaymentLink(p: {
   const r = await sq<{ payment_link?: { id: string; url: string; order_id: string } }>('/v2/online-checkout/payment-links', {
     method: 'POST',
     body: {
-      idempotency_key: p.idempotencyKey,
+      idempotency_key: p.minimal ? `${p.idempotencyKey}-min` : p.idempotencyKey,
       order: {
         location_id: process.env.SQUARE_LOCATION_ID,
         reference_id: p.referenceId,
@@ -62,8 +67,8 @@ export async function createPaymentLink(p: {
       checkout_options: {
         redirect_url: p.redirectUrl,
         ask_for_shipping_address: false,
-        accepted_payment_methods: { apple_pay: true, google_pay: true },
-        ...(support ? { merchant_support_email: support } : {}),
+        ...(p.minimal ? {} : { accepted_payment_methods: { apple_pay: true, google_pay: true } }),
+        ...(support && !p.minimal ? { merchant_support_email: support } : {}),
       },
       ...(Object.keys(prefill).length ? { pre_populated_data: prefill } : {}),
       payment_note: p.note,
