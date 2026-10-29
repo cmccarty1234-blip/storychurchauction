@@ -27,16 +27,20 @@ export async function startOnlinePayment(bidderId: string) {
     if (!b) throw new AppError('BIDDER_NOT_FOUND', 'Bidder not found.', 404)
     const ev = await one<{ online_payments: boolean }>('select online_payments from events where id = $1', [b.event_id], c)
     if (!ev?.online_payments || !squareReady()) throw new AppError('PAYMENTS_OFF', 'Online payment isn’t switched on. Please pay at the checkout table.', 409)
-    const balance = totals(await wonItems(b.id, c)).balanceCents
+    const owing = (await wonItems(b.id, c)).filter((i) => i.balance_cents > 0)
+    const balance = owing.reduce((s, i) => s + i.balance_cents, 0)
     if (balance <= 0) throw new AppError('NOTHING_DUE', 'You don’t have a balance to pay right now.', 409)
+    const contact = await one<{ email: string | null; phone: string | null }>('select email, phone from bidders where id = $1', [b.id], c)
     const op = await one<{ id: string }>('insert into online_payments (event_id, bidder_id, amount_cents) values ($1,$2,$3) returning id', [b.event_id, b.id, balance], c)
-    return { id: op!.id, eventId: b.event_id, number: b.bidder_number, amountCents: balance }
+    return { id: op!.id, eventId: b.event_id, number: b.bidder_number, amountCents: balance, lines: owing.map((i) => ({ name: `#${i.item_number} ${i.title}`, amountCents: i.balance_cents })), email: contact?.email ?? null, phone: contact?.phone ?? null }
   })
   try {
     const link = await createPaymentLink({
       idempotencyKey: row.id,
-      name: `StoryChurch auction — bidder #${row.number}`,
-      amountCents: row.amountCents,
+      lines: row.lines,
+      referenceId: row.id,
+      buyerEmail: row.email,
+      buyerPhone: row.phone,
       redirectUrl: `${appUrl()}/my-wins?paid=1`,
       note: `Auction balance, bidder #${row.number} (ref ${row.id.slice(0, 8)})`,
     })

@@ -54,8 +54,12 @@ describe('starting an online payment', () => {
     const r = await startOnlinePayment(b.id)
     expect(r).toEqual({ url: 'https://square.test/pay/1', amountCents: 10000 })
     const sent = JSON.parse(String(calls[0].init!.body))
-    expect(sent.quick_pay.price_money).toEqual({ amount: 10000, currency: 'USD' })
-    expect(sent.quick_pay.location_id).toBe('LOC1')
+    expect(sent.order.line_items).toHaveLength(1)
+    expect(sent.order.line_items[0].name).toMatch(/^#\d+ /) // each item the guest won, by number and title
+    expect(sent.order.line_items[0].base_price_money).toEqual({ amount: 10000, currency: 'USD' })
+    expect(sent.order.location_id).toBe('LOC1')
+    expect(sent.checkout_options.accepted_payment_methods).toEqual({ apple_pay: true, google_pay: true })
+    expect(sent.pre_populated_data.buyer_phone_number).toMatch(/^\+1719/) // from the guest's registration
     expect((calls[0].init!.headers as Record<string, string>).Authorization).toBe('Bearer test-token')
     expect(await balance(b.id)).toBe(10000) // nothing is credited just for starting
   })

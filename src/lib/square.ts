@@ -35,13 +35,37 @@ async function sq<T>(path: string, init: { method?: string; body?: unknown } = {
 }
 
 /** A hosted Square checkout page for an exact amount. */
-export async function createPaymentLink(p: { idempotencyKey: string; name: string; amountCents: number; redirectUrl: string; note: string }) {
+export async function createPaymentLink(p: {
+  idempotencyKey: string
+  /** One line per item the guest is paying for; the lines add up to the amount charged. */
+  lines: { name: string; amountCents: number }[]
+  referenceId: string
+  redirectUrl: string
+  note: string
+  buyerEmail?: string | null
+  buyerPhone?: string | null
+}) {
+  const prefill = {
+    ...(p.buyerEmail ? { buyer_email: p.buyerEmail } : {}),
+    ...(p.buyerPhone && /^\+[1-9]\d{7,14}$/.test(p.buyerPhone) ? { buyer_phone_number: p.buyerPhone } : {}),
+  }
+  const support = process.env.SQUARE_SUPPORT_EMAIL
   const r = await sq<{ payment_link?: { id: string; url: string; order_id: string } }>('/v2/online-checkout/payment-links', {
     method: 'POST',
     body: {
       idempotency_key: p.idempotencyKey,
-      quick_pay: { name: p.name, price_money: { amount: p.amountCents, currency: 'USD' }, location_id: process.env.SQUARE_LOCATION_ID },
-      checkout_options: { redirect_url: p.redirectUrl, ask_for_shipping_address: false },
+      order: {
+        location_id: process.env.SQUARE_LOCATION_ID,
+        reference_id: p.referenceId,
+        line_items: p.lines.map((l) => ({ name: l.name.slice(0, 250), quantity: '1', base_price_money: { amount: l.amountCents, currency: 'USD' } })),
+      },
+      checkout_options: {
+        redirect_url: p.redirectUrl,
+        ask_for_shipping_address: false,
+        accepted_payment_methods: { apple_pay: true, google_pay: true },
+        ...(support ? { merchant_support_email: support } : {}),
+      },
+      ...(Object.keys(prefill).length ? { pre_populated_data: prefill } : {}),
       payment_note: p.note,
     },
   })
