@@ -89,7 +89,7 @@ export function Projector({ qr, joinUrl }: { qr: string; joinUrl: string }) {
     }
   })
 
-  if (!state) return <Shell reduced={reduced}><Center><p className="text-[3vw] text-white/60">Connecting to the auction…</p></Center></Shell>
+  if (!state) return <Shell reduced={reduced}><Center><p className="text-[length:calc(var(--u)*3)] text-white/60">Connecting to the auction…</p></Center></Shell>
 
   const t = now()
   const room = state.room
@@ -97,12 +97,12 @@ export function Projector({ qr, joinUrl }: { qr: string; joinUrl: string }) {
   if (state.event.emergency) {
     main = (
       <Center>
-        <p className="font-heading text-[7vw] leading-none text-brand-yellow">PLEASE STAND BY</p>
-        <p className="mt-6 text-[2.6vw] text-white/80">Bidding is paused for a moment.{state.event.emergency.reason ? ` ${state.event.emergency.reason}` : ''}</p>
+        <p className="font-heading text-[length:calc(var(--u)*7)] leading-none text-brand-yellow">PLEASE STAND BY</p>
+        <p className="mt-6 text-[length:calc(var(--u)*2.6)] text-white/80">Bidding is paused for a moment.{state.event.emergency.reason ? ` ${state.event.emergency.reason}` : ''}</p>
       </Center>
     )
   } else if (state.event.displayMode === 'message' && state.event.displayMessage) {
-    main = <Center><p className="font-heading max-w-[80vw] text-center text-[6vw] leading-tight text-brand-yellow">{state.event.displayMessage}</p></Center>
+    main = <Center><p className="font-heading max-w-[calc(var(--u)*80)] text-center text-[length:calc(var(--u)*6)] leading-tight text-brand-yellow">{state.event.displayMessage}</p></Center>
   } else if (state.event.displayMode === 'welcome') {
     main = <Welcome state={state} qr={qr} joinUrl={joinUrl} />
   } else if (state.event.displayMode === 'thanks') {
@@ -116,8 +116,8 @@ export function Projector({ qr, joinUrl }: { qr: string; joinUrl: string }) {
   } else if (room?.code === 'jackpot') {
     main = (
       <Center>
-        <p className="font-heading text-[8vw] leading-none text-brand-yellow">MYSTERY JACKPOT!</p>
-        <p className="mt-6 text-[3vw]">Everyone who registered is in. Prize: <b className="text-brand-yellow">{String(room.config.prize ?? 'a mystery prize')}</b></p>
+        <p className="font-heading text-[length:calc(var(--u)*8)] leading-none text-brand-yellow">MYSTERY JACKPOT!</p>
+        <p className="mt-6 text-[length:calc(var(--u)*3)]">Everyone who registered is in. Prize: <b className="text-brand-yellow">{String(room.config.prize ?? 'a mystery prize')}</b></p>
       </Center>
     )
   } else if ((state.stage || state.reopened[0]) && state.event.displayMode !== 'dashboard') {
@@ -130,8 +130,8 @@ export function Projector({ qr, joinUrl }: { qr: string; joinUrl: string }) {
     <Shell reduced={reduced}>
       {main}
       {state.pies.enabled && ['live', 'lightning', 'battle'].includes(room?.code ?? (state.stage || state.reopened[0] ? 'live' : '')) && !state.event.emergency ? (
-        <div className="flex shrink-0 items-center justify-center gap-[2vw] bg-brand-yellow py-[0.6vh] text-ink">
-          <p className="font-heading text-[2.2vw]">🥧 PIE BRANDON IN THE FACE — sign up at the Bid Desk! Small {formatCents(state.pies.smallPriceCents)} · LARGE {formatCents(state.pies.largePriceCents)}</p>
+        <div className="flex shrink-0 items-center justify-center gap-[calc(var(--u)*2)] bg-brand-yellow py-[0.6vh] text-ink">
+          <p className="font-heading text-[length:calc(var(--u)*2.2)]">PIE BRANDON IN THE FACE — sign up at the Bid Desk! Small {formatCents(state.pies.smallPriceCents)} · LARGE {formatCents(state.pies.largePriceCents)}</p>
         </div>
       ) : null}
       <Ticker state={state} reduced={reduced} />
@@ -162,6 +162,17 @@ export function Projector({ qr, joinUrl }: { qr: string; joinUrl: string }) {
   )
 }
 
+function PieIcon({ className = 'size-[1em]' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 64 64" className={className} aria-hidden>
+      <ellipse cx="32" cy="40" rx="28" ry="12" fill="#c98a3c" />
+      <path d="M6 38 Q32 4 58 38 Q32 50 6 38Z" fill="#fff6e0" />
+      <path d="M6 38 Q32 4 58 38" fill="none" stroke="#c98a3c" strokeWidth="5" strokeLinecap="round" />
+      <circle cx="22" cy="30" r="3.2" fill="#e8b4b8" /><circle cx="34" cy="24" r="3.2" fill="#e8b4b8" /><circle cx="44" cy="31" r="3.2" fill="#e8b4b8" />
+    </svg>
+  )
+}
+
 /** The church's white wordmark, shown as-is on the dark projector. */
 function Logo({ className = 'h-[5vh]' }: { className?: string }) {
   return <Image src="/brand/storychurch-banner.png" alt="Story Church" width={1562} height={286} priority className={`${className} w-auto`} />
@@ -169,21 +180,21 @@ function Logo({ className = 'h-[5vh]' }: { className?: string }) {
 
 function Shell({ children, reduced }: { children: React.ReactNode; reduced: boolean }) {
   return (
-    <div data-reduce={reduced} className="relative flex h-screen w-screen flex-col overflow-hidden bg-ink text-white">
+    <div data-reduce={reduced} style={{ '--u': 'min(1vw, 1.7778vh)' } as React.CSSProperties} className="relative flex h-screen w-screen flex-col overflow-hidden bg-ink text-white">
       <div className="h-[0.6vh] shrink-0 bg-brand-yellow" aria-hidden />
       <div className="relative flex min-h-0 flex-1 flex-col">{children}</div>
     </div>
   )
 }
-const Center = ({ children }: { children: React.ReactNode }) => <div className="flex flex-1 flex-col items-center justify-center px-[4vw] text-center">{children}</div>
+const Center = ({ children }: { children: React.ReactNode }) => <div className="flex flex-1 flex-col items-center justify-center px-[calc(var(--u)*4)] text-center">{children}</div>
 
 function Countdown({ secs, warn, big = false, frozen = false, label }: { secs: number; warn: number; big?: boolean; frozen?: boolean; label?: string }) {
   const danger = !frozen && secs <= 5
   const hot = !frozen && secs <= warn
   return (
-    <div className={`text-center ${hot && !frozen ? 'sc-glow' : ''} rounded-3xl border-4 px-[2vw] py-[1vh] ${danger ? 'border-red-500 bg-red-600/20' : hot ? 'border-brand-yellow bg-brand-yellow/10' : 'border-white/30'}`}>
-      <div className={`tnum font-heading leading-none ${big ? 'text-[9vw]' : 'text-[7vw]'} ${danger ? 'text-red-400' : hot ? 'text-brand-yellow' : 'text-white'}`}>{mmss(secs)}</div>
-      {label ? <div className="mt-1 text-[1.6vw] font-bold tracking-[0.25em] text-white/70">{label}</div> : null}
+    <div className={`text-center ${hot && !frozen ? 'sc-glow' : ''} rounded-3xl border-4 px-[calc(var(--u)*2)] py-[1vh] ${danger ? 'border-red-500 bg-red-600/20' : hot ? 'border-brand-yellow bg-brand-yellow/10' : 'border-white/30'}`}>
+      <div className={`tnum font-heading leading-none ${big ? 'text-[length:calc(var(--u)*9)]' : 'text-[length:calc(var(--u)*7)]'} ${danger ? 'text-red-400' : hot ? 'text-brand-yellow' : 'text-white'}`}>{mmss(secs)}</div>
+      {label ? <div className="mt-1 text-[length:calc(var(--u)*1.6)] font-bold tracking-[0.25em] text-white/70">{label}</div> : null}
     </div>
   )
 }
@@ -196,34 +207,34 @@ function LiveView({ state, item, now }: { state: GameState; item: StageItem; now
   const warn = state.event.warningSeconds
   const bids = state.recentBids.filter((b) => b.itemNumber === item.number).slice(0, 5)
   return (
-    <div className="grid min-h-0 flex-1 grid-cols-[46%_54%] gap-[2vw] p-[2.5vw]">
+    <div className="grid min-h-0 flex-1 grid-cols-[46%_54%] gap-[calc(var(--u)*2)] p-[calc(var(--u)*2.5)]">
       <div className="relative overflow-hidden rounded-3xl border-4 border-brand-yellow bg-charcoal">
         {img(item.imagePath) ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={img(item.imagePath)!} alt={item.title} className="size-full object-cover" />
         ) : (
-          <div className="flex size-full items-center justify-center font-heading text-[12vw] text-white/20">#{item.number}</div>
+          <div className="flex size-full items-center justify-center font-heading text-[length:calc(var(--u)*12)] text-white/20">#{item.number}</div>
         )}
-        <div className="absolute left-0 top-0 rounded-br-3xl bg-brand-yellow px-[1.6vw] py-[0.6vh] font-heading text-[3vw] text-ink">ITEM {item.number}</div>
+        <div className="absolute left-0 top-0 rounded-br-3xl bg-brand-yellow px-[calc(var(--u)*1.6)] py-[0.6vh] font-heading text-[length:calc(var(--u)*3)] text-ink">ITEM {item.number}</div>
       </div>
       <div className="flex min-h-0 flex-col justify-between">
         <div>
           <Logo className="mb-[1vh] h-[3.6vh] opacity-80" />
-          <h1 className="font-heading text-[4.4vw] leading-[1.02]">{item.title}</h1>
-          {reopened ? <p className="sc-pop mt-2 inline-block rounded-full bg-brand-yellow px-4 py-1 text-[2vw] font-bold text-ink">{item.timerPhase === 'challenge' ? 'CHALLENGE — everyone can respond!' : 'RESURRECTED — this auction is back!'}</p> : null}
+          <h1 className="font-heading text-[length:calc(var(--u)*4.4)] leading-[1.02]">{item.title}</h1>
+          {reopened ? <p className="sc-pop mt-2 inline-block rounded-full bg-brand-yellow px-4 py-1 text-[length:calc(var(--u)*2)] font-bold text-ink">{item.timerPhase === 'challenge' ? 'CHALLENGE — everyone can respond!' : 'RESURRECTED — this auction is back!'}</p> : null}
         </div>
         <div className="space-y-[1.2vh]">
           <div>
-            <p className="text-[1.6vw] font-bold tracking-[0.25em] text-white/60">CURRENT BID</p>
-            <p className="tnum font-heading text-[9vw] leading-none text-brand-yellow">{item.currentBidCents != null ? formatCents(item.currentBidCents) : 'OPEN'}</p>
-            <p className="mt-1 text-[2.6vw] font-bold">{item.leaderNumber ? <>Bidder <span className="text-brand-yellow">#{item.leaderNumber}</span> leads</> : 'Be the first to bid!'}</p>
-            <p className="text-[1.9vw] text-white/70">Next bid: <b className="text-white">{formatCents(item.minNextCents)}</b></p>
+            <p className="text-[length:calc(var(--u)*1.6)] font-bold tracking-[0.25em] text-white/60">CURRENT BID</p>
+            <p className="tnum font-heading text-[length:calc(var(--u)*9)] leading-none text-brand-yellow">{item.currentBidCents != null ? formatCents(item.currentBidCents) : 'OPEN'}</p>
+            <p className="mt-1 text-[length:calc(var(--u)*2.6)] font-bold">{item.leaderNumber ? <>Bidder <span className="text-brand-yellow">#{item.leaderNumber}</span> leads</> : 'Be the first to bid!'}</p>
+            <p className="text-[length:calc(var(--u)*1.9)] text-white/70">Next bid: <b className="text-white">{formatCents(item.minNextCents)}</b></p>
           </div>
           {clock ? <Countdown secs={clock.secs} warn={warn} big frozen={clock.frozen} label={clock.label} /> : null}
         </div>
         <div className="space-y-[0.6vh]">
           {bids.map((b, i) => (
-            <p key={b.at + i} className="sc-slide text-[1.9vw] text-white/80">
+            <p key={b.at + i} className="sc-slide text-[length:calc(var(--u)*1.9)] text-white/80">
               <span className="font-bold text-brand-yellow">#{b.bidderNumber}</span> bid <b className="text-white">{formatCents(b.amountCents)}</b>
             </p>
           ))}
@@ -247,12 +258,12 @@ const shortUrl = (u: string) => u.replace(/^https?:\/\//, '').replace(/\/+$/, ''
 
 function QrCard({ qr, joinUrl, big = false }: { qr: string; joinUrl: string; big?: boolean }) {
   return (
-    <div className="rounded-2xl bg-white p-[1.2vw] text-center text-ink">
+    <div className="rounded-2xl bg-white p-[calc(var(--u)*1.2)] text-center text-ink">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={qr} alt="QR code to register and bid" className={`mx-auto aspect-square ${big ? 'w-[26vh]' : 'w-[18vh]'}`} />
-      <p className={`mt-[0.8vh] font-heading leading-tight ${big ? 'text-[2.6vw]' : 'text-[1.9vw]'}`}>BID FROM YOUR PHONE</p>
-      <p className={`font-bold text-ink/70 ${big ? 'text-[1.7vw]' : 'text-[1.3vw]'}`}>Scan to register &amp; bid</p>
-      <p className={`mt-[0.4vh] font-bold ${big ? 'text-[1.6vw]' : 'text-[1.2vw]'}`}>{shortUrl(joinUrl)}</p>
+      <p className={`mt-[0.8vh] font-heading leading-tight ${big ? 'text-[length:calc(var(--u)*2.6)]' : 'text-[length:calc(var(--u)*1.9)]'}`}>BID FROM YOUR PHONE</p>
+      <p className={`font-bold text-ink/70 ${big ? 'text-[length:calc(var(--u)*1.7)]' : 'text-[length:calc(var(--u)*1.3)]'}`}>Scan to register &amp; bid</p>
+      <p className={`mt-[0.4vh] font-bold ${big ? 'text-[length:calc(var(--u)*1.6)]' : 'text-[length:calc(var(--u)*1.2)]'}`}>{shortUrl(joinUrl)}</p>
     </div>
   )
 }
@@ -272,7 +283,7 @@ function Dashboard({ state, now, qr, joinUrl }: { state: GameState; now: number;
   const tz = state.event.timezone
   const tips = [
     'POWER-UPS! Buy one at the bidding desk to reopen, extend or end an auction.',
-    `🥧 PIE BRANDON IN THE FACE! Sign up at the Bid Desk all night — small $100, large $200.${state.pies.smallSold + state.pies.largeSold > 0 ? ` ${state.pies.smallSold + state.pies.largeSold} pies pledged so far!` : ''}`,
+    `PIE BRANDON IN THE FACE! Sign up at the Bid Desk all night — small $100, large $200.${state.pies.smallSold + state.pies.largeSold > 0 ? ` ${state.pies.smallSold + state.pies.largeSold} pies pledged so far!` : ''}`,
     ...(closeSecs != null && !closed ? [`The silent auction closes at ${clockTime(state.event.silentCloseAt, tz)}. Get your final bids in!`] : []),
     ...(state.nextLive ? [`UP NEXT LIVE: #${state.nextLive.number} ${state.nextLive.title} — opens at ${formatCents(state.nextLive.startingBidCents)}`] : []),
     'Checkout opens after the silent auction closes. Pay by cash, check or card.',
@@ -280,50 +291,50 @@ function Dashboard({ state, now, qr, joinUrl }: { state: GameState; now: number;
   ]
   const tip = tips[Math.floor(now / 10000) % tips.length]
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-[1.4vh] p-[2vw]">
-      <div className="flex items-center justify-between gap-[2vw]">
+    <div className="flex min-h-0 flex-1 flex-col gap-[1.4vh] p-[calc(var(--u)*2)]">
+      <div className="flex items-center justify-between gap-[calc(var(--u)*2)]">
         <Logo className="h-[6vh]" />
-        <p className="font-heading text-[2vw] tracking-wide text-white/70">YOUR STORY MATTERS.</p>
+        <p className="font-heading text-[length:calc(var(--u)*2)] tracking-wide text-white/70">YOUR STORY MATTERS.</p>
       </div>
 
-      <div className="grid grid-cols-[1.6fr_1fr] gap-[1.2vw]">
-        <div className="rounded-2xl border border-white/20 bg-white/5 px-[2vw] py-[1.2vh]">
+      <div className="grid grid-cols-[1.6fr_1fr] gap-[calc(var(--u)*1.2)]">
+        <div className="rounded-2xl border border-white/20 bg-white/5 px-[calc(var(--u)*2)] py-[1.2vh]">
           <div className="flex items-baseline justify-between">
-            <p className="text-[1.7vw] font-bold tracking-[0.25em] text-white/60">TOTAL COMMITTED</p>
-            <p className="text-[1.7vw] font-bold text-white/70">{state.bidsTonight} bids tonight</p>
+            <p className="text-[length:calc(var(--u)*1.7)] font-bold tracking-[0.25em] text-white/60">TOTAL COMMITTED</p>
+            <p className="text-[length:calc(var(--u)*1.7)] font-bold text-white/70">{state.bidsTonight} bids tonight</p>
           </div>
-          <p className="tnum font-heading text-[7.5vw] leading-none text-brand-yellow">{formatCents(committed)}</p>
+          <p className="tnum font-heading text-[length:calc(var(--u)*6.2)] leading-none text-brand-yellow">{formatCents(committed)}</p>
           {goal ? (
             <div className="mt-[1vh]">
               <div className="h-[2.4vh] overflow-hidden rounded-full bg-white/15" role="progressbar" aria-valuenow={Math.round(pct)} aria-valuemin={0} aria-valuemax={100} aria-label="Progress toward the fundraising goal">
                 <div className="h-full rounded-full bg-brand-yellow transition-all duration-1000" style={{ width: `${pct}%` }} />
               </div>
-              <p className="mt-[0.4vh] text-[1.7vw] font-bold text-white/80">{Math.floor(pct)}% of our {formatCents(goal)} goal</p>
+              <p className="mt-[0.4vh] text-[length:calc(var(--u)*1.7)] font-bold text-white/80">{Math.floor(pct)}% of our {formatCents(goal)} goal</p>
             </div>
           ) : null}
         </div>
-        <div className={`flex flex-col items-center justify-center rounded-2xl border-2 px-[1.5vw] py-[1.2vh] text-center ${finalStretch ? 'sc-glow border-brand-yellow bg-brand-yellow/10' : 'border-white/20 bg-white/5'}`}>
-          <p className="text-[1.6vw] font-bold tracking-[0.2em] text-white/60">{closed ? 'SILENT AUCTION' : 'SILENT AUCTION CLOSES IN'}</p>
-          <p className={`tnum font-heading leading-none ${finalStretch ? 'text-[8vw] text-brand-yellow' : 'text-[6vw]'}`}>{closeSecs == null ? '—' : closed ? 'CLOSED' : hms(closeSecs)}</p>
-          {finalStretch ? <p className="mt-1 text-[1.8vw] font-bold text-brand-yellow">FINAL CALL FOR SILENT BIDS!</p> : null}
+        <div className={`flex flex-col items-center justify-center rounded-2xl border-2 px-[calc(var(--u)*1.5)] py-[1.2vh] text-center ${finalStretch ? 'sc-glow border-brand-yellow bg-brand-yellow/10' : 'border-white/20 bg-white/5'}`}>
+          <p className="text-[length:calc(var(--u)*1.6)] font-bold tracking-[0.2em] text-white/60">{closed ? 'SILENT AUCTION' : 'SILENT AUCTION CLOSES IN'}</p>
+          <p className={`tnum font-heading leading-none ${finalStretch ? 'text-[length:calc(var(--u)*6.4)] text-brand-yellow' : 'text-[length:calc(var(--u)*5)]'}`}>{closeSecs == null ? '—' : closed ? 'CLOSED' : hms(closeSecs)}</p>
+          {finalStretch ? <p className="mt-1 text-[length:calc(var(--u)*1.8)] font-bold text-brand-yellow">FINAL CALL FOR SILENT BIDS!</p> : null}
         </div>
       </div>
 
       {state.pies.enabled ? (
-        <div className="flex items-center justify-between gap-[2vw] rounded-2xl bg-brand-yellow px-[2vw] py-[1vh] text-ink">
-          <p className="font-heading text-[3.4vw] leading-none">🥧 PIE BRANDON IN THE FACE!</p>
-          <p className="text-right text-[2vw] font-extrabold leading-tight">
+        <div className="flex items-center justify-between gap-[calc(var(--u)*2)] rounded-2xl bg-brand-yellow px-[calc(var(--u)*2)] py-[1vh] text-ink">
+          <p className="font-heading text-[length:calc(var(--u)*3.4)] leading-none"><PieIcon className="mr-[calc(var(--u)*1)] inline-block size-[1.1em] align-[-0.12em]" />PIE BRANDON IN THE FACE!</p>
+          <p className="text-right text-[length:calc(var(--u)*2)] font-extrabold leading-tight">
             Small {formatCents(state.pies.smallPriceCents)} · LARGE {formatCents(state.pies.largePriceCents)}
-            <span className="block text-[1.7vw] font-bold">{state.pies.smallSold + state.pies.largeSold > 0 ? `${state.pies.smallSold + state.pies.largeSold} pies pledged · ${formatCents(state.pies.cents)} raised` : 'Sign up at the Bid Desk!'}</span>
+            <span className="block text-[length:calc(var(--u)*1.7)] font-bold">{state.pies.smallSold + state.pies.largeSold > 0 ? `${state.pies.smallSold + state.pies.largeSold} pies pledged · ${formatCents(state.pies.cents)} raised` : 'Sign up at the Bid Desk!'}</span>
           </p>
         </div>
       ) : null}
 
       {chance.length ? (
-        <div className="sc-pop rounded-2xl bg-brand-yellow px-[2vw] py-[1vh] text-ink">
-          <p className="font-heading text-[2vw]">LAST CHANCE — NOT FINAL YET!</p>
+        <div className="sc-pop rounded-2xl bg-brand-yellow px-[calc(var(--u)*2)] py-[1vh] text-ink">
+          <p className="font-heading text-[length:calc(var(--u)*2)]">LAST CHANCE — NOT FINAL YET!</p>
           {chance.map((i) => (
-            <p key={i.id} className="flex justify-between gap-4 text-[2vw] font-bold">
+            <p key={i.id} className="flex justify-between gap-4 text-[length:calc(var(--u)*2)] font-bold">
               <span className="truncate">#{i.number} {i.title} — {formatCents(i.currentBidCents)} (bidder #{i.leaderNumber ?? '—'}{i.status === 'reopened' ? ', REOPENED' : ''})</span>
               <span className="tnum shrink-0">{mmss(secsUntil(i.status === 'reopened' ? i.deadlineAt : i.provisionalUntil, now))}</span>
             </p>
@@ -331,7 +342,7 @@ function Dashboard({ state, now, qr, joinUrl }: { state: GameState; now: number;
         </div>
       ) : null}
 
-      <div className="grid min-h-0 flex-1 grid-cols-[2fr_1fr] gap-[1.2vw]">
+      <div className="grid min-h-0 flex-1 grid-cols-[2fr_1fr] gap-[calc(var(--u)*1.2)]">
         <div className="min-h-0 overflow-hidden rounded-2xl border border-white/20 bg-white/5">
           {spot ? (
             <div key={spot.id} className="sc-slide grid h-full grid-cols-[1.05fr_1fr]">
@@ -340,30 +351,30 @@ function Dashboard({ state, now, qr, joinUrl }: { state: GameState; now: number;
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={img(spot.imagePath)!} alt={spot.title} className="size-full object-cover" />
                 ) : (
-                  <div className="flex size-full items-center justify-center font-heading text-[8vw] text-white/20">#{spot.number}</div>
+                  <div className="flex size-full items-center justify-center"><Logo className="h-[9vh] opacity-50" /></div>
                 )}
-                <div className="absolute left-0 top-0 rounded-br-2xl bg-brand-yellow px-[1.2vw] py-[0.4vh] font-heading text-[2.2vw] text-ink">ITEM {spot.number}</div>
+                <div className="absolute left-0 top-0 rounded-br-2xl bg-brand-yellow px-[calc(var(--u)*1.2)] py-[0.4vh] font-heading text-[length:calc(var(--u)*2.2)] text-ink">ITEM {spot.number}</div>
               </div>
-              <div className="flex min-h-0 flex-col justify-center gap-[1vh] p-[1.8vw]">
-                <p className="text-[1.5vw] font-bold tracking-[0.22em] text-brand-yellow">HOT RIGHT NOW</p>
-                <h2 className="font-heading text-[3.2vw] leading-[1.05]">{spot.title}</h2>
-                <p className="tnum font-heading text-[6.5vw] leading-none text-brand-yellow">{formatCents(spot.currentBidCents)}</p>
-                <p className="text-[2vw] font-bold">Bidder <span className="text-brand-yellow">#{spot.leaderNumber ?? '—'}</span> leads · {spot.bidCount} bids</p>
-                {spot.closesAt ? <p className="text-[1.7vw] text-white/70">Closes in <b className="tnum text-white">{hms(secsUntil(spot.closesAt, now))}</b></p> : null}
+              <div className="flex min-h-0 min-w-0 flex-col justify-center gap-[0.8vh] overflow-hidden p-[calc(var(--u)*1.6)]">
+                <p className="text-[length:calc(var(--u)*1.5)] font-bold tracking-[0.22em] text-brand-yellow">HOT RIGHT NOW</p>
+                <h2 className="font-heading text-[length:calc(var(--u)*2.7)] leading-[1.05]">{spot.title}</h2>
+                <p className="tnum font-heading text-[length:calc(var(--u)*5.2)] leading-none text-brand-yellow">{formatCents(spot.currentBidCents)}</p>
+                <p className="text-[length:calc(var(--u)*2)] font-bold">Bidder <span className="text-brand-yellow">#{spot.leaderNumber ?? '—'}</span> leads · {spot.bidCount} bids</p>
+                {spot.closesAt ? <p className="text-[length:calc(var(--u)*1.7)] text-white/70">Closes in <b className="tnum text-white">{hms(secsUntil(spot.closesAt, now))}</b></p> : null}
               </div>
             </div>
           ) : (
             <Center>
               <Logo className="h-[12vh]" />
-              <p className="mt-[3vh] font-heading text-[4vw] text-brand-yellow">BIDS WILL SHOW UP HERE</p>
-              <p className="mt-2 text-[2vw] text-white/70">Scan the code and place the first bid!</p>
+              <p className="mt-[3vh] font-heading text-[length:calc(var(--u)*4)] text-brand-yellow">BIDS WILL SHOW UP HERE</p>
+              <p className="mt-2 text-[length:calc(var(--u)*2)] text-white/70">Scan the code and place the first bid!</p>
             </Center>
           )}
         </div>
         <div className="flex min-h-0 flex-col gap-[1.2vh]">
           <QrCard qr={qr} joinUrl={joinUrl} />
-          <div key={tip} className="sc-slide flex flex-1 items-center rounded-2xl border border-brand-yellow/60 bg-brand-yellow/10 px-[1.4vw] py-[1vh]">
-            <p className="text-[1.8vw] font-bold leading-snug">{tip}</p>
+          <div key={tip} className="sc-slide flex flex-1 items-center rounded-2xl border border-brand-yellow/60 bg-brand-yellow/10 px-[calc(var(--u)*1.4)] py-[1vh]">
+            <p className="text-[length:calc(var(--u)*1.8)] font-bold leading-snug">{tip}</p>
           </div>
         </div>
       </div>
@@ -375,13 +386,13 @@ function Dashboard({ state, now, qr, joinUrl }: { state: GameState; now: number;
 function Welcome({ state, qr, joinUrl }: { state: GameState; qr: string; joinUrl: string }) {
   const close = clockTime(state.event.silentCloseAt, state.event.timezone)
   return (
-    <div className="grid min-h-0 flex-1 grid-cols-[1.3fr_1fr] items-center gap-[3vw] px-[4vw]">
+    <div className="grid min-h-0 flex-1 grid-cols-[1.3fr_1fr] items-center gap-[calc(var(--u)*3)] px-[calc(var(--u)*4)]">
       <div>
         <Logo className="h-[11vh]" />
-        <p className="mt-[3vh] font-heading text-[9vw] leading-[0.95] text-brand-yellow">WELCOME!</p>
-        <p className="mt-[2vh] text-[2.8vw] font-bold leading-snug">Scan the code to register and start bidding from your phone.</p>
-        {close ? <p className="mt-[1.5vh] text-[2.2vw] text-white/75">The silent auction closes at <b className="text-white">{close}</b>.</p> : null}
-        <p className="mt-[3vh] font-heading text-[2.2vw] tracking-wide text-white/70">YOUR STORY MATTERS.</p>
+        <p className="mt-[3vh] font-heading text-[length:calc(var(--u)*9)] leading-[0.95] text-brand-yellow">WELCOME!</p>
+        <p className="mt-[2vh] text-[length:calc(var(--u)*2.8)] font-bold leading-snug">Scan the code to register and start bidding from your phone.</p>
+        {close ? <p className="mt-[1.5vh] text-[length:calc(var(--u)*2.2)] text-white/75">The silent auction closes at <b className="text-white">{close}</b>.</p> : null}
+        <p className="mt-[3vh] font-heading text-[length:calc(var(--u)*2.2)] tracking-wide text-white/70">YOUR STORY MATTERS.</p>
       </div>
       <QrCard qr={qr} joinUrl={joinUrl} big />
     </div>
@@ -394,13 +405,13 @@ function PieFinale({ state }: { state: GameState }) {
   return (
     <Center>
       <Logo className="h-[8vh]" />
-      <p className="sc-pop mt-[2vh] font-heading text-[7vw] leading-[0.95] text-brand-yellow">🥧 PIE BRANDON IN THE FACE!</p>
-      <p className="mt-[2vh] text-[3vw] font-bold">{left > 0 ? `${left} pies waiting` : p.thrown > 0 ? 'Every pie has been thrown!' : 'Sign up at the Bid Desk!'} · {formatCents(p.cents)} raised</p>
+      <p className="sc-pop mt-[2vh] font-heading text-[length:calc(var(--u)*7)] leading-[0.95] text-brand-yellow"><PieIcon className="mr-[calc(var(--u)*1.5)] inline-block size-[0.95em] align-[-0.1em]" />PIE BRANDON IN THE FACE!</p>
+      <p className="mt-[2vh] text-[length:calc(var(--u)*3)] font-bold">{left > 0 ? `${left} pies waiting` : p.thrown > 0 ? 'Every pie has been thrown!' : 'Sign up at the Bid Desk!'} · {formatCents(p.cents)} raised</p>
       {p.next.length ? (
-        <div className="mt-[3vh] w-[70vw] rounded-3xl border-4 border-brand-yellow bg-white/5 p-[2vw]">
-          <p className="text-[1.8vw] font-bold tracking-[0.25em] text-brand-yellow">UP NEXT</p>
+        <div className="mt-[3vh] w-[calc(var(--u)*70)] rounded-3xl border-4 border-brand-yellow bg-white/5 p-[calc(var(--u)*2)]">
+          <p className="text-[length:calc(var(--u)*1.8)] font-bold tracking-[0.25em] text-brand-yellow">UP NEXT</p>
           {p.next.map((n, i) => (
-            <p key={i} className={`font-heading ${i === 0 ? 'text-[5.5vw] text-white' : 'text-[2.8vw] text-white/70'}`}>
+            <p key={i} className={`font-heading ${i === 0 ? 'text-[length:calc(var(--u)*5.5)] text-white' : 'text-[length:calc(var(--u)*2.8)] text-white/70'}`}>
               Bidder #{n.bidderNumber} — {n.size === 'large' ? 'LARGE' : 'small'} pie
             </p>
           ))}
@@ -416,11 +427,11 @@ function Thanks({ state }: { state: GameState }) {
   return (
     <Center>
       <Logo className="h-[9vh]" />
-      <p className="sc-pop mt-[3vh] font-heading text-[10vw] leading-none text-brand-yellow">THANK YOU!</p>
-      <p className="mt-[2vh] text-[2.8vw] font-bold">Together we raised</p>
-      <p className="tnum font-heading text-[11vw] leading-none">{formatCents(committed)}</p>
-      <p className="mt-[3vh] max-w-[80vw] whitespace-pre-line text-[2.4vw] font-bold leading-snug">{state.event.pickup.trim() || 'Please visit the checkout table to pay and pick up your items.'}</p>
-      <p className="mt-[2vh] font-heading text-[2.2vw] tracking-wide text-white/70">YOUR STORY MATTERS.</p>
+      <p className="sc-pop mt-[3vh] font-heading text-[length:calc(var(--u)*10)] leading-none text-brand-yellow">THANK YOU!</p>
+      <p className="mt-[2vh] text-[length:calc(var(--u)*2.8)] font-bold">Together we raised</p>
+      <p className="tnum font-heading text-[length:calc(var(--u)*11)] leading-none">{formatCents(committed)}</p>
+      <p className="mt-[3vh] max-w-[calc(var(--u)*80)] whitespace-pre-line text-[length:calc(var(--u)*2.4)] font-bold leading-snug">{state.event.pickup.trim() || 'Please visit the checkout table to pay and pick up your items.'}</p>
+      <p className="mt-[2vh] font-heading text-[length:calc(var(--u)*2.2)] tracking-wide text-white/70">YOUR STORY MATTERS.</p>
     </Center>
   )
 }
@@ -431,14 +442,14 @@ function LightningView({ state, now }: { state: GameState; now: number }) {
   const secs = secsUntil(room.endsAt, now)
   const nums = (room.lightningItems ?? []).slice(0, 24)
   return (
-    <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-[2vh] px-[3vw] text-center">
-      <p className="sc-pop font-heading text-[9vw] leading-none text-brand-yellow">⚡ LIGHTNING ROUND! ⚡</p>
-      <p className="text-[2.8vw]">Bids go up by just <b className="text-brand-yellow">$1</b> on these silent items — get your phone out!</p>
+    <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-[2vh] px-[calc(var(--u)*3)] text-center">
+      <p className="sc-pop font-heading text-[length:calc(var(--u)*9)] leading-none text-brand-yellow">⚡ LIGHTNING ROUND! ⚡</p>
+      <p className="text-[length:calc(var(--u)*2.8)]">Bids go up by just <b className="text-brand-yellow">$1</b> on these silent items — get your phone out!</p>
       <Countdown secs={secs} warn={10} big label="TIME LEFT" />
-      <p className="max-w-[85vw] text-[2.4vw] font-bold">Items: {nums.map((n) => `#${n}`).join('  ')}</p>
+      <p className="max-w-[calc(var(--u)*85)] text-[length:calc(var(--u)*2.4)] font-bold">Items: {nums.map((n) => `#${n}`).join('  ')}</p>
       <div className="space-y-1">
         {state.recentBids.slice(0, 4).map((b, i) => (
-          <p key={b.at + i} className="sc-slide text-[2vw] text-white/80"><b className="text-brand-yellow">#{b.bidderNumber}</b> bid {formatCents(b.amountCents)} on {b.title}</p>
+          <p key={b.at + i} className="sc-slide text-[length:calc(var(--u)*2)] text-white/80"><b className="text-brand-yellow">#{b.bidderNumber}</b> bid {formatCents(b.amountCents)} on {b.title}</p>
         ))}
       </div>
     </div>
@@ -451,18 +462,18 @@ function BattleView({ state, now }: { state: GameState; now: number }) {
   const total = Math.max(1, b.gold.points + b.black.points)
   const secs = secsUntil(room.endsAt, now)
   return (
-    <div className="flex min-h-0 flex-1 flex-col justify-center gap-[3vh] px-[4vw]">
-      <p className="text-center font-heading text-[7vw] leading-none text-brand-yellow">BATTLE OF THE ROOM!</p>
+    <div className="flex min-h-0 flex-1 flex-col justify-center gap-[3vh] px-[calc(var(--u)*4)]">
+      <p className="text-center font-heading text-[length:calc(var(--u)*7)] leading-none text-brand-yellow">BATTLE OF THE ROOM!</p>
       <div className="mx-auto"><Countdown secs={secs} warn={10} label="TIME LEFT" /></div>
-      <div className="grid grid-cols-2 gap-[3vw] text-center">
-        <div className="rounded-3xl bg-brand-yellow p-[2vw] text-ink"><p className="font-heading text-[3vw]">TEAM GOLD</p><p className="tnum font-heading text-[9vw] leading-none">{b.gold.points}</p><p className="text-[1.4vw] font-bold">{b.gold.bids} bids · {b.gold.players} players</p></div>
-        <div className="rounded-3xl border-4 border-brand-yellow bg-black p-[2vw]"><p className="font-heading text-[3vw] text-brand-yellow">TEAM BLACK</p><p className="tnum font-heading text-[9vw] leading-none">{b.black.points}</p><p className="text-[1.4vw] font-bold text-white/70">{b.black.bids} bids · {b.black.players} players</p></div>
+      <div className="grid grid-cols-2 gap-[calc(var(--u)*3)] text-center">
+        <div className="rounded-3xl bg-brand-yellow p-[calc(var(--u)*2)] text-ink"><p className="font-heading text-[length:calc(var(--u)*3)]">TEAM GOLD</p><p className="tnum font-heading text-[length:calc(var(--u)*9)] leading-none">{b.gold.points}</p><p className="text-[length:calc(var(--u)*1.4)] font-bold">{b.gold.bids} bids · {b.gold.players} players</p></div>
+        <div className="rounded-3xl border-4 border-brand-yellow bg-black p-[calc(var(--u)*2)]"><p className="font-heading text-[length:calc(var(--u)*3)] text-brand-yellow">TEAM BLACK</p><p className="tnum font-heading text-[length:calc(var(--u)*9)] leading-none">{b.black.points}</p><p className="text-[length:calc(var(--u)*1.4)] font-bold text-white/70">{b.black.bids} bids · {b.black.players} players</p></div>
       </div>
       <div className="flex h-[4vh] overflow-hidden rounded-full border-2 border-white/40">
         <div className="bg-brand-yellow transition-all duration-700" style={{ width: `${(b.gold.points / total) * 100}%` }} />
         <div className="flex-1 bg-black" />
       </div>
-      <p className="text-center text-[1.5vw] text-white/60">Game points, not dollars. {String(room.config.reward ?? '') ? <>Reward: <b className="text-white">{String(room.config.reward)}</b>. </> : null}Each accepted bid scores 10 points + 1 per $10 it raises the price.</p>
+      <p className="text-center text-[length:calc(var(--u)*1.5)] text-white/60">Game points, not dollars. {String(room.config.reward ?? '') ? <>Reward: <b className="text-white">{String(room.config.reward)}</b>. </> : null}Each accepted bid scores 10 points + 1 per $10 it raises the price.</p>
     </div>
   )
 }
@@ -473,24 +484,24 @@ function Overlay({ a, state }: { a: Ann; state: GameState }) {
   const isJackpot = a.kind === 'room.jackpot.winner'
   const item = a.itemId ? [...state.lastChance, ...state.reopened, state.stage].find((i) => i?.id === a.itemId) : null
   return (
-    <div className="fixed inset-0 z-40 flex flex-col items-center justify-center bg-ink/95 px-[5vw] text-center" role="alert">
+    <div className="fixed inset-0 z-40 flex flex-col items-center justify-center bg-ink/95 px-[calc(var(--u)*5)] text-center" role="alert">
       <div className="absolute top-[3vh]"><Logo className="h-[6vh]" /></div>
       {isSold ? <Confetti /> : null}
       {isJackpot ? (
         <Jackpot a={a} />
       ) : (
         <>
-          <p className="sc-pop font-heading text-[8.5vw] leading-[1.02] text-brand-yellow">{isSold ? 'SOLD!' : a.headline}</p>
+          <p className="sc-pop font-heading text-[length:calc(var(--u)*8.5)] leading-[1.02] text-brand-yellow">{isSold ? 'SOLD!' : a.headline}</p>
           {isSold ? (
             <>
-              <p className="sc-pop mt-4 text-[3.6vw] font-bold">{String(a.payload.bidderNumber ? `Bidder #${a.payload.bidderNumber}` : '')}</p>
-              <p className="tnum sc-pop font-heading text-[11vw] leading-none">{formatCents(Number(a.payload.amountCents ?? 0))}</p>
-              <p className="mt-3 text-[2.6vw] text-white/80">{a.headline.replace(/^SOLD!\s*/, '').split(' — ')[0]}</p>
+              <p className="sc-pop mt-4 text-[length:calc(var(--u)*3.6)] font-bold">{String(a.payload.bidderNumber ? `Bidder #${a.payload.bidderNumber}` : '')}</p>
+              <p className="tnum sc-pop font-heading text-[length:calc(var(--u)*11)] leading-none">{formatCents(Number(a.payload.amountCents ?? 0))}</p>
+              <p className="mt-3 text-[length:calc(var(--u)*2.6)] text-white/80">{a.headline.replace(/^SOLD!\s*/, '').split(' — ')[0]}</p>
             </>
           ) : (
             <>
-              {a.body ? <p className="mt-4 text-[3vw] font-bold">{a.body}</p> : null}
-              {item ? <p className="mt-2 text-[2.2vw] text-white/70">Currently {formatCents(item.currentBidCents)}{item.provisionalUntil ? ' · last-chance window open' : ''}</p> : null}
+              {a.body ? <p className="mt-4 text-[length:calc(var(--u)*3)] font-bold">{a.body}</p> : null}
+              {item ? <p className="mt-2 text-[length:calc(var(--u)*2.2)] text-white/70">Currently {formatCents(item.currentBidCents)}{item.provisionalUntil ? ' · last-chance window open' : ''}</p> : null}
             </>
           )}
         </>
@@ -518,9 +529,9 @@ function Jackpot({ a }: { a: Ann }) {
   const done = shown === winner
   return (
     <>
-      <p className="font-heading text-[7vw] leading-none text-brand-yellow">MYSTERY JACKPOT!</p>
-      <p className={`tnum font-heading mt-6 text-[18vw] leading-none ${done ? 'sc-pop text-white' : 'text-white/60'}`}>{shown != null ? `#${shown}` : '…'}</p>
-      <p className="mt-4 text-[3vw]">{done ? <>wins <b className="text-brand-yellow">{String(a.payload.prize ?? 'the prize')}</b>!</> : `Drawing from ${entries} registered guests…`}</p>
+      <p className="font-heading text-[length:calc(var(--u)*7)] leading-none text-brand-yellow">MYSTERY JACKPOT!</p>
+      <p className={`tnum font-heading mt-6 text-[length:calc(var(--u)*18)] leading-none ${done ? 'sc-pop text-white' : 'text-white/60'}`}>{shown != null ? `#${shown}` : '…'}</p>
+      <p className="mt-4 text-[length:calc(var(--u)*3)]">{done ? <>wins <b className="text-brand-yellow">{String(a.payload.prize ?? 'the prize')}</b>!</> : `Drawing from ${entries} registered guests…`}</p>
     </>
   )
 }
@@ -548,11 +559,11 @@ function Ticker({ state, reduced }: { state: GameState; reduced: boolean }) {
   return (
     <div className="h-[6.5vh] shrink-0 overflow-hidden border-t-2 border-brand-yellow bg-black">
       {reduced ? (
-        <p className="truncate px-[2vw] py-[1.2vh] text-[2vw] text-white/90">{text[0]}</p>
+        <p className="truncate px-[calc(var(--u)*2)] py-[1.2vh] text-[length:calc(var(--u)*2)] text-white/90">{text[0]}</p>
       ) : (
-        <div className="flex w-max items-center gap-[4vw] whitespace-nowrap py-[1.2vh] pl-[2vw]" style={{ animation: `sc-marquee ${Math.max(30, run.length * 5)}s linear infinite` }}>
+        <div className="flex w-max items-center gap-[calc(var(--u)*4)] whitespace-nowrap py-[1.2vh] pl-[calc(var(--u)*2)]" style={{ animation: `sc-marquee ${Math.max(30, run.length * 5)}s linear infinite` }}>
           {run.map((l, i) => (
-            <span key={i} className="text-[2vw] text-white/90"><span className="mr-[1.5vw] text-brand-yellow">●</span>{l}</span>
+            <span key={i} className="text-[length:calc(var(--u)*2)] text-white/90"><span className="mr-[calc(var(--u)*1.5)] text-brand-yellow">●</span>{l}</span>
           ))}
         </div>
       )}
