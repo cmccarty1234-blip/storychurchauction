@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { AlertOctagon, Check, Megaphone, Pause, Play, Plus, Radio, Square, Timer, X } from 'lucide-react'
+import { AlertOctagon, Check, Megaphone, Pause, Play, Plus, Radio, Square, Timer, Tv, X } from 'lucide-react'
+import { COMMERCIALS } from '@/lib/commercials'
 import { newKey, post } from '@/lib/client'
 import { formatCents, parseDollars } from '@/lib/money'
 import { liveClock, mmss, secsUntil, useGameState, useTicker } from '@/lib/game-client'
@@ -34,6 +35,7 @@ export function HostConsole({ isAdmin }: { isAdmin: boolean }) {
   const [announce, setAnnounce] = useState('')
   const [prize, setPrize] = useState('')
   const [reason, setReason] = useState('')
+  const [promo, setPromo] = useState<Record<string, string>>({})
   const key = useRef(newKey())
   const touched = useRef(false)
 
@@ -285,6 +287,29 @@ export function HostConsole({ isAdmin }: { isAdmin: boolean }) {
             <p className="mt-2 text-sm font-semibold">People are called up in the order they signed up. Tap Splat! as each pie is thrown — it can&rsquo;t be thrown twice.</p>
           </>
         ) : <p>Loading…</p>}
+      </section>
+
+      <section className="rounded-2xl border bg-card p-4">
+        <h2 className="mb-1 flex items-center gap-2 text-2xl"><Tv className="size-6" /> Commercial breaks</h2>
+        <p className="mb-3 text-sm text-muted-foreground">Takes over the projector with a retro TV commercial. Pick a silent item to promote underneath it, then tap Play. The projector needs internet.</p>
+        {state.commercial ? (
+          <div className="mb-3 flex flex-wrap items-center gap-3 rounded-xl bg-brand-yellow px-4 py-3 text-ink">
+            <p className="min-w-0 flex-1 font-bold">On the projector now: {state.commercial.title} · {mmss(secsUntil(state.commercial.endsAt, t))} left</p>
+            <button className={dark} disabled={busy} onClick={() => show({ action: 'commercial-stop' }, 'Commercial stopped.')}>Stop it</button>
+          </div>
+        ) : null}
+        <ul className="space-y-3">
+          {COMMERCIALS.map((c) => (
+            <li key={c.key} className="flex flex-wrap items-center gap-3 rounded-xl border p-3">
+              <p className="min-w-0 flex-1 font-bold">{c.title} <span className="font-normal text-muted-foreground">· {c.seconds}s</span></p>
+              <select aria-label={`Item to promote with ${c.title}`} className="h-14 min-w-0 max-w-full rounded-xl border bg-white px-3" value={promo[c.key] ?? ''} onChange={(e) => setPromo((p) => ({ ...p, [c.key]: e.target.value }))}>
+                <option value="">No item — just the commercial</option>
+                {data?.silent.map((s) => <option key={s.id} value={s.id}>Promote #{s.item_number} {s.title}</option>)}
+              </select>
+              <button className={gold} disabled={busy || !!state.commercial || !!state.event.emergency} onClick={() => show({ action: 'commercial-play', key: c.key, itemId: promo[c.key] || undefined }, `Playing “${c.title}”.`)}><Play className="inline size-5" /> Play</button>
+            </li>
+          ))}
+        </ul>
       </section>
 
       <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">

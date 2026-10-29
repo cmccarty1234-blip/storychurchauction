@@ -8,6 +8,7 @@ import { advanceDue } from './lifecycle'
 import { activeSession, advanceRooms, battleScore } from './rooms'
 import { minNextBid } from './bidding'
 import { pieLine, pieSummary, type PieSummary } from './pies'
+import { commercialByKey } from './commercials'
 
 export type StageItem = {
   id: string
@@ -54,6 +55,15 @@ export type GameState = {
   pies: PieSummary & { next: { bidderNumber: number; size: 'small' | 'large' }[] }
   totals: { leadingCents: number; finalizedCents: number; powerupCents: number; pieCents: number; paymentsCents: number; outstandingCents: number; itemsSold: number }
   announcements: { id: string; kind: string; headline: string; body: string | null; interrupt: boolean; at: string; itemId: string | null; payload: Record<string, unknown> }[]
+  commercial: null | {
+    key: string
+    title: string
+    youtubeId: string
+    tagline: string
+    startedAt: string
+    endsAt: string
+    item: { id: string; number: number; title: string; imagePath: string | null; currentBidCents: number | null } | null
+  }
   room: null | {
     id: string
     code: string
@@ -153,6 +163,31 @@ export async function gameState(eventId: string): Promise<GameState> {
     if (room.code === 'lightning') roomOut.lightningItems = room.config.itemNumbers ?? []
   }
 
+  // A commercial break the host started; only reported while it is still on screen. Safe if migration 0008 hasn't been run.
+  let commercial: GameState['commercial'] = null
+  try {
+    const c = await one<any>(
+      `select e.commercial_key, e.commercial_started_at, i.id, i.item_number, i.title, i.image_path, i.current_bid_cents
+         from events e left join auction_items i on i.id = e.commercial_item_id where e.id = $1 and e.commercial_started_at is not null`,
+      [eventId],
+    )
+    const clip = commercialByKey(c?.commercial_key)
+    if (c && clip) {
+      const endsAt = new Date(c.commercial_started_at.getTime() + clip.seconds * 1000)
+      if (endsAt.getTime() > ev.now.getTime()) {
+        commercial = {
+          key: clip.key,
+          title: clip.title,
+          youtubeId: clip.youtubeId,
+          tagline: clip.tagline,
+          startedAt: c.commercial_started_at.toISOString(),
+          endsAt: endsAt.toISOString(),
+          item: c.id ? { id: c.id, number: c.item_number, title: c.title, imagePath: c.image_path, currentBidCents: c.current_bid_cents } : null,
+        }
+      }
+    }
+  } catch {}
+
   return {
     serverNow: ev.now.toISOString(),
     event: {
@@ -179,6 +214,7 @@ export async function gameState(eventId: string): Promise<GameState> {
     pies: { ...(await pieSummary(eventId)), next: (await pieLine(eventId)).slice(0, 4).map((p) => ({ bidderNumber: p.bidderNumber, size: p.size })) },
     totals: { leadingCents: totals.leading, finalizedCents: totals.finalized, powerupCents: totals.powerups, pieCents: totals.pies, paymentsCents: totals.paid, outstandingCents: totals.finalized - totals.paid, itemsSold: totals.sold },
     announcements: ann.map((a: any) => ({ id: a.id, kind: a.kind, headline: a.headline, body: a.body, interrupt: a.interrupt, at: a.created_at.toISOString(), itemId: a.item_id, payload: a.payload })),
+    commercial,
     room: roomOut,
   }
 }

@@ -10,6 +10,8 @@ import { drawJackpot, endRoomEvent, startRoomEvent } from '@/lib/rooms'
 import { requireAdmin } from '@/lib/session'
 import { pieLine, pieSummary, throwPie } from '@/lib/pies'
 import { wheelbarrow } from '@/lib/wheelbarrow'
+import { commercialByKey } from '@/lib/commercials'
+import { AppError } from '@/lib/errors'
 
 const Body = z.discriminatedUnion('action', [
   z.object({ action: z.literal('extend'), itemId: uuid, seconds: z.number().int() }),
@@ -22,6 +24,8 @@ const Body = z.discriminatedUnion('action', [
   z.object({ action: z.literal('room-end'), sessionId: uuid }),
   z.object({ action: z.literal('pie-throw'), bidderNumber: z.number().int(), code: z.enum(['pie_small', 'pie_large']) }),
   z.object({ action: z.literal('jackpot-draw'), sessionId: uuid, reason: z.string().max(200).optional() }),
+  z.object({ action: z.literal('commercial-play'), key: z.string().max(60), itemId: uuid.optional() }),
+  z.object({ action: z.literal('commercial-stop') }),
 ])
 
 /** Host console actions. Hosts and administrators only — volunteers can't reach these. */
@@ -63,6 +67,22 @@ export const POST = route(async (req) => {
       return { ok: true }
     case 'jackpot-draw':
       return await drawJackpot(b.sessionId, admin.id, b.reason)
+    case 'commercial-play': {
+      const clip = commercialByKey(b.key)
+      if (!clip) throw new AppError('NOT_FOUND', 'That commercial isn’t in the list.', 404)
+      await tx(async (c) => {
+        await c.query('update events set commercial_key = $2, commercial_item_id = $3, commercial_started_at = now() where id = $1', [ev.id, clip.key, b.itemId ?? null])
+        await audit({ eventId: ev.id, actorType: 'admin', actorId: admin.id, action: 'host.commercial', details: { key: clip.key, itemId: b.itemId ?? null } }, c)
+        await notify(c, { t: 'game' })
+      })
+      return { ok: true }
+    }
+    case 'commercial-stop':
+      await tx(async (c) => {
+        await c.query('update events set commercial_started_at = null where id = $1', [ev.id])
+        await notify(c, { t: 'game' })
+      })
+      return { ok: true }
   }
 })
 

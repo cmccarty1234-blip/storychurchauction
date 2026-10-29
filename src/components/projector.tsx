@@ -135,6 +135,7 @@ export function Projector({ qr, joinUrl }: { qr: string; joinUrl: string }) {
         </div>
       ) : null}
       <Ticker state={state} reduced={reduced} />
+      {state.commercial && !state.event.emergency && new Date(state.commercial.endsAt).getTime() > t ? <CommercialBreak key={state.commercial.startedAt} c={state.commercial} now={t} muted={muted} reduced={reduced} joinUrl={joinUrl} /> : null}
       {overlay ? <Overlay a={overlay} state={state} /> : null}
       {!online ? <div className="fixed left-4 top-4 rounded bg-amber-500 px-3 py-1 text-sm font-bold text-black">Reconnecting…</div> : null}
       <div className="fixed bottom-14 right-3 z-50 flex gap-2 opacity-30 transition hover:opacity-100 focus-within:opacity-100">
@@ -528,6 +529,55 @@ function Confetti() {
       {bits.map((b, i) => (
         <span key={i} className={`absolute top-0 block ${b.gold ? 'bg-brand-yellow' : 'bg-white'}`} style={{ left: `${b.left}%`, width: b.size, height: b.size * 1.6, animation: `sc-fall ${b.dur}s linear ${b.delay}s infinite` }} />
       ))}
+    </div>
+  )
+}
+
+// ───────────────────────── commercial break (host-triggered takeover) ─────────────────────────
+function CommercialBreak({ c, now, muted, reduced, joinUrl }: { c: NonNullable<GameState['commercial']>; now: number; muted: boolean; reduced: boolean; joinUrl: string }) {
+  // The video's sound setting is fixed when the break starts (changing the src mid-video would restart it).
+  const [startMuted] = useState(muted)
+  const total = new Date(c.endsAt).getTime() - new Date(c.startedAt).getTime()
+  const leftMs = Math.max(0, new Date(c.endsAt).getTime() - now)
+  const src = `https://www.youtube-nocookie.com/embed/${c.youtubeId}?autoplay=1&mute=${startMuted ? 1 : 0}&controls=0&rel=0&modestbranding=1&playsinline=1&iv_load_policy=3&disablekb=1`
+  const item = c.item
+  const anim = (cls: string) => (reduced ? '' : cls)
+  return (
+    <div className="fixed inset-0 z-30 flex flex-col items-center overflow-hidden bg-black text-white" role="region" aria-label="Commercial break">
+      <div className={`absolute inset-0 ${anim('sc-stripes')}`} aria-hidden />
+      <div className="relative z-10 flex w-full items-center justify-between px-[calc(var(--u)*3)] pt-[2vh]">
+        <p className="flex items-center gap-[calc(var(--u)*1)] font-heading text-[length:calc(var(--u)*3)] tracking-widest text-brand-yellow">
+          <span className={`inline-block size-[calc(var(--u)*1.4)] rounded-full bg-red-600 ${anim('sc-blink')}`} />COMMERCIAL BREAK
+        </p>
+        <p className="tnum text-[length:calc(var(--u)*2)] font-bold text-white/70">Back to the auction in :{String(Math.ceil(leftMs / 1000)).padStart(2, '0')}</p>
+      </div>
+      <div className="relative z-10 flex min-h-0 flex-1 flex-col items-center justify-center">
+        <div className={`rounded-[calc(var(--u)*2)] border-[calc(var(--u)*1)] border-neutral-700 bg-neutral-900 p-[calc(var(--u)*0.8)] shadow-[0_0_80px_rgba(245,197,24,0.35)] ${anim('sc-tv-on')}`}>
+          <div className="relative aspect-video h-[52vh] overflow-hidden rounded-[calc(var(--u)*1)] bg-black">
+            <iframe key={c.startedAt} src={src} title={c.title} allow="autoplay; encrypted-media" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen className="size-full border-0" />
+            <div className="pointer-events-none absolute inset-0 opacity-30" style={{ backgroundImage: 'repeating-linear-gradient(0deg, rgba(0,0,0,0.55) 0 2px, transparent 2px 4px)' }} aria-hidden />
+            <div className="pointer-events-none absolute inset-0 shadow-[inset_0_0_120px_rgba(0,0,0,0.65)]" aria-hidden />
+          </div>
+        </div>
+        <p className="mt-[1.5vh] text-[length:calc(var(--u)*2)] font-semibold italic text-white/70">{c.tagline}</p>
+      </div>
+      {item ? (
+        <div className={`relative z-10 mb-[3vh] flex w-[92%] items-center gap-[calc(var(--u)*2.5)] rounded-2xl bg-brand-yellow p-[calc(var(--u)*1.2)] text-ink shadow-2xl ${anim('sc-rise')}`}>
+          {item.imagePath ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={img(item.imagePath)!} alt="" className="h-[11vh] w-[calc(var(--u)*13)] shrink-0 rounded-xl object-cover" />
+          ) : null}
+          <div className="min-w-0 flex-1">
+            <p className="text-[length:calc(var(--u)*1.5)] font-black tracking-[0.2em]">WHILE YOU WATCH — BID ON ITEM #{item.number}</p>
+            <p className="line-clamp-2 font-heading text-[length:calc(var(--u)*2.8)] leading-tight">{item.title}</p>
+          </div>
+          <div className="shrink-0 text-right">
+            <p className="tnum font-heading text-[length:calc(var(--u)*4)] leading-none">{item.currentBidCents ? formatCents(item.currentBidCents) : 'Open!'}</p>
+            <p className="text-[length:calc(var(--u)*1.5)] font-bold">Bid from your phone: {joinUrl.replace(/^https?:\/\//, '')}</p>
+          </div>
+        </div>
+      ) : <div className="mb-[3vh]" />}
+      <div className="absolute bottom-0 left-0 z-10 h-[1vh] bg-brand-yellow" style={{ width: `${total > 0 ? (leftMs / total) * 100 : 0}%` }} />
     </div>
   )
 }
