@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import Image from 'next/image'
 import { Flame, Maximize2, Volume2, VolumeX, Zap } from 'lucide-react'
+import { GRACE_MS } from '@/lib/commercials'
 import { formatCents } from '@/lib/money'
 import { liveClock, mmss, secsUntil, useGameState, useTicker } from '@/lib/game-client'
 import type { GameState, StageItem } from '@/lib/game-state'
@@ -152,7 +153,7 @@ export function Projector({ qr, joinUrl }: { qr: string; joinUrl: string }) {
         </div>
       ) : null}
       <Ticker state={state} reduced={reduced} />
-      {state.commercial && !state.event.emergency && new Date(state.commercial.endsAt).getTime() > t ? <CommercialBreak key={state.commercial.startedAt} c={state.commercial} now={t} muted={muted} onSound={() => setMuted(false)} reduced={reduced} joinUrl={joinUrl} /> : null}
+      {state.commercial && !state.event.emergency && new Date(state.commercial.endsAt).getTime() + GRACE_MS > t ? <CommercialBreak key={state.commercial.startedAt} c={state.commercial} now={t} muted={muted} onSound={() => setMuted(false)} reduced={reduced} joinUrl={joinUrl} /> : null}
       {overlay ? <Overlay a={overlay} state={state} /> : null}
       {!online ? <div className="fixed left-4 top-4 rounded bg-amber-500 px-3 py-1 text-sm font-bold text-black">Reconnecting…</div> : null}
       <div className="fixed bottom-14 right-3 z-50 flex gap-2 opacity-30 transition hover:opacity-100 focus-within:opacity-100">
@@ -563,9 +564,22 @@ function CommercialBreak({ c, now, muted, onSound, reduced, joinUrl }: { c: NonN
   useEffect(() => {
     frame.current?.contentWindow?.postMessage(JSON.stringify({ event: 'command', func: muted ? 'mute' : 'unMute', args: [] }), '*')
   }, [muted])
+  // The break ends the moment the video itself finishes (YouTube posts its state to the page), however long it took to load.
+  const [ended, setEnded] = useState(false)
+  useEffect(() => {
+    const onMsg = (e: MessageEvent) => {
+      if (e.source !== frame.current?.contentWindow || typeof e.data !== 'string') return
+      try {
+        const m = JSON.parse(e.data)
+        if ((m.event === 'onStateChange' && m.info === 0) || (m.event === 'infoDelivery' && m.info?.playerState === 0)) setEnded(true)
+      } catch {}
+    }
+    window.addEventListener('message', onMsg)
+    return () => window.removeEventListener('message', onMsg)
+  }, [])
   const total = new Date(c.endsAt).getTime() - new Date(c.startedAt).getTime()
   const leftMs = Math.max(0, new Date(c.endsAt).getTime() - now)
-  const src = `https://www.youtube-nocookie.com/embed/${c.youtubeId}?autoplay=1&mute=${startMuted ? 1 : 0}&controls=0&rel=0&modestbranding=1&playsinline=1&iv_load_policy=3&disablekb=1&fs=0&cc_load_policy=0&enablejsapi=1`
+  const src = `https://www.youtube-nocookie.com/embed/${c.youtubeId}?autoplay=1&mute=${startMuted ? 1 : 0}&controls=0&rel=0&modestbranding=1&playsinline=1&iv_load_policy=3&disablekb=1&fs=0&cc_load_policy=0&enablejsapi=1&origin=${encodeURIComponent(new URL(joinUrl).origin)}`
   const item = c.item
   const anim = (cls: string) => (reduced ? '' : cls)
   // A QR straight to this item's page (/i/<number>), made in the browser so it follows whatever item is being promoted.
@@ -580,6 +594,7 @@ function CommercialBreak({ c, now, muted, onSound, reduced, joinUrl }: { c: NonN
       .catch(() => {})
     return () => { alive = false }
   }, [itemNumber, joinUrl])
+  if (ended) return null
   return (
     <div className="fixed inset-0 z-30 flex flex-col items-center overflow-hidden bg-black text-white" role="region" aria-label="Commercial break">
       <div className={`absolute inset-0 ${anim('sc-stripes')}`} aria-hidden />
@@ -595,7 +610,7 @@ function CommercialBreak({ c, now, muted, onSound, reduced, joinUrl }: { c: NonN
       <div className="relative z-10 flex min-h-0 flex-1 flex-col items-center justify-center">
         <div className={`rounded-[calc(var(--u)*2)] border-[calc(var(--u)*1)] border-neutral-700 bg-neutral-900 p-[calc(var(--u)*0.8)] shadow-[0_0_80px_rgba(245,197,24,0.35)] ${anim('sc-tv-on')}`}>
           <div className="relative aspect-video h-[52vh] overflow-hidden rounded-[calc(var(--u)*1)] bg-black">
-            <iframe ref={frame} key={c.startedAt} src={src} title={c.title} allow="autoplay; encrypted-media" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen tabIndex={-1} className="pointer-events-none size-full scale-[1.12] border-0" />
+            <iframe ref={frame} key={c.startedAt} src={src} onLoad={() => frame.current?.contentWindow?.postMessage(JSON.stringify({ event: 'listening', id: 1, channel: 'widget' }), '*')} title={c.title} allow="autoplay; encrypted-media" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen tabIndex={-1} className="pointer-events-none size-full scale-[1.12] border-0" />
             <div className="pointer-events-none absolute inset-0 opacity-30" style={{ backgroundImage: 'repeating-linear-gradient(0deg, rgba(0,0,0,0.55) 0 2px, transparent 2px 4px)' }} aria-hidden />
             <div className="pointer-events-none absolute inset-0 shadow-[inset_0_0_120px_rgba(0,0,0,0.65)]" aria-hidden />
           </div>

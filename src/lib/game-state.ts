@@ -8,7 +8,7 @@ import { advanceDue } from './lifecycle'
 import { activeSession, advanceRooms, battleScore } from './rooms'
 import { minNextBid } from './bidding'
 import { pieLine, pieSummary, type PieSummary } from './pies'
-import { commercialByKey } from './commercials'
+import { commercialByKey, GRACE_MS } from './commercials'
 import { advanceCommercialStart } from './commercial-start'
 
 export type StageItem = {
@@ -182,7 +182,8 @@ export async function gameState(eventId: string): Promise<GameState> {
       : []
     if (c && clip) {
       const endsAt = new Date(c.commercial_started_at.getTime() + clip.seconds * 1000)
-      if (endsAt.getTime() > ev.now.getTime()) {
+      // Still reported for a short grace period past the video's length, so a slow-loading video can finish playing.
+      if (endsAt.getTime() + GRACE_MS > ev.now.getTime()) {
         commercial = {
           key: clip.key,
           title: clip.title,

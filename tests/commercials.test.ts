@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { query } from '@/lib/db'
 import { gameState } from '@/lib/game-state'
-import { COMMERCIALS } from '@/lib/commercials'
+import { COMMERCIALS, GRACE_MS } from '@/lib/commercials'
 import { advanceCommercialStart, startItemWithCommercial } from '@/lib/commercial-start'
 import { makeEvent, makeItem, resetDb } from './helpers'
 
@@ -26,7 +26,11 @@ describe('commercial breaks', () => {
     expect(s.item).toMatchObject({ id: it.id, number: 4, title: 'Date Night Dinner' })
     expect(new Date(s.endsAt).getTime() - new Date(s.startedAt).getTime()).toBe(clip.seconds * 1000)
 
-    await query(`update events set commercial_started_at = now() - interval '${clip.seconds + 5} seconds' where id = $1`, [ev.id])
+    // just past the video's length it is still reported (a slow-loading video may still be finishing)...
+    await query(`update events set commercial_started_at = now() - interval '${clip.seconds + 2} seconds' where id = $1`, [ev.id])
+    expect((await gameState(ev.id)).commercial).not.toBeNull()
+    // ...and after the grace period it is gone.
+    await query(`update events set commercial_started_at = now() - interval '${clip.seconds + GRACE_MS / 1000 + 2} seconds' where id = $1`, [ev.id])
     expect((await gameState(ev.id)).commercial).toBeNull()
   })
 
