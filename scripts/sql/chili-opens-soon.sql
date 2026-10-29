@@ -1,9 +1,9 @@
 -- Adds the six chili entries as silent items that are VISIBLE but not open for bidding ("Opens soon").
--- $20 start, $10 raises (edit the numbers if you like). Safe to run twice: a chili that already exists is skipped.
+-- $1 start, $1 raises. Safe to run twice: a chili that already exists is skipped.
 insert into auction_items (event_id, item_number, kind, title, description, donor_name, starting_bid_cents, increment_cents, status)
 select e.id,
        (select coalesce(max(item_number), 0) from auction_items where event_id = e.id and kind = 'silent') + row_number() over (order by v.ord),
-       'silent', v.title, 'A chili entry for the night.', v.donor, 2000, 1000, 'upcoming'
+       'silent', v.title, 'A chili entry for the night.', v.donor, 100, 100, 'upcoming'
   from (select id from events order by created_at desc limit 1) e
  cross join (values
    (1, 'Dee''s Sweet and Swaggy Chili', 'Dee'),

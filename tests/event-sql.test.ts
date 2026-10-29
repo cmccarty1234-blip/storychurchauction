@@ -56,6 +56,8 @@ describe('chili SQL', () => {
     const rows = await query<{ item_number: number; title: string; status: string }>(`select item_number, title, status from auction_items where title ilike '%chili%' or title ilike '%pozole%' order by item_number`)
     expect(rows.map((r) => r.item_number)).toEqual([59, 60, 61, 62, 63, 64])
     expect(new Set(rows.map((r) => r.status))).toEqual(new Set(['upcoming']))
+    const bids = await query<{ starting_bid_cents: number; increment_cents: number }>(`select starting_bid_cents, increment_cents from auction_items where title ilike '%chili%' or title ilike '%pozole%'`)
+    expect(bids.every((b) => b.starting_bid_cents === 100 && b.increment_cents === 100)).toBe(true)
     await pool().query(chiliSql)
     expect((await one<{ n: number }>(`select count(*)::int n from auction_items where title ilike '%chili%' or title ilike '%pozole%'`))!.n).toBe(6)
   })
