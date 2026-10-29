@@ -104,6 +104,19 @@ export async function getPayment(paymentId: string): Promise<SquarePayment> {
   return { status: r.payment?.status ?? 'UNKNOWN', amountCents: r.payment?.amount_money?.amount ?? 0, currency: r.payment?.amount_money?.currency ?? '', receipt: r.payment?.receipt_number ?? null }
 }
 
+/**
+ * Tells Square's hosted checkout to show the business LOGO in the header (instead of the plain business name) and to use our
+ * yellow button. The logo itself is the one uploaded in the Square dashboard — this only changes how checkout displays it.
+ */
+export async function applyCheckoutBranding() {
+  const loc = process.env.SQUARE_LOCATION_ID
+  const r = await sq<{ location_settings?: { branding?: Record<string, string> } }>(`/v2/online-checkout/location-settings/${encodeURIComponent(loc ?? '')}`, {
+    method: 'PUT',
+    body: { location_settings: { location_id: loc, branding: { header_type: 'FRAMED_LOGO', button_color: '#f5c518', button_shape: 'ROUNDED' } } },
+  })
+  return r.location_settings?.branding ?? {}
+}
+
 /** Square signs every webhook: base64(HMAC-SHA256(signatureKey, notificationUrl + rawBody)). */
 export function verifyWebhook(rawBody: string, signature: string | null, url = webhookUrl(), key = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY): boolean {
   if (!signature || !key) return false

@@ -174,6 +174,7 @@ export function GameSettingsForm({ s, squareReady }: { s: GameSettings; squareRe
         <label className="text-xs font-semibold">Smallest reopen allowed (s){n('minReopenSeconds')}</label>
         <label className="text-xs font-semibold">Fundraising goal $ (blank = no bar){n('goal')}</label>
       </div>
+      {squareReady ? <BrandingButton /> : null}
       <Button
         className="mt-4 h-11"
         disabled={busy}
@@ -193,6 +194,17 @@ export function GameSettingsForm({ s, squareReady }: { s: GameSettings; squareRe
       </Button>
       <Msg m={msg} />
     </section>
+  )
+}
+
+function BrandingButton() {
+  const { busy, msg, run } = useAction()
+  return (
+    <div className="mt-3 rounded-xl border p-3">
+      <p className="text-sm font-semibold">Square checkout page: show the church logo (instead of the plain name) with a yellow Pay button.</p>
+      <Button variant="outline" className="mt-2 h-11" disabled={busy} onClick={() => run(() => post('/api/admin/square-branding', {}), 'Done. Open a new payment page to see it.')}>Apply logo &amp; yellow button to Square checkout</Button>
+      <Msg m={msg} />
+    </div>
   )
 }
 

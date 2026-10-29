@@ -108,6 +108,21 @@ describe('starting an online payment', () => {
   })
 })
 
+describe('checkout branding', () => {
+  it('asks Square to show the logo header and the yellow button for our location only', async () => {
+    const { applyCheckoutBranding } = await import('@/lib/square')
+    vi.stubGlobal('fetch', vi.fn(async (url: string, init?: RequestInit) => {
+      calls.push({ url, init })
+      return new Response(JSON.stringify({ location_settings: { branding: { header_type: 'FRAMED_LOGO' } } }), { status: 200 })
+    }))
+    expect(await applyCheckoutBranding()).toEqual({ header_type: 'FRAMED_LOGO' })
+    expect(calls[0].url).toContain('/v2/online-checkout/location-settings/LOC1')
+    expect(calls[0].init!.method).toBe('PUT')
+    const body = JSON.parse(String(calls[0].init!.body))
+    expect(body.location_settings).toMatchObject({ location_id: 'LOC1', branding: { header_type: 'FRAMED_LOGO', button_color: '#f5c518' } })
+  })
+})
+
 describe('webhook signature', () => {
   it('accepts only a message signed with our key for our URL', () => {
     const body = JSON.stringify({ hello: 'world' })
