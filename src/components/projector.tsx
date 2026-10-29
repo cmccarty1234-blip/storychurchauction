@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import Image from 'next/image'
-import { Maximize2, Volume2, VolumeX, Zap } from 'lucide-react'
+import { Flame, Maximize2, Volume2, VolumeX, Zap } from 'lucide-react'
 import { formatCents } from '@/lib/money'
 import { liveClock, mmss, secsUntil, useGameState, useTicker } from '@/lib/game-client'
 import type { GameState, StageItem } from '@/lib/game-state'
@@ -91,6 +91,18 @@ export function Projector({ qr, joinUrl }: { qr: string; joinUrl: string }) {
     if (s <= 5 && s > 0 && s !== lastBeep.current) {
       lastBeep.current = s
       beep(520 + (5 - s) * 60, 90)
+    }
+  })
+
+  // A little "ka-ching" whenever the bid on the item on the block goes up (not when a screen first loads).
+  const lastBid = useRef<{ id: string | null; cents: number | null }>({ id: null, cents: null })
+  useEffect(() => {
+    const st = state?.stage
+    const prev = lastBid.current
+    lastBid.current = { id: st?.id ?? null, cents: st?.currentBidCents ?? null }
+    if (st && prev.id === st.id && st.currentBidCents != null && st.currentBidCents !== prev.cents) {
+      beep(1318, 90)
+      setTimeout(() => beep(1760, 170), 90)
     }
   })
 
@@ -194,13 +206,14 @@ function Shell({ children, reduced }: { children: React.ReactNode; reduced: bool
 }
 const Center = ({ children }: { children: React.ReactNode }) => <div className="flex flex-1 flex-col items-center justify-center px-[calc(var(--u)*4)] text-center">{children}</div>
 
-function Countdown({ secs, warn, big = false, frozen = false, label }: { secs: number; warn: number; big?: boolean; frozen?: boolean; label?: string }) {
+function Countdown({ secs, warn, big = false, frozen = false, label, callClass }: { secs: number; warn: number; big?: boolean; frozen?: boolean; label?: string; callClass?: string }) {
   const danger = !frozen && secs <= 5
   const hot = !frozen && secs <= warn
   return (
     <div className={`text-center ${hot && !frozen ? 'sc-glow' : ''} rounded-3xl border-4 px-[calc(var(--u)*2)] py-[1vh] ${danger ? 'border-red-500 bg-red-600/20' : hot ? 'border-brand-yellow bg-brand-yellow/10' : 'border-white/30'}`}>
-      <div className={`tnum font-heading leading-none ${big ? 'text-[length:calc(var(--u)*9)]' : 'text-[length:calc(var(--u)*7)]'} ${danger ? 'text-red-400' : hot ? 'text-brand-yellow' : 'text-white'}`}>{mmss(secs)}</div>
-      {label ? <div className="mt-1 text-[length:calc(var(--u)*1.6)] font-bold tracking-[0.25em] text-white/70">{label}</div> : null}
+      <div className={`tnum font-heading leading-none ${big ? 'text-[length:calc(var(--u)*8)]' : 'text-[length:calc(var(--u)*7)]'} ${danger ? 'text-red-400' : hot ? 'text-brand-yellow' : 'text-white'}`}>{mmss(secs)}</div>
+      {label && callClass ? <div key={label} className={`sc-pop mt-1 font-heading text-[length:calc(var(--u)*3.6)] leading-none tracking-wide ${callClass}`}>{label}</div> : null}
+      {label && !callClass ? <div className="mt-1 text-[length:calc(var(--u)*1.6)] font-bold tracking-[0.25em] text-white/70">{label}</div> : null}
     </div>
   )
 }
@@ -211,7 +224,14 @@ function LiveView({ state, item, now }: { state: GameState; item: StageItem; now
   const reopened = item.status === 'reopened'
   const clock = liveClock(item, now, emergency)
   const warn = state.event.warningSeconds
-  const bids = state.recentBids.filter((b) => b.itemNumber === item.number).slice(0, 5)
+  const itemBids = state.recentBids.filter((b) => b.itemNumber === item.number)
+  // The screen does the auctioneer's job: calls at 10 / 5 / 2 seconds, a flash on every new bid, and a banner when bids pile up.
+  const live = !clock?.frozen && (item.status === 'open' || item.status === 'reopened')
+  const secs = clock?.secs ?? 0
+  const call = live && secs > 0 && secs <= 10 ? (secs <= 2 ? { t: 'FINAL CALL!', c: 'text-red-400' } : secs <= 5 ? { t: 'GOING TWICE…', c: 'text-orange-400' } : { t: 'GOING ONCE…', c: 'text-brand-yellow' }) : null
+  const age = (b: { at: string }) => now - new Date(b.at).getTime()
+  const jump = itemBids[0] && itemBids[1] && age(itemBids[0]) < 2500 ? itemBids[0].amountCents - itemBids[1].amountCents : null
+  const war = itemBids.filter((b) => age(b) < 20000).length >= 3
   return (
     <div className="grid min-h-0 flex-1 grid-cols-[46%_54%] gap-[calc(var(--u)*2)] p-[calc(var(--u)*2.5)]">
       <div className="relative overflow-hidden rounded-3xl border-4 border-brand-yellow bg-charcoal">
@@ -226,25 +246,22 @@ function LiveView({ state, item, now }: { state: GameState; item: StageItem; now
       <div className="flex min-h-0 flex-col justify-between">
         <div>
           <Logo className="mb-[1vh] h-[3.6vh] opacity-80" />
-          <h1 className="font-heading text-[length:calc(var(--u)*4.4)] leading-[1.02]">{item.title}</h1>
+          <h1 className="line-clamp-2 font-heading text-[length:calc(var(--u)*3.6)] leading-[1.02]">{item.title}</h1>
           {reopened ? <p className="sc-pop mt-2 inline-block rounded-full bg-brand-yellow px-4 py-1 text-[length:calc(var(--u)*2)] font-bold text-ink">{item.timerPhase === 'challenge' ? 'CHALLENGE — everyone can respond!' : 'RESURRECTED — this auction is back!'}</p> : null}
         </div>
         <div className="space-y-[1.2vh]">
           <div>
             <p className="text-[length:calc(var(--u)*1.6)] font-bold tracking-[0.25em] text-white/60">CURRENT BID</p>
-            <p className="tnum font-heading text-[length:calc(var(--u)*9)] leading-none text-brand-yellow">{item.currentBidCents != null ? formatCents(item.currentBidCents) : 'OPEN'}</p>
+            <p key={item.currentBidCents ?? 'open'} className="tnum sc-pop font-heading text-[length:calc(var(--u)*8)] leading-none text-brand-yellow">
+              {item.currentBidCents != null ? formatCents(item.currentBidCents) : 'OPEN'}
+              {jump && jump > 0 ? <span className="sc-pop ml-[calc(var(--u)*2)] align-middle text-[length:calc(var(--u)*4)] text-green-400">+{formatCents(jump)}</span> : null}
+            </p>
             <p className="mt-1 text-[length:calc(var(--u)*2.6)] font-bold">{item.leaderNumber ? <>Bidder <span className="text-brand-yellow">#{item.leaderNumber}</span> leads</> : 'Be the first to bid!'}</p>
             <p className="text-[length:calc(var(--u)*1.9)] text-white/70">Next bid: <b className="text-white">{formatCents(item.minNextCents)}</b></p>
           </div>
-          {clock ? <Countdown secs={clock.secs} warn={warn} big frozen={clock.frozen} label={clock.label} /> : null}
+          {clock ? <Countdown secs={clock.secs} warn={warn} big frozen={clock.frozen} label={call ? call.t : clock.label} callClass={call?.c} /> : null}
         </div>
-        <div className="space-y-[0.6vh]">
-          {bids.map((b, i) => (
-            <p key={b.at + i} className="sc-slide text-[length:calc(var(--u)*1.9)] text-white/80">
-              <span className="font-bold text-brand-yellow">#{b.bidderNumber}</span> bid <b className="text-white">{formatCents(b.amountCents)}</b>
-            </p>
-          ))}
-        </div>
+        {war ? <p className="sc-pop flex shrink-0 items-center gap-[calc(var(--u)*1)] font-heading text-[length:calc(var(--u)*3)] leading-none text-red-400"><Flame className="size-[1.1em]" />BIDDING WAR!</p> : null}
       </div>
     </div>
   )
