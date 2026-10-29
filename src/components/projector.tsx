@@ -551,17 +551,29 @@ function CommercialBreak({ c, now, muted, onSound, reduced, joinUrl }: { c: NonN
   const src = `https://www.youtube-nocookie.com/embed/${c.youtubeId}?autoplay=1&mute=${startMuted ? 1 : 0}&controls=0&rel=0&modestbranding=1&playsinline=1&iv_load_policy=3&disablekb=1&fs=0&cc_load_policy=0&enablejsapi=1`
   const item = c.item
   const anim = (cls: string) => (reduced ? '' : cls)
+  // A QR straight to this item's page (/i/<number>), made in the browser so it follows whatever item is being promoted.
+  const [itemQr, setItemQr] = useState<string | null>(null)
+  const itemNumber = item?.number
+  useEffect(() => {
+    if (itemNumber == null) return
+    let alive = true
+    import('qrcode')
+      .then((m) => m.default.toDataURL(`${new URL(joinUrl).origin}/i/${itemNumber}`, { errorCorrectionLevel: 'M', margin: 1, width: 400, color: { dark: '#101010', light: '#ffffff' } }))
+      .then((url) => { if (alive) setItemQr(url) })
+      .catch(() => {})
+    return () => { alive = false }
+  }, [itemNumber, joinUrl])
   return (
     <div className="fixed inset-0 z-30 flex flex-col items-center overflow-hidden bg-black text-white" role="region" aria-label="Commercial break">
       <div className={`absolute inset-0 ${anim('sc-stripes')}`} aria-hidden />
       <div className="relative z-10 flex w-full items-center justify-between px-[calc(var(--u)*3)] pt-[2vh]">
-        <p className="flex items-center gap-[calc(var(--u)*1)] font-heading text-[length:calc(var(--u)*3)] tracking-widest text-brand-yellow">
+        <p className="flex items-center gap-[calc(var(--u)*1)] whitespace-nowrap font-heading text-[length:calc(var(--u)*3)] tracking-widest text-brand-yellow">
           <span className={`inline-block size-[calc(var(--u)*1.4)] rounded-full bg-red-600 ${anim('sc-blink')}`} />COMMERCIAL BREAK
         </p>
         {muted ? (
-          <button onClick={onSound} className={`rounded-full bg-brand-yellow px-[calc(var(--u)*2)] py-[0.8vh] text-[length:calc(var(--u)*2)] font-black text-ink ${anim('sc-blink')}`}><VolumeX className="mr-2 inline size-[1.1em]" />Click here for sound</button>
+          <button onClick={onSound} className={`whitespace-nowrap rounded-full bg-brand-yellow px-[calc(var(--u)*2)] py-[0.8vh] text-[length:calc(var(--u)*1.8)] font-black text-ink ${anim('sc-blink')}`}><VolumeX className="mr-2 inline size-[1.1em]" />Click here for sound</button>
         ) : null}
-        <p className="tnum text-[length:calc(var(--u)*2)] font-bold text-white/70">Back to the auction in :{String(Math.ceil(leftMs / 1000)).padStart(2, '0')}</p>
+        <p className="tnum whitespace-nowrap text-[length:calc(var(--u)*2)] font-bold text-white/70">Back to the auction in :{String(Math.ceil(leftMs / 1000)).padStart(2, '0')}</p>
       </div>
       <div className="relative z-10 flex min-h-0 flex-1 flex-col items-center justify-center">
         <div className={`rounded-[calc(var(--u)*2)] border-[calc(var(--u)*1)] border-neutral-700 bg-neutral-900 p-[calc(var(--u)*0.8)] shadow-[0_0_80px_rgba(245,197,24,0.35)] ${anim('sc-tv-on')}`}>
@@ -585,8 +597,12 @@ function CommercialBreak({ c, now, muted, onSound, reduced, joinUrl }: { c: NonN
           </div>
           <div className="shrink-0 text-right">
             <p className="tnum font-heading text-[length:calc(var(--u)*4)] leading-none">{item.currentBidCents ? formatCents(item.currentBidCents) : item.kind === 'live' ? 'LIVE!' : 'Open!'}</p>
-            <p className="text-[length:calc(var(--u)*1.5)] font-bold">{item.kind === 'live' ? 'Bid from your phone when it goes live' : `Bid from your phone: ${joinUrl.replace(/^https?:\/\//, '')}`}</p>
+            <p className="text-[length:calc(var(--u)*1.5)] font-bold">{item.kind === 'live' ? 'Scan to see it — bid when it goes live' : 'Scan to bid on your phone'}</p>
           </div>
+          {itemQr ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={itemQr} alt={`QR code for item ${item.number}`} className="aspect-square h-[13vh] shrink-0 rounded-xl bg-white p-[0.5vh]" />
+          ) : null}
         </div>
       ) : <div className="mb-[3vh]" />}
       <div className="absolute bottom-0 left-0 z-10 h-[1vh] bg-brand-yellow" style={{ width: `${total > 0 ? (leftMs / total) * 100 : 0}%` }} />
