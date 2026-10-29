@@ -533,32 +533,62 @@ function Confetti() {
 }
 
 // ───────────────────────── activity ticker ─────────────────────────
+type TickItem = { tag: string; tone: 'bid' | 'news' | 'tip' | 'pie'; text: string; amount?: string; ago?: string }
+const TONE: Record<TickItem['tone'], string> = {
+  bid: 'bg-brand-yellow text-black',
+  news: 'bg-white text-black',
+  tip: 'bg-sky-400 text-black',
+  pie: 'bg-pink-500 text-white',
+}
+
 function Ticker({ state, reduced }: { state: GameState; reduced: boolean }) {
-  // Only verified events: announcements and accepted bids from the database.
-  const close = state.event.silentCloseAt && new Date(state.event.silentCloseAt).getTime() > new Date(state.serverNow).getTime() ? clockTime(state.event.silentCloseAt, state.event.timezone) : null
-  const tips = [
-    ...(state.pies.enabled ? [`PIE BRANDON IN THE FACE! Sign up at the Bid Desk — small ${formatCents(state.pies.smallPriceCents)}, LARGE ${formatCents(state.pies.largePriceCents)}`] : []),
-    'POWER-UPS! Buy one at the Bid Desk to reopen, extend or end an auction.',
-    ...(close ? [`The silent auction closes at ${close} — get your final bids in!`] : []),
-    'No phone? Ask any volunteer — they can place your bid for you.',
-    'Checkout opens after the silent auction closes: cash, check or card.',
+  // Only verified events: announcements and accepted bids from the database. Tips are fixed reminders.
+  const now = new Date(state.serverNow).getTime()
+  const close = state.event.silentCloseAt && new Date(state.event.silentCloseAt).getTime() > now ? clockTime(state.event.silentCloseAt, state.event.timezone) : null
+  const ago = (iso: string) => {
+    const s = Math.max(0, Math.round((now - new Date(iso).getTime()) / 1000))
+    return s < 60 ? 'just now' : s < 3600 ? `${Math.floor(s / 60)}m ago` : `${Math.floor(s / 3600)}h ago`
+  }
+  const bids: TickItem[] = state.recentBids.slice(0, 8).map((b) => ({ tag: 'NEW BID', tone: 'bid', text: `Bidder #${b.bidderNumber} on #${b.itemNumber} ${b.title}`, amount: formatCents(b.amountCents), ago: ago(b.at) }))
+  const news: TickItem[] = state.announcements
+    .filter((a) => !a.kind.startsWith('item.provisional'))
+    .slice(0, 6)
+    .map((a) => ({ tag: a.kind.startsWith('powerup') ? 'POWER-UP' : a.kind.startsWith('pie') ? 'PIE' : 'NEWS', tone: a.kind.startsWith('pie') ? 'pie' : 'news', text: a.headline, ago: ago(a.at) }))
+  const tips: TickItem[] = [
+    ...(state.pies.enabled ? [{ tag: 'PIE BRANDON', tone: 'pie' as const, text: 'Sign up at the Bid Desk — small', amount: `${formatCents(state.pies.smallPriceCents)}, LARGE ${formatCents(state.pies.largePriceCents)}` }] : []),
+    { tag: 'POWER-UPS', tone: 'tip', text: 'Buy one at the Bid Desk to reopen, extend or end an auction.' },
+    ...(close ? [{ tag: 'SILENT CLOSES', tone: 'tip' as const, text: 'Final bids in before', amount: close }] : []),
+    { tag: 'NO PHONE?', tone: 'tip', text: 'Ask any volunteer — they can place your bid for you.' },
+    { tag: 'CHECKOUT', tone: 'tip', text: 'Opens after the silent auction closes: cash, check or card.' },
   ]
-  const lines = [
-    ...tips,
-    ...state.announcements.filter((a) => !a.kind.startsWith('item.provisional')).slice(0, 8).map((a) => a.headline),
-    ...state.recentBids.slice(0, 6).map((b) => `Bidder #${b.bidderNumber} bid ${formatCents(b.amountCents)} on ${b.title}`),
-  ]
-  const text = lines.length ? lines : ['Welcome to the StoryChurch auction — YOUR STORY MATTERS.']
-  const run = [...text, ...text]
+  // Round-robin so fresh bids and news are never stuck behind the reminders.
+  const items: TickItem[] = []
+  for (let i = 0; items.length < bids.length + news.length + tips.length; i++) {
+    for (const list of [bids, news, tips]) if (list[i]) items.push(list[i])
+  }
+  const lines = items.length ? items : [{ tag: 'WELCOME', tone: 'news' as const, text: 'to the StoryChurch auction — YOUR STORY MATTERS.' }]
+  const run = [...lines, ...lines]
+  const chars = lines.reduce((n, l) => n + l.tag.length + l.text.length + (l.amount?.length ?? 0) + 12, 0)
+  const row = (l: TickItem, i: number) => (
+    <span key={i} className="flex items-center gap-[calc(var(--u)*1)] text-[length:calc(var(--u)*2.3)] text-white">
+      <span className={`rounded-full px-[calc(var(--u)*1)] py-[0.2vh] text-[length:calc(var(--u)*1.5)] font-black tracking-wider ${TONE[l.tone]}`}>{l.tag}</span>
+      <span className="font-medium">{l.text}</span>
+      {l.amount && <span className="font-black text-brand-yellow">{l.amount}</span>}
+      {l.ago && <span className="text-[length:calc(var(--u)*1.5)] text-white/50">{l.ago}</span>}
+    </span>
+  )
   return (
-    <div className="h-[6.5vh] shrink-0 overflow-hidden border-t-2 border-brand-yellow bg-black">
+    <div className="relative flex h-[8vh] shrink-0 items-center overflow-hidden border-t-4 border-brand-yellow bg-gradient-to-b from-neutral-900 to-black">
+      <div className="relative z-10 flex h-full shrink-0 items-center gap-[calc(var(--u)*0.8)] bg-brand-yellow px-[calc(var(--u)*2)] text-[length:calc(var(--u)*2.2)] font-black tracking-widest text-black shadow-[8px_0_16px_rgba(0,0,0,0.6)]">
+        <span className="h-[calc(var(--u)*1.2)] w-[calc(var(--u)*1.2)] animate-pulse rounded-full bg-red-600" />LIVE
+      </div>
       {reduced ? (
-        <p className="truncate px-[calc(var(--u)*2)] py-[1.2vh] text-[length:calc(var(--u)*2)] text-white/90">{text[0]}</p>
+        <div className="min-w-0 flex-1 truncate px-[calc(var(--u)*2)]">{row(lines[0], 0)}</div>
       ) : (
-        <div className="flex w-max items-center gap-[calc(var(--u)*4)] whitespace-nowrap py-[1.2vh] pl-[calc(var(--u)*2)]" style={{ animation: `sc-marquee ${Math.max(30, run.length * 5)}s linear infinite` }}>
-          {run.map((l, i) => (
-            <span key={i} className="text-[length:calc(var(--u)*2)] text-white/90"><span className="mr-[calc(var(--u)*1.5)] text-brand-yellow">●</span>{l}</span>
-          ))}
+        <div className="min-w-0 flex-1 overflow-hidden">
+          <div className="flex w-max items-center gap-[calc(var(--u)*5)] whitespace-nowrap pl-[calc(var(--u)*3)]" style={{ animation: `sc-marquee ${Math.max(40, Math.round(chars * 0.2))}s linear infinite` }}>
+            {run.map(row)}
+          </div>
         </div>
       )}
     </div>
