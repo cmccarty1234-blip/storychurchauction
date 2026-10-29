@@ -62,6 +62,14 @@ export async function getOrder(orderId: string): Promise<SquareOrder> {
   }
 }
 
+export type SquarePayment = { status: string; amountCents: number; currency: string; receipt: string | null }
+
+/** The payment itself (its status is the real answer — an order can still read OPEN while its payment is COMPLETED). */
+export async function getPayment(paymentId: string): Promise<SquarePayment> {
+  const r = await sq<{ payment?: { status: string; amount_money?: { amount: number; currency: string }; receipt_number?: string } }>(`/v2/payments/${encodeURIComponent(paymentId)}`)
+  return { status: r.payment?.status ?? 'UNKNOWN', amountCents: r.payment?.amount_money?.amount ?? 0, currency: r.payment?.amount_money?.currency ?? '', receipt: r.payment?.receipt_number ?? null }
+}
+
 /** Square signs every webhook: base64(HMAC-SHA256(signatureKey, notificationUrl + rawBody)). */
 export function verifyWebhook(rawBody: string, signature: string | null, url = webhookUrl(), key = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY): boolean {
   if (!signature || !key) return false

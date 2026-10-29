@@ -10,7 +10,7 @@ import { expectError, key, makeAdmin, makeBidders, makeEvent, makeItem, resetDb 
 let ev: { id: string }
 let admin: { id: string }
 const calls: { url: string; init?: RequestInit }[] = []
-let orderState = { state: 'OPEN', payment_id: 'pay_1', amount: 10000 }
+let orderState = { state: 'OPEN', payment_id: 'pay_1', amount: 10000, paymentStatus: 'APPROVED' }
 
 beforeEach(async () => {
   await resetDb()
@@ -22,13 +22,14 @@ beforeEach(async () => {
   process.env.SQUARE_ENV = 'sandbox'
   await query('update events set online_payments = true where id = $1', [ev.id])
   calls.length = 0
-  orderState = { state: 'OPEN', payment_id: 'pay_1', amount: 10000 }
+  orderState = { state: 'OPEN', payment_id: 'pay_1', amount: 10000, paymentStatus: 'APPROVED' }
   vi.stubGlobal(
     'fetch',
     vi.fn(async (url: string, init?: RequestInit) => {
       calls.push({ url, init })
       if (url.includes('/v2/online-checkout/payment-links')) return new Response(JSON.stringify({ payment_link: { id: 'pl1', url: 'https://square.test/pay/1', order_id: 'ord1' } }), { status: 200 })
-      if (url.includes('/v2/orders/')) return new Response(JSON.stringify({ order: { state: orderState.state, tenders: orderState.state === 'COMPLETED' ? [{ payment_id: orderState.payment_id, amount_money: { amount: orderState.amount, currency: 'USD' } }] : [] } }), { status: 200 })
+      if (url.includes('/v2/orders/')) return new Response(JSON.stringify({ order: { state: orderState.state, tenders: orderState.paymentStatus !== 'NONE' ? [{ payment_id: orderState.payment_id, amount_money: { amount: orderState.amount, currency: 'USD' } }] : [] } }), { status: 200 })
+      if (url.includes('/v2/payments/')) return new Response(JSON.stringify({ payment: { status: orderState.paymentStatus, amount_money: { amount: orderState.amount, currency: 'USD' }, receipt_number: 'RCPT1' } }), { status: 200 })
       return new Response('{}', { status: 404 })
     }),
   )
@@ -140,9 +141,12 @@ describe('reconciliation (slow or missing webhook)', () => {
   it('picks up a completed order when the guest returns, without any webhook', async () => {
     const b = await winner()
     await startOnlinePayment(b.id)
-    expect(await reconcileBidder(b.id)).toBe(0) // still open at Square
+    orderState.paymentStatus = 'NONE'
+    expect(await reconcileBidder(b.id)).toBe(0) // nothing paid at Square yet
+    orderState.paymentStatus = 'APPROVED'
+    expect(await reconcileBidder(b.id)).toBe(0) // authorised but not completed: not credited
     expect(await balance(b.id)).toBe(10000)
-    orderState = { state: 'COMPLETED', payment_id: 'pay_9', amount: 10000 }
+    orderState = { state: 'OPEN', payment_id: 'pay_9', amount: 10000, paymentStatus: 'COMPLETED' } // note: the order itself still reads OPEN
     expect(await reconcileBidder(b.id)).toBe(1)
     expect(await balance(b.id)).toBe(0)
     expect(await reconcileBidder(b.id)).toBe(0) // and never twice

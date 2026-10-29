@@ -13,7 +13,7 @@ import { notify } from './realtime'
 import { formatCents } from './money'
 import { appUrl } from './appurl'
 import { totals, wonItems } from './checkout'
-import { createPaymentLink, getOrder, squareReady } from './square'
+import { createPaymentLink, getOrder, getPayment, squareReady } from './square'
 
 export async function onlinePaymentsAvailable(eventId: string) {
   const e = await one<{ online_payments: boolean }>('select online_payments from events where id = $1', [eventId])
@@ -110,8 +110,10 @@ export async function reconcileBidder(bidderId: string) {
   for (const o of open) {
     try {
       const order = await getOrder(o.square_order_id)
-      if (order.state === 'COMPLETED' && order.paymentId && order.paidCents > 0) {
-        const r = await applyCompleted({ orderId: o.square_order_id, paymentId: order.paymentId, amountCents: order.paidCents })
+      if (!order.paymentId) continue // nothing paid yet
+      const pay = await getPayment(order.paymentId) // trust the payment's own status, not the order's
+      if (pay.status === 'COMPLETED' && pay.currency === 'USD' && pay.amountCents > 0) {
+        const r = await applyCompleted({ orderId: o.square_order_id, paymentId: order.paymentId, amountCents: pay.amountCents, receipt: pay.receipt })
         if ('applied' in r) n++
       }
     } catch {
