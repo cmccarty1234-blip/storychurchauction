@@ -539,7 +539,7 @@ function CommercialBreak({ c, now, muted, reduced, joinUrl }: { c: NonNullable<G
   const [startMuted] = useState(muted)
   const total = new Date(c.endsAt).getTime() - new Date(c.startedAt).getTime()
   const leftMs = Math.max(0, new Date(c.endsAt).getTime() - now)
-  const src = `https://www.youtube-nocookie.com/embed/${c.youtubeId}?autoplay=1&mute=${startMuted ? 1 : 0}&controls=0&rel=0&modestbranding=1&playsinline=1&iv_load_policy=3&disablekb=1`
+  const src = `https://www.youtube-nocookie.com/embed/${c.youtubeId}?autoplay=1&mute=${startMuted ? 1 : 0}&controls=0&rel=0&modestbranding=1&playsinline=1&iv_load_policy=3&disablekb=1&fs=0&cc_load_policy=0`
   const item = c.item
   const anim = (cls: string) => (reduced ? '' : cls)
   return (
@@ -554,7 +554,7 @@ function CommercialBreak({ c, now, muted, reduced, joinUrl }: { c: NonNullable<G
       <div className="relative z-10 flex min-h-0 flex-1 flex-col items-center justify-center">
         <div className={`rounded-[calc(var(--u)*2)] border-[calc(var(--u)*1)] border-neutral-700 bg-neutral-900 p-[calc(var(--u)*0.8)] shadow-[0_0_80px_rgba(245,197,24,0.35)] ${anim('sc-tv-on')}`}>
           <div className="relative aspect-video h-[52vh] overflow-hidden rounded-[calc(var(--u)*1)] bg-black">
-            <iframe key={c.startedAt} src={src} title={c.title} allow="autoplay; encrypted-media" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen className="size-full border-0" />
+            <iframe key={c.startedAt} src={src} title={c.title} allow="autoplay; encrypted-media" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen tabIndex={-1} className="pointer-events-none size-full scale-[1.12] border-0" />
             <div className="pointer-events-none absolute inset-0 opacity-30" style={{ backgroundImage: 'repeating-linear-gradient(0deg, rgba(0,0,0,0.55) 0 2px, transparent 2px 4px)' }} aria-hidden />
             <div className="pointer-events-none absolute inset-0 shadow-[inset_0_0_120px_rgba(0,0,0,0.65)]" aria-hidden />
           </div>
