@@ -14,6 +14,7 @@ export default async function HomePage() {
   const ev = await getEvent()
   const [bidder, live, items] = await Promise.all([getBidder(), currentLiveItem(ev.id), listItems(ev.id)])
   const silent = items.filter((i) => i.kind === 'silent')
+  const liveCount = items.filter((i) => i.kind === 'live').length
   const closes = ev.silent_close_at
   const silentClosed = closes != null && closes.getTime() <= nowMs()
   const eventDay = ev.event_date ? new Date(`${ev.event_date}T12:00:00Z`).toLocaleDateString('en-US', { timeZone: 'UTC', weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }) : null
@@ -34,9 +35,18 @@ export default async function HomePage() {
         <p className="mt-5 max-w-xl text-lg text-charcoal sm:text-xl">
           Join StoryChurch for a community auction where every bid supports a greater purpose.
         </p>
+        {items.length > 0 ? (
+          <p className="mt-4 inline-flex flex-wrap items-baseline gap-x-2 rounded-full bg-ink px-5 py-2 text-brand-yellow" role="status">
+            <span className="tnum text-3xl font-extrabold leading-none">{items.length}</span>
+            <span className="text-base font-bold uppercase tracking-wide">items up for auction</span>
+            <span className="text-sm font-semibold text-white/80">
+              {silent.length} silent{liveCount > 0 ? ` · ${liveCount} live` : ''}
+            </span>
+          </p>
+        ) : null}
         <div className="mt-7 flex flex-col gap-3 sm:flex-row">
           <Link href="/auction" className={linkButton({ size: 'lg', variant: 'default' }, 'h-14 px-8 text-base uppercase tracking-wide')}>
-            Browse auction items <ArrowRight className="size-5" />
+            Browse all {items.length > 0 ? `${items.length} ` : ''}auction items <ArrowRight className="size-5" />
           </Link>
           <a href="#event" className={linkButton({ size: 'lg', variant: 'outline' }, 'h-14 px-8 text-base uppercase tracking-wide')}>
             View event details
