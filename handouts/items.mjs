@@ -3,7 +3,7 @@
 // Reads data/auction-import.csv (item numbers = order of the silent rows, exactly as imported) and data/images/<n>.*
 // Items whose price is still a placeholder (needs_price = YES) print a blank "Starting bid" line to fill in by hand.
 // To print from live data later, update the CSV (or ask for a database-driven version).
-import { readFileSync, readdirSync, writeFileSync, mkdirSync } from 'node:fs'
+import { readFileSync, readdirSync, writeFileSync, mkdirSync, existsSync } from 'node:fs'
 import { spawnSync } from 'node:child_process'
 import path from 'node:path'
 import QRCode from 'qrcode'
@@ -34,14 +34,27 @@ function parseCsv(text) {
 }
 
 const MODE = process.argv[2] === 'live' ? 'live' : 'silent'
-const all = parseCsv(readFileSync('data/auction-import.csv', 'utf8'))
+const ITEMS_FILE = process.env.ITEMS_FILE ?? 'data/production-items.csv' // the live-site export (or its renumbered version)
+const PROD = existsSync(ITEMS_FILE)
+const all = parseCsv(readFileSync(PROD ? ITEMS_FILE : 'data/auction-import.csv', 'utf8'))
 // Numbers come from the item_no column (the item numbers on the live site), so moving an item never renumbers the others.
-const silent = all.filter((r) => r.kind === MODE).map((r, i) => ({ ...r, n: r.item_no ? parseInt(r.item_no, 10) : (MODE === 'live' ? 102 : 1) + i })).sort((x, y) => x.n - y.n)
+// From the live-site export, hidden drafts are left off the SILENT table catalog (live items are all listed).
+const silent = all.filter((r) => r.kind === MODE && !(PROD && MODE === 'silent' && r.status === 'draft')).map((r, i) => ({ ...r, n: r.item_no ? parseInt(r.item_no, 10) : (MODE === 'live' ? 102 : 1) + i })).sort((x, y) => x.n - y.n)
 
 const imgDir = 'data/images'
 const photoFiles = new Map(readdirSync(imgDir).filter((f) => /^\d+\.(jpe?g|png|webp)$/i.test(f)).map((f) => [parseInt(f, 10), f]))
-const photo = async (n) => {
-  const f = photoFiles.get(n)
+const normT = (t) => t.toLowerCase().replace(/[^a-z0-9]/g, '')
+const credits = existsSync(path.join(imgDir, 'credits.csv')) ? parseCsv(readFileSync(path.join(imgDir, 'credits.csv'), 'utf8')) : []
+const creditNo = new Map(credits.map((c) => [normT(c.title), parseInt(c.item_number, 10)]))
+const photoFor = (it) => {
+  if (!PROD) return photoFiles.get(it.n)
+  const k = normT(it.title)
+  let no = creditNo.get(k)
+  if (no == null && k.length >= 8) for (const [ck, cn] of creditNo) if (ck.length >= 8 && (k.startsWith(ck) || ck.startsWith(k))) { no = cn; break }
+  return no != null ? photoFiles.get(no) : undefined
+}
+const photo = async (it) => {
+  const f = photoFor(it)
   if (!f) return null
   const buf = await sharp(path.join(imgDir, f)).rotate().resize({ width: 700, height: 460, fit: 'cover' }).jpeg({ quality: 78 }).toBuffer()
   return 'data:image/jpeg;base64,' + buf.toString('base64')
@@ -80,10 +93,10 @@ footer { display: flex; justify-content: space-between; font-size: 8.5pt; color:
 `
 
 const card = async (it) => {
-  const p = await photo(it.n)
+  const p = await photo(it)
   const start = usd(it.start_usd)
   const val = usd(it.value_usd)
-  const needs = it.needs_price === 'YES'
+  const needs = !PROD && it.needs_price === 'YES'
   return `<div class="card">
   <div class="ph">${p ? `<img class="p" src="${p}" alt="">` : `<div class="noimg"><img src="${logo}" alt=""></div>`}<div class="num">#${it.n}</div></div>
   <div class="body">
@@ -113,10 +126,10 @@ for (let i = 0; i < silent.length; i += PER) {
 <footer><span>${MODE === 'live' ? `Live items are called from the stage — raise your paddle or tap Live on your phone (${SITE.replace(/^https?:\/\//, '')})` : `Scan a code or visit ${SITE.replace(/^https?:\/\//, '')} to bid · Silent auction closes ${CLOSE_TIME}`}</span><span>Your story matters.</span></footer></div>`)
 }
 const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>${MODE === 'live' ? 'Live' : 'Silent'} auction items</title><style>${css}</style></head><body>${pages.join('\n')}</body></html>`
-const base = MODE === 'live' ? 'Live-Auction-Items' : 'Silent-Auction-Items'
+const base = (MODE === 'live' ? 'Live-Auction-Items' : 'Silent-Auction-Items') + (process.env.OUT_SUFFIX ?? '')
 const f = path.join(out, `${base}.html`)
 writeFileSync(f, html)
 const pdf = path.join(out, `${base}.pdf`)
 const edge = ['C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', 'C:/Program Files/Microsoft/Edge/Application/msedge.exe'].find((p) => { try { readFileSync(p, { flag: 'r' }); return true } catch { return false } })
 const r = spawnSync(edge ?? 'msedge', ['--headless=new', '--disable-gpu', '--no-pdf-header-footer', '--virtual-time-budget=20000', `--print-to-pdf=${pdf}`, 'file:///' + f.replace(/\\/g, '/')], { stdio: 'ignore' })
-console.log(`${silent.length} ${MODE} items, ${pages.length} pages, ${silent.filter((i) => photoFiles.has(i.n)).length} with photos → ${r.status === 0 ? pdf : 'PDF FAILED'}`)
+console.log(`${silent.length} ${MODE} items, ${pages.length} pages, ${silent.filter((i) => photoFor(i)).length} with photos → ${r.status === 0 ? pdf : 'PDF FAILED'}`)
