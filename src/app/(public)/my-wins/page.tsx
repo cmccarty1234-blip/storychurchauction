@@ -7,6 +7,7 @@ import { formatCents } from '@/lib/money'
 import { LiveRefresh } from '@/components/live-refresh'
 import { PayOnline } from '@/components/pay-online'
 import { onlinePaymentsAvailable, reconcileBidder } from '@/lib/online-pay'
+import { myChili } from '@/lib/chili'
 
 export const metadata = { title: 'My wins' }
 
@@ -20,6 +21,7 @@ export default async function MyWinsPage({ searchParams }: { searchParams: Promi
   const items = await wonItems(bidder.id)
   const t = totals(items)
   const status = paymentStatus(t)
+  const chili = await myChili(bidder.id)
 
   return (
     <div className="space-y-6">
@@ -28,6 +30,11 @@ export default async function MyWinsPage({ searchParams }: { searchParams: Promi
         <h1 className="text-3xl font-extrabold">My wins</h1>
         <p className="mt-1 text-muted-foreground">Bidder #{bidder.bidder_number} · {bidder.name}</p>
       </div>
+      {chili.owedCents > 0 ? (
+        <p role="status" className="rounded-xl border-2 border-ink bg-brand-yellow p-4 font-semibold">
+          Chili cook-off votes: <b className="tnum">{formatCents(chili.owedCents)}</b> — pay this at the checkout desk too. Thank you for voting!
+        </p>
+      ) : null}
       {items.length === 0 ? (
         <div className="rounded-xl border bg-card p-8 text-center">
           <p className="font-semibold">Nothing won yet.</p>

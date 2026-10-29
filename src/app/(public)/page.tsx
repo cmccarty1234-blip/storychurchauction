@@ -9,6 +9,7 @@ import { linkButton } from '@/components/ui/button'
 import { LiveRefresh } from '@/components/live-refresh'
 import { Countdown } from '@/components/countdown'
 import { PiePromo } from '@/components/pie-promo'
+import { ChiliPromo } from '@/components/chili-promo'
 
 export default async function HomePage() {
   const ev = await getEvent()
@@ -60,6 +61,8 @@ export default async function HomePage() {
           </p>
         )}
       </section>
+
+      <ChiliPromo eventId={ev.id} />
 
       <PiePromo eventId={ev.id} />
 

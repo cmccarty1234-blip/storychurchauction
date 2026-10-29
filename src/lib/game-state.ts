@@ -10,6 +10,7 @@ import { minNextBid } from './bidding'
 import { pieLine, pieSummary, type PieSummary } from './pies'
 import { commercialByKey, GRACE_MS } from './commercials'
 import { advanceCommercialStart } from './commercial-start'
+import { chiliBoard, type ChiliBoard } from './chili'
 
 export type StageItem = {
   id: string
@@ -53,8 +54,9 @@ export type GameState = {
   closingSoon: { id: string; number: number; title: string; currentBidCents: number | null; closesAt: string }[]
   recentBids: { itemNumber: number; title: string; bidderNumber: number; amountCents: number; at: string }[]
   bidsTonight: number
+  chili: ChiliBoard
   pies: PieSummary & { next: { bidderNumber: number; size: 'small' | 'large' }[] }
-  totals: { leadingCents: number; finalizedCents: number; powerupCents: number; pieCents: number; paymentsCents: number; outstandingCents: number; itemsSold: number }
+  totals: { leadingCents: number; finalizedCents: number; powerupCents: number; pieCents: number; chiliCents: number; paymentsCents: number; outstandingCents: number; itemsSold: number }
   announcements: { id: string; kind: string; headline: string; body: string | null; interrupt: boolean; at: string; itemId: string | null; payload: Record<string, unknown> }[]
   commercial: null | {
     key: string
@@ -161,6 +163,7 @@ export async function gameState(eventId: string): Promise<GameState> {
     activeSession(eventId),
   ])
 
+  const chili = await chiliBoard(eventId)
   let roomOut: GameState['room'] = null
   if (room) {
     roomOut = { id: room.id, code: room.code, endsAt: iso(room.ends_at), config: room.config }
@@ -222,8 +225,9 @@ export async function gameState(eventId: string): Promise<GameState> {
     closingSoon: closing.map((h: any) => ({ id: h.id, number: h.item_number, title: h.title, currentBidCents: h.current_bid_cents, closesAt: h.closes_at.toISOString() })),
     recentBids: bids.map((b: any) => ({ itemNumber: b.item_number, title: b.title, bidderNumber: b.bidder_number, amountCents: b.amount_cents, at: b.created_at.toISOString() })),
     bidsTonight: totals.bids,
+    chili,
     pies: { ...(await pieSummary(eventId)), next: (await pieLine(eventId)).slice(0, 4).map((p) => ({ bidderNumber: p.bidderNumber, size: p.size })) },
-    totals: { leadingCents: totals.leading, finalizedCents: totals.finalized, powerupCents: totals.powerups, pieCents: totals.pies, paymentsCents: totals.paid, outstandingCents: totals.finalized - totals.paid, itemsSold: totals.sold },
+    totals: { leadingCents: totals.leading, finalizedCents: totals.finalized, powerupCents: totals.powerups, pieCents: totals.pies, chiliCents: chili.totalCents, paymentsCents: totals.paid, outstandingCents: totals.finalized - totals.paid, itemsSold: totals.sold },
     announcements: ann.map((a: any) => ({ id: a.id, kind: a.kind, headline: a.headline, body: a.body, interrupt: a.interrupt, at: a.created_at.toISOString(), itemId: a.item_id, payload: a.payload })),
     commercial,
     room: roomOut,

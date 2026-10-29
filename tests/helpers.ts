@@ -3,7 +3,7 @@ import { createAdminUser } from '@/lib/auth-core'
 
 export async function resetDb() {
   await pool().query(`
-    truncate payment_allocations, payments, item_collections, winning_results, live_bid_voids,
+    truncate chili_votes, chili_entries, payment_allocations, payments, item_collections, winning_results, live_bid_voids,
              live_accepted_bids, live_bid_requests, silent_bids, auction_items,
              bidder_sessions, bidders, admin_sessions, admin_users, audit_logs, events restart identity cascade`)
 }

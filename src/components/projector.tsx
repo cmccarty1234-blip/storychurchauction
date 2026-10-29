@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import Image from 'next/image'
-import { Flame, Maximize2, Volume2, VolumeX, Zap } from 'lucide-react'
+import { Crown, Flame, Maximize2, Volume2, VolumeX, Zap } from 'lucide-react'
 import { GRACE_MS } from '@/lib/commercials'
 import { formatCents } from '@/lib/money'
 import { liveClock, mmss, secsUntil, useGameState, useTicker } from '@/lib/game-client'
@@ -31,7 +31,7 @@ function useBeeper(muted: boolean) {
   }
 }
 
-export function Projector({ qr, joinUrl }: { qr: string; joinUrl: string }) {
+export function Projector({ qr, chiliQr, joinUrl }: { qr: string; chiliQr?: string; joinUrl: string }) {
   const { state, online, now } = useGameState(1000)
   useTicker(100)
   const [reduced, setReduced] = useState(false)
@@ -127,6 +127,8 @@ export function Projector({ qr, joinUrl }: { qr: string; joinUrl: string }) {
     main = <Thanks state={state} />
   } else if (state.event.displayMode === 'pie') {
     main = <PieFinale state={state} />
+  } else if (state.event.displayMode === 'chili') {
+    main = <ChiliBoardView state={state} qr={chiliQr} joinUrl={joinUrl} />
   } else if (room?.code === 'lightning') {
     main = <LightningView state={state} now={t} />
   } else if (room?.code === 'battle') {
@@ -268,6 +270,54 @@ function LiveView({ state, item, now }: { state: GameState; item: StageItem; now
   )
 }
 
+// ───────────────────────── Chili cook-off board ─────────────────────────
+function ChiliBoardView({ state, qr, joinUrl }: { state: GameState; qr?: string; joinUrl: string }) {
+  const ch = state.chili
+  const top = ch.entries[0]?.cents ?? 0
+  const closed = ch.state === 'closed'
+  const winner = closed && top > 0 ? ch.entries[0] : null
+  return (
+    <div className="flex min-h-0 flex-1 gap-[calc(var(--u)*2.5)] p-[calc(var(--u)*2.5)]">
+      <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex items-end justify-between gap-[calc(var(--u)*2)]">
+          <div>
+            <p className="whitespace-nowrap font-heading text-[length:calc(var(--u)*4.4)] leading-none text-brand-yellow">{winner ? 'WE HAVE A WINNER!' : 'CHILI COOK-OFF'}</p>
+            <p className="mt-[0.5vh] text-[length:calc(var(--u)*2.2)] font-bold text-white/80">{closed ? 'Thank you for voting!' : '$1 = 1 vote · the most dollars wins'}</p>
+          </div>
+          <div className="text-right">
+            <p className="tnum font-heading text-[length:calc(var(--u)*5)] leading-none">{formatCents(ch.totalCents)}</p>
+            <p className="text-[length:calc(var(--u)*1.6)] font-bold tracking-[0.2em] text-white/60">RAISED FOR THE CAUSE</p>
+          </div>
+        </div>
+        <ul className="mt-[2vh] flex min-h-0 flex-1 flex-col justify-around gap-[1vh]">
+          {ch.entries.map((e, i) => (
+            <li key={e.id} className={winner && i === 0 ? 'sc-glow rounded-2xl border-4 border-brand-yellow bg-brand-yellow/10 px-[calc(var(--u)*1.5)] py-[0.6vh]' : 'px-[calc(var(--u)*1.5)]'}>
+              <div className="flex items-baseline justify-between gap-[calc(var(--u)*2)]">
+                <p className="min-w-0 truncate text-[length:calc(var(--u)*2.6)] font-extrabold">
+                  {i === 0 && e.cents > 0 ? <Crown className="mr-[calc(var(--u)*1)] inline size-[1em] align-[-0.1em] text-brand-yellow" /> : null}
+                  #{e.number} {e.name}{e.cook ? <span className="font-normal text-white/60"> · {e.cook}</span> : null}
+                </p>
+                <p className="tnum shrink-0 font-heading text-[length:calc(var(--u)*3.2)] leading-none text-brand-yellow">{formatCents(e.cents)}</p>
+              </div>
+              <div className="mt-[0.4vh] h-[2vh] overflow-hidden rounded-full bg-white/15">
+                <div className="h-full rounded-full bg-brand-yellow transition-all duration-1000" style={{ width: `${top > 0 ? Math.max(1.5, (e.cents / top) * 100) : 0}%` }} />
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
+      {qr && !closed ? (
+        <div className="flex w-[calc(var(--u)*20)] shrink-0 flex-col self-center rounded-2xl bg-white p-[calc(var(--u)*1.2)] text-center text-ink">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={qr} alt="QR code to vote for a chili" className="mx-auto aspect-square w-full" />
+          <p className="mt-[0.6vh] font-heading text-[length:calc(var(--u)*2)] leading-tight">VOTE FROM YOUR PHONE</p>
+          <p className="text-[length:calc(var(--u)*1.2)] font-bold text-ink/70">{shortUrl(joinUrl.replace('/register', '/chili'))}</p>
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
 // ───────────────────────── Mode A: auction dashboard ─────────────────────────
 const hms = (secs: number) => {
   const s = Math.max(0, Math.ceil(secs))
@@ -295,7 +345,7 @@ function QrCard({ qr, joinUrl, big = false }: { qr: string; joinUrl: string; big
 function Dashboard({ state, now, qr, joinUrl }: { state: GameState; now: number; qr: string; joinUrl: string }) {
   const tt = state.totals
   // One headline number: every winning/leading bid plus Power-Up sales.
-  const committed = tt.leadingCents + tt.finalizedCents + tt.powerupCents + tt.pieCents
+  const committed = tt.leadingCents + tt.finalizedCents + tt.powerupCents + tt.pieCents + tt.chiliCents
   const goal = state.event.goalCents
   const pct = goal ? Math.min(100, (committed / goal) * 100) : 0
   const closeSecs = state.event.silentCloseAt ? secsUntil(state.event.silentCloseAt, now) : null
@@ -681,6 +731,7 @@ function Ticker({ state, reduced }: { state: GameState; reduced: boolean }) {
     .map((a) => ({ tag: a.kind.startsWith('powerup') ? 'POWER-UP' : a.kind.startsWith('pie') ? 'PIE' : 'NEWS', tone: a.kind.startsWith('pie') ? 'pie' : 'news', text: a.headline, ago: ago(a.at) }))
   const tips: TickItem[] = [
     ...(state.pies.enabled ? [{ tag: 'PIE BRANDON', tone: 'pie' as const, text: 'Sign up at the Bid Desk — small', amount: `${formatCents(state.pies.smallPriceCents)}, LARGE ${formatCents(state.pies.largePriceCents)}` }] : []),
+    ...(state.chili.state === 'open' ? [{ tag: 'CHILI', tone: 'pie' as const, text: 'Taste the chili and vote on your phone — $1 = 1 vote! Most dollars wins.' }] : []),
     { tag: 'POWER-UPS', tone: 'tip', text: 'Buy one at the Bid Desk to reopen, extend or end an auction.' },
     ...(close ? [{ tag: 'SILENT CLOSES', tone: 'tip' as const, text: 'Final bids in before', amount: close }] : []),
     { tag: 'NO PHONE?', tone: 'tip', text: 'Ask any volunteer — they can place your bid for you.' },

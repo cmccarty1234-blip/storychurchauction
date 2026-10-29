@@ -11,6 +11,7 @@ import { requireAdmin } from '@/lib/session'
 import { pieLine, pieSummary, throwPie } from '@/lib/pies'
 import { wheelbarrow } from '@/lib/wheelbarrow'
 import { commercialByKey } from '@/lib/commercials'
+import { setChiliState } from '@/lib/chili'
 import { AppError } from '@/lib/errors'
 
 const Body = z.discriminatedUnion('action', [
@@ -19,13 +20,14 @@ const Body = z.discriminatedUnion('action', [
   z.object({ action: z.literal('emergency-stop'), reason: z.string().max(200) }),
   z.object({ action: z.literal('emergency-release') }),
   z.object({ action: z.literal('announce'), headline: z.string().min(1).max(140), body: z.string().max(300).optional() }),
-  z.object({ action: z.literal('display'), mode: z.enum(['auto', 'dashboard', 'live', 'message', 'welcome', 'thanks', 'pie']), message: z.string().max(200).optional() }),
+  z.object({ action: z.literal('display'), mode: z.enum(['auto', 'dashboard', 'live', 'message', 'welcome', 'thanks', 'pie', 'chili']), message: z.string().max(200).optional() }),
   z.object({ action: z.literal('room-start'), code: z.enum(['lightning', 'jackpot', 'battle']), itemIds: z.array(uuid).optional(), prize: z.string().max(120).optional(), reward: z.string().max(120).optional(), seconds: z.number().int().optional() }),
   z.object({ action: z.literal('room-end'), sessionId: uuid }),
   z.object({ action: z.literal('pie-throw'), bidderNumber: z.number().int(), code: z.enum(['pie_small', 'pie_large']) }),
   z.object({ action: z.literal('jackpot-draw'), sessionId: uuid, reason: z.string().max(200).optional() }),
   z.object({ action: z.literal('commercial-play'), key: z.string().max(60), itemId: uuid.optional() }),
   z.object({ action: z.literal('commercial-stop') }),
+  z.object({ action: z.literal('chili-state'), state: z.enum(['off', 'open', 'closed']) }),
 ])
 
 /** Host console actions. Hosts and administrators only — volunteers can't reach these. */
@@ -79,6 +81,9 @@ export const POST = route(async (req) => {
       })
       return { ok: true }
     }
+    case 'chili-state':
+      await setChiliState(ev.id, b.state, admin.id)
+      return { ok: true }
     case 'commercial-stop':
       await tx(async (c) => {
         await c.query('update events set commercial_started_at = null where id = $1', [ev.id])

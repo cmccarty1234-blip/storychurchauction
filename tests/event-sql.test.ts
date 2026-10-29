@@ -5,7 +5,6 @@ import { placeSilentBid } from '@/lib/bidding'
 import { key, makeBidders, makeEvent, makeItem, resetDb } from './helpers'
 
 const eyeSql = readFileSync('scripts/sql/eye-exams-2x2.sql', 'utf8')
-const chiliSql = readFileSync('scripts/sql/chili-opens-soon.sql', 'utf8')
 
 let ev: { id: string }
 beforeEach(async () => {
@@ -46,19 +45,5 @@ describe('eye exams 2 x 2 SQL', () => {
     ev = await makeEvent()
     await makeItem(ev.id, { num: 14, title: 'Eye Exam (1 of 4)' })
     await expect(pool().query(eyeSql)).rejects.toThrow(/not all found/)
-  })
-})
-
-describe('chili SQL', () => {
-  it('adds the six entries as "opens soon", after the last silent number, and does nothing the second time', async () => {
-    await makeItem(ev.id, { num: 58, title: 'Last Silent' })
-    await pool().query(chiliSql)
-    const rows = await query<{ item_number: number; title: string; status: string }>(`select item_number, title, status from auction_items where title ilike '%chili%' or title ilike '%pozole%' order by item_number`)
-    expect(rows.map((r) => r.item_number)).toEqual([59, 60, 61, 62, 63, 64])
-    expect(new Set(rows.map((r) => r.status))).toEqual(new Set(['upcoming']))
-    const bids = await query<{ starting_bid_cents: number; increment_cents: number }>(`select starting_bid_cents, increment_cents from auction_items where title ilike '%chili%' or title ilike '%pozole%'`)
-    expect(bids.every((b) => b.starting_bid_cents === 0 && b.increment_cents === 100)).toBe(true)
-    await pool().query(chiliSql)
-    expect((await one<{ n: number }>(`select count(*)::int n from auction_items where title ilike '%chili%' or title ilike '%pozole%'`))!.n).toBe(6)
   })
 })

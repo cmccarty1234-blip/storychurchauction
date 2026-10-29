@@ -13,6 +13,8 @@ import { PaymentForm, ReleaseButton, VoidPaymentButton } from '@/components/chec
 import { LiveRefresh } from '@/components/live-refresh'
 import { buttonVariants } from '@/components/ui/button'
 import { refundNote, reconcileBidder } from '@/lib/online-pay'
+import { chiliForCheckout } from '@/lib/chili'
+import { ChiliCheckout } from '@/components/chili-checkout'
 
 export default async function CheckoutBidder({ params }: { params: Promise<{ bidderId: string }> }) {
   const { bidderId } = await params
@@ -23,7 +25,7 @@ export default async function CheckoutBidder({ params }: { params: Promise<{ bid
   if (!b) notFound()
   await reconcileBidder(b.id)
   const refunds = await query<{ refund_due_cents: number }>('select refund_due_cents from online_payments where bidder_id = $1 and refund_due_cents > 0', [b.id])
-  const [items, payments] = await Promise.all([wonItems(b.id), bidderPayments(b.id)])
+  const [items, payments, chiliRows] = await Promise.all([wonItems(b.id), bidderPayments(b.id), chiliForCheckout(b.id)])
   const t = totals(items)
   const status = paymentStatus(t)
   const released = items.filter((i) => i.collection_status === 'released').length
@@ -83,6 +85,8 @@ export default async function CheckoutBidder({ params }: { params: Promise<{ bid
           </table>
         </div>
       </section>
+
+      {chiliRows.length ? <ChiliCheckout bidderId={b.id} rows={chiliRows} /> : null}
 
       {refunds.map((r, i) => <p key={i} role="alert" className="rounded-xl border-2 border-red-700 bg-red-50 p-3 font-semibold text-red-900">{refundNote(r.refund_due_cents)}</p>)}
 

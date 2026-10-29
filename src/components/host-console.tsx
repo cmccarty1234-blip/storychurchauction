@@ -292,6 +292,21 @@ export function HostConsole({ isAdmin }: { isAdmin: boolean }) {
       </section>
 
       <section className="rounded-2xl border bg-card p-4">
+        <h2 className="mb-1 text-2xl">Chili cook-off</h2>
+        <p className="mb-3 text-sm text-muted-foreground">$1 = 1 vote; the chili with the most dollars wins. Guests vote at /chili and pay at checkout.</p>
+        <div className="flex flex-wrap gap-2">
+          {([['off', 'Hidden'], ['open', 'Open voting'], ['closed', 'Close voting']] as const).map(([s, label]) => (
+            <button key={s} className={state.chili.state === s ? gold : ghost} aria-pressed={state.chili.state === s} disabled={busy} onClick={() => show({ action: 'chili-state', state: s }, `Chili: ${label}.`)}>{label}</button>
+          ))}
+          <button className={dark} disabled={busy} onClick={() => show({ action: 'display', mode: 'chili' }, 'Projector: chili board.')}>Show the chili board</button>
+        </div>
+        <ol className="mt-3 space-y-1 text-lg">
+          {state.chili.entries.map((e, i) => <li key={e.id}><b>{i + 1}.</b> #{e.number} {e.name} — <b className="tnum">{formatCents(e.cents)}</b> ({e.voters} voter{e.voters === 1 ? '' : 's'})</li>)}
+        </ol>
+        <p className="mt-1 text-sm font-semibold">Total raised: {formatCents(state.chili.totalCents)}</p>
+      </section>
+
+      <section className="rounded-2xl border bg-card p-4">
         <h2 className="mb-1 flex items-center gap-2 text-2xl"><Tv className="size-6" /> Commercial breaks</h2>
         <p className="mb-3 text-sm text-muted-foreground">Takes over the projector with a retro TV commercial. Pick a silent item to promote underneath it, then tap Play. The projector needs internet.</p>
         {playing ? (
@@ -322,7 +337,7 @@ export function HostConsole({ isAdmin }: { isAdmin: boolean }) {
         <div className="rounded-2xl border bg-card p-4">
           <h2 className="mb-2 flex items-center gap-2 text-2xl"><Megaphone className="size-6" /> Projector</h2>
           <div className="flex flex-wrap gap-2">
-            {([['welcome', 'Welcome'], ['dashboard', 'Auction'], ['live', 'Live item'], ['pie', 'Pie finale'], ['thanks', 'Thank you'], ['auto', 'Automatic']] as const).map(([m, label]) => (
+            {([['welcome', 'Welcome'], ['dashboard', 'Auction'], ['live', 'Live item'], ['pie', 'Pie finale'], ['chili', 'Chili board'], ['thanks', 'Thank you'], ['auto', 'Automatic']] as const).map(([m, label]) => (
               <button key={m} className={state.event.displayMode === m ? gold : ghost} aria-pressed={state.event.displayMode === m} disabled={busy} onClick={() => show({ action: 'display', mode: m })}>{label}</button>
             ))}
           </div>
