@@ -9,6 +9,7 @@ export type Commercial = { key: string; title: string; youtubeId: string; second
 
 export const COMMERCIALS: Commercial[] = [
   { key: 'ihop-passport', title: 'IHOP International Passport Breakfast', youtubeId: 'iawBwfVtopA', seconds: 33, tagline: 'A word from our sponsors…', promote: 'IHOP' },
+  { key: 'chickfila-honest', title: 'If Chick-fil-A Commercials Were Honest (pt 2)', youtubeId: 'LXdxNhv4eXw', seconds: 32, tagline: 'A word from our sponsors…', promote: 'Chick-fil-A' },
   { key: 'broadmoor', title: 'The Broadmoor Hotel: Legendary. Historic. Timeless.', youtubeId: 'KLWjfvweSA4', seconds: 32, tagline: 'A word from our sponsors…', promote: 'Broadmoor Stay', autoOnStart: true },
 ]
 

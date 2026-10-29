@@ -64,6 +64,8 @@ export type GameState = {
     startedAt: string
     endsAt: string
     opensItem: boolean
+    /** Other items matching the same promo (e.g. the second Chick-fil-A package), by number. */
+    others: number[]
     item: { id: string; number: number; kind: 'silent' | 'live'; title: string; imagePath: string | null; currentBidCents: number | null } | null
   }
   room: null | {
@@ -175,6 +177,9 @@ export async function gameState(eventId: string): Promise<GameState> {
       [eventId],
     )
     const clip = commercialByKey(c?.commercial_key)
+    const others: number[] = c?.id && clip?.promote
+      ? (await query<{ item_number: number }>(`select item_number from auction_items where event_id = $1 and id <> $2 and kind = $3 and status <> 'cancelled' and title ilike $4 order by item_number`, [eventId, c.id, c.kind, `%${clip.promote}%`])).map((r) => r.item_number)
+      : []
     if (c && clip) {
       const endsAt = new Date(c.commercial_started_at.getTime() + clip.seconds * 1000)
       if (endsAt.getTime() > ev.now.getTime()) {
@@ -186,6 +191,7 @@ export async function gameState(eventId: string): Promise<GameState> {
           startedAt: c.commercial_started_at.toISOString(),
           endsAt: endsAt.toISOString(),
           opensItem: !!c.commercial_start_item_id && c.commercial_start_item_id === c.id,
+          others,
           item: c.id ? { id: c.id, number: c.item_number, kind: c.kind, title: c.title, imagePath: c.image_path, currentBidCents: c.current_bid_cents } : null,
         }
       }

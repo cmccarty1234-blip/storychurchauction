@@ -609,7 +609,7 @@ function CommercialBreak({ c, now, muted, onSound, reduced, joinUrl }: { c: NonN
             <img src={img(item.imagePath)!} alt="" className="h-[11vh] w-[calc(var(--u)*13)] shrink-0 rounded-xl object-cover" />
           ) : null}
           <div className="min-w-0 flex-1">
-            <p className="text-[length:calc(var(--u)*1.5)] font-black tracking-[0.2em]">{c.opensItem ? 'BIDDING OPENS WHEN THIS ENDS — ITEM' : item.kind === 'live' ? 'COMING UP LIVE TONIGHT' : 'WHILE YOU WATCH — BID ON ITEM'} #{item.number}</p>
+            <p className="text-[length:calc(var(--u)*1.5)] font-black tracking-[0.2em]">{c.opensItem ? 'BIDDING OPENS WHEN THIS ENDS — ITEM' : item.kind === 'live' ? 'COMING UP LIVE TONIGHT' : 'WHILE YOU WATCH — BID ON ITEM'}{c.others.length ? 'S' : ''} {[item.number, ...c.others].map((n) => `#${n}`).join(' & ')}</p>
             <p className="line-clamp-2 font-heading text-[length:calc(var(--u)*2.8)] leading-tight">{item.title}</p>
           </div>
           <div className="shrink-0 text-right">
