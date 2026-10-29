@@ -7,6 +7,7 @@ export type Commercial = { key: string; title: string; youtubeId: string; second
 
 export const COMMERCIALS: Commercial[] = [
   { key: 'ihop-passport', title: 'IHOP International Passport Breakfast', youtubeId: 'iawBwfVtopA', seconds: 33, tagline: 'A word from our sponsors…' },
+  { key: 'broadmoor', title: 'The Broadmoor Hotel: Legendary. Historic. Timeless.', youtubeId: 'KLWjfvweSA4', seconds: 32, tagline: 'A word from our sponsors…' },
 ]
 
 export const commercialByKey = (key: string | null | undefined) => COMMERCIALS.find((c) => c.key === key) ?? null
