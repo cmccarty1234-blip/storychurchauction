@@ -258,12 +258,12 @@ const shortUrl = (u: string) => u.replace(/^https?:\/\//, '').replace(/\/+$/, ''
 
 function QrCard({ qr, joinUrl, big = false }: { qr: string; joinUrl: string; big?: boolean }) {
   return (
-    <div className="rounded-2xl bg-white p-[calc(var(--u)*1.2)] text-center text-ink">
+    <div className={`flex min-h-0 flex-col rounded-2xl bg-white p-[calc(var(--u)*1.2)] text-center text-ink ${big ? '' : 'h-full'}`}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={qr} alt="QR code to register and bid" className={`mx-auto aspect-square ${big ? 'w-[26vh]' : 'w-[18vh]'}`} />
-      <p className={`mt-[0.8vh] font-heading leading-tight ${big ? 'text-[length:calc(var(--u)*2.6)]' : 'text-[length:calc(var(--u)*1.9)]'}`}>BID FROM YOUR PHONE</p>
-      <p className={`font-bold text-ink/70 ${big ? 'text-[length:calc(var(--u)*1.7)]' : 'text-[length:calc(var(--u)*1.3)]'}`}>Scan to register &amp; bid</p>
-      <p className={`mt-[0.4vh] font-bold ${big ? 'text-[length:calc(var(--u)*1.6)]' : 'text-[length:calc(var(--u)*1.2)]'}`}>{shortUrl(joinUrl)}</p>
+      <img src={qr} alt="QR code to register and bid" className={big ? 'mx-auto aspect-square w-[26vh]' : 'mx-auto min-h-0 flex-1 object-contain'} />
+      <p className={`mt-[0.6vh] shrink-0 font-heading leading-tight ${big ? 'text-[length:calc(var(--u)*2.6)]' : 'text-[length:calc(var(--u)*1.8)]'}`}>BID FROM YOUR PHONE</p>
+      <p className={`shrink-0 font-bold text-ink/70 ${big ? 'text-[length:calc(var(--u)*1.7)]' : 'text-[length:calc(var(--u)*1.25)]'}`}>Scan to register &amp; bid</p>
+      <p className={`shrink-0 font-bold ${big ? 'text-[length:calc(var(--u)*1.6)]' : 'text-[length:calc(var(--u)*1.15)]'}`}>{shortUrl(joinUrl)}</p>
     </div>
   )
 }
@@ -280,16 +280,6 @@ function Dashboard({ state, now, qr, joinUrl }: { state: GameState; now: number;
   const chance = [...state.reopened, ...state.lastChance].slice(0, 3)
   const spots = state.hot
   const spot = spots.length ? spots[Math.floor(now / 8000) % spots.length] : null
-  const tz = state.event.timezone
-  const tips = [
-    'POWER-UPS! Buy one at the bidding desk to reopen, extend or end an auction.',
-    `PIE BRANDON IN THE FACE! Sign up at the Bid Desk all night — small $100, large $200.${state.pies.smallSold + state.pies.largeSold > 0 ? ` ${state.pies.smallSold + state.pies.largeSold} pies pledged so far!` : ''}`,
-    ...(closeSecs != null && !closed ? [`The silent auction closes at ${clockTime(state.event.silentCloseAt, tz)}. Get your final bids in!`] : []),
-    ...(state.nextLive ? [`UP NEXT LIVE: #${state.nextLive.number} ${state.nextLive.title} — opens at ${formatCents(state.nextLive.startingBidCents)}`] : []),
-    'Checkout opens after the silent auction closes. Pay by cash, check or card.',
-    'No phone? Ask any volunteer — they can place your bid for you.',
-  ]
-  const tip = tips[Math.floor(now / 10000) % tips.length]
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-[1.4vh] p-[calc(var(--u)*2)]">
       <div className="flex items-center justify-between gap-[calc(var(--u)*2)]">
@@ -371,12 +361,7 @@ function Dashboard({ state, now, qr, joinUrl }: { state: GameState; now: number;
             </Center>
           )}
         </div>
-        <div className="flex min-h-0 flex-col gap-[1.2vh]">
-          <QrCard qr={qr} joinUrl={joinUrl} />
-          <div key={tip} className="sc-slide flex flex-1 items-center rounded-2xl border border-brand-yellow/60 bg-brand-yellow/10 px-[calc(var(--u)*1.4)] py-[1vh]">
-            <p className="text-[length:calc(var(--u)*1.8)] font-bold leading-snug">{tip}</p>
-          </div>
-        </div>
+        <QrCard qr={qr} joinUrl={joinUrl} />
       </div>
     </div>
   )
@@ -550,7 +535,16 @@ function Confetti() {
 // ───────────────────────── activity ticker ─────────────────────────
 function Ticker({ state, reduced }: { state: GameState; reduced: boolean }) {
   // Only verified events: announcements and accepted bids from the database.
+  const close = state.event.silentCloseAt && new Date(state.event.silentCloseAt).getTime() > new Date(state.serverNow).getTime() ? clockTime(state.event.silentCloseAt, state.event.timezone) : null
+  const tips = [
+    ...(state.pies.enabled ? [`PIE BRANDON IN THE FACE! Sign up at the Bid Desk — small ${formatCents(state.pies.smallPriceCents)}, LARGE ${formatCents(state.pies.largePriceCents)}`] : []),
+    'POWER-UPS! Buy one at the Bid Desk to reopen, extend or end an auction.',
+    ...(close ? [`The silent auction closes at ${close} — get your final bids in!`] : []),
+    'No phone? Ask any volunteer — they can place your bid for you.',
+    'Checkout opens after the silent auction closes: cash, check or card.',
+  ]
   const lines = [
+    ...tips,
     ...state.announcements.filter((a) => !a.kind.startsWith('item.provisional')).slice(0, 8).map((a) => a.headline),
     ...state.recentBids.slice(0, 6).map((b) => `Bidder #${b.bidderNumber} bid ${formatCents(b.amountCents)} on ${b.title}`),
   ]
