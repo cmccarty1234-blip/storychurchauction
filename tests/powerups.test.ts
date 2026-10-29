@@ -201,7 +201,7 @@ describe('Resurrection', () => {
     expect(await avail(c.id, 'resurrection')).toBe(1)
   })
 
-  it('works on silent items too', async () => {
+  it('is refused on silent items (Power-Ups are for live items)', async () => {
     await query(`update events set provisional_silent = true where id = $1`, [ev.id])
     const [a, b] = await makeBidders(ev.id, 2)
     const it = await makeItem(ev.id, { num: 1 })
@@ -210,9 +210,8 @@ describe('Resurrection', () => {
     await tick(it.id)
     expect((await itemRow(it.id)).status).toBe('provisional')
     await buy(b.id, 'resurrection')
-    await use(b.id, it.id, 'resurrection')
-    await placeSilentBid({ bidderId: b.id, itemId: it.id, amountCents: 5500, expectedCurrentCents: 5000, idempotencyKey: key() })
-    expect((await itemRow(it.id)).current_bidder_id).toBe(b.id)
+    await expectError(use(b.id, it.id, 'resurrection'), 'NOT_ELIGIBLE')
+    expect(await avail(b.id, 'resurrection')).toBe(1)
   })
 })
 
@@ -298,58 +297,60 @@ describe('The Knockout', () => {
   })
 })
 
-describe('Challenge Flag', () => {
-  it('places the qualifying bid and opens a 20 s challenge together; the window deadline does not move', async () => {
+describe('Resurrection with a bid (the Challenge Flag, merged)', () => {
+  it('places the bid and reopens for 60 s together; the window deadline does not move', async () => {
     const { it, c } = await provisionalLive()
-    await buy(c.id, 'challenge_flag')
+    await buy(c.id, 'resurrection')
     const until = (await itemRow(it.id)).provisional_until
-    const r = await use(c.id, it.id, 'challenge_flag', { amountCents: 6000 })
-    expect(r.seconds).toBe(20)
+    const r = await use(c.id, it.id, 'resurrection', { amountCents: 6000 })
+    expect(r.seconds).toBe(60)
     const row = await itemRow(it.id)
     expect(row.status).toBe('reopened')
     expect(row.current_bidder_id).toBe(c.id)
     expect(row.current_bid_cents).toBe(6000)
     expect(row.provisional_until).toEqual(until)
-    expect(await avail(c.id, 'challenge_flag')).toBe(0)
+    expect(await avail(c.id, 'resurrection')).toBe(0)
   })
 
-  it('a rejected challenge bid does NOT consume the Flag', async () => {
+  it('a rejected bid does NOT consume the Resurrection', async () => {
     const { it, c, b } = await provisionalLive()
-    await buy(c.id, 'challenge_flag')
-    await expectError(use(c.id, it.id, 'challenge_flag', { amountCents: 5500 }), 'TOO_LOW')
-    await expectError(use(c.id, it.id, 'challenge_flag', {}), 'BID_REQUIRED')
-    await buy(b.id, 'challenge_flag')
-    await expectError(use(b.id, it.id, 'challenge_flag', { amountCents: 9000 }), 'ALREADY_LEADING')
-    expect(await avail(c.id, 'challenge_flag')).toBe(1)
+    await buy(c.id, 'resurrection')
+    await expectError(use(c.id, it.id, 'resurrection', { amountCents: 5500 }), 'TOO_LOW')
+    await expectError(use(c.id, it.id, 'resurrection', { amountCents: 0 }), 'BID_REQUIRED')
+    await buy(b.id, 'resurrection')
+    await expectError(use(b.id, it.id, 'resurrection', { amountCents: 9000 }), 'ALREADY_LEADING')
+    expect(await avail(c.id, 'resurrection')).toBe(1)
     expect((await itemRow(it.id)).status).toBe('provisional')
     expect(await query('select 1 from powerup_activations')).toHaveLength(0)
   })
 
-  it('is live-only, once per item, and others may respond; highest accepted bid wins', async () => {
+  it('once per item, others may respond; highest accepted bid wins', async () => {
     const { it, a, c } = await provisionalLive()
-    await buy(c.id, 'challenge_flag')
-    await buy(a.id, 'challenge_flag')
-    await use(c.id, it.id, 'challenge_flag', { amountCents: 6000 })
-    await phone(a.id, it.id, 6500) // response during the challenge
-    await age(it.id, 21)
+    await buy(c.id, 'resurrection')
+    await buy(a.id, 'resurrection')
+    await use(c.id, it.id, 'resurrection', { amountCents: 6000 })
+    await phone(a.id, it.id, 6500) // response while it is reopened
+    await age(it.id, 61)
     await tick(it.id)
     expect((await itemRow(it.id)).status).toBe('provisional')
-    await expectError(use(a.id, it.id, 'challenge_flag', { amountCents: 9000 }), 'LIMIT')
+    await expectError(use(a.id, it.id, 'resurrection', { amountCents: 9000 }), 'LIMIT')
     await age(it.id, 300)
     await tick(it.id)
     expect(await query('select bidder_id, amount_cents from winning_results')).toEqual([{ bidder_id: a.id, amount_cents: 6500 }])
-
-    const [s] = await makeBidders(ev.id, 1)
-    const silent = await makeItem(ev.id, { num: 1 })
-    await buy(s.id, 'challenge_flag')
-    await expectError(use(s.id, silent.id, 'challenge_flag', { amountCents: 9000 }), 'NOT_ELIGIBLE')
   })
 
-  it('cannot extend the original provisional deadline: a short remainder shortens the challenge', async () => {
+  it('is live-only: refused on a silent item', async () => {
+    const [s] = await makeBidders(ev.id, 1)
+    const silent = await makeItem(ev.id, { num: 1 })
+    await buy(s.id, 'resurrection')
+    await expectError(use(s.id, silent.id, 'resurrection', { amountCents: 9000 }), 'NOT_ELIGIBLE')
+  })
+
+  it('cannot extend the original provisional deadline: a short remainder shortens the reopening', async () => {
     const { it, c } = await provisionalLive()
-    await buy(c.id, 'challenge_flag')
+    await buy(c.id, 'resurrection')
     await query(`update auction_items set provisional_until = now() + interval '12 seconds' where id = $1`, [it.id])
-    const r = await use(c.id, it.id, 'challenge_flag', { amountCents: 6000 })
+    const r = await use(c.id, it.id, 'resurrection', { amountCents: 6000 })
     expect(r.seconds).toBeLessThanOrEqual(12)
   })
 })

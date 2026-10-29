@@ -71,7 +71,7 @@ describe('a whole night, simulated', () => {
     const pick = <T,>(a: T[]) => a[Math.floor(r() * a.length)]
 
     // The bidding desk sells a mix of Power-Ups.
-    const codes = ['resurrection', 'final_call', 'knockout', 'challenge_flag']
+    const codes = ['resurrection', 'final_call', 'knockout']
     for (const b of bidders) for (let k = 0; k < 2; k++) await recordPurchase({ bidderId: b.id, code: pick(codes), quantity: 1, method: pick(['cash', 'check', 'card_terminal']), adminId: admin.id, idempotencyKey: key() })
 
     const silent: { id: string }[] = []
@@ -109,12 +109,12 @@ describe('a whole night, simulated', () => {
       if (st === 'open') await setLiveRunState(l.id, 'close', admin.id, true)
       await Promise.allSettled([
         ...Array.from({ length: 6 }, () => activatePowerUp({ bidderId: pick(bidders).id, itemId: l.id, code: 'resurrection', idempotencyKey: key() })),
-        ...Array.from({ length: 6 }, () => activatePowerUp({ bidderId: pick(bidders).id, itemId: l.id, code: 'challenge_flag', amountCents: 40_000 + Math.floor(r() * 5) * 500, idempotencyKey: key() })),
+        ...Array.from({ length: 6 }, () => activatePowerUp({ bidderId: pick(bidders).id, itemId: l.id, code: 'resurrection', amountCents: 40_000 + Math.floor(r() * 5) * 500, idempotencyKey: key() })),
       ])
       await assertItemConsistent(l.id)
       // everything that can have happened is capped
       const uses = await query<any>('select powerup_code c, count(*)::int n from powerup_activations where item_id = $1 group by 1', [l.id])
-      const caps: Record<string, number> = { resurrection: 1, final_call: 2, knockout: 1, challenge_flag: 1 }
+      const caps: Record<string, number> = { resurrection: 1, final_call: 2, knockout: 1 }
       for (const u of uses) expect(u.n).toBeLessThanOrEqual(caps[u.c])
       // let any window run out
       for (let i = 0; i < 4; i++) {

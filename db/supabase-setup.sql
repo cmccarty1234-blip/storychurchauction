@@ -576,3 +576,16 @@ alter table online_payments enable row level security;
 
 insert into schema_migrations (name) values ('0006_online_payments.sql') on conflict do nothing;
 
+-- ════════════ 0007_merge_challenge_into_resurrection.sql ════════════
+-- The Challenge Flag is folded into Resurrection: one reopening per item, optionally with the guest's own bid.
+-- Resurrection is for live items only (silent items never have a last-chance window). The Flag is switched off, not deleted,
+-- so any already-recorded purchases/uses keep their history.
+update powerup_defs
+   set kinds = '{live}',
+       description = 'Bring a just-ended live auction back for 60 seconds, once per item. Add your own bid to take the lead — or reopen it and let everyone bid.'
+ where code = 'resurrection';
+
+update powerup_defs set enabled = false where code = 'challenge_flag';
+
+insert into schema_migrations (name) values ('0007_merge_challenge_into_resurrection.sql') on conflict do nothing;
+

@@ -345,12 +345,12 @@ function Dashboard({ state, now, qr, joinUrl }: { state: GameState; now: number;
                 )}
                 <div className="absolute left-0 top-0 rounded-br-2xl bg-brand-yellow px-[calc(var(--u)*1.2)] py-[0.4vh] font-heading text-[length:calc(var(--u)*2.2)] text-ink">ITEM {spot.number}</div>
               </div>
-              <div className="flex min-h-0 min-w-0 flex-col justify-center gap-[0.8vh] overflow-hidden p-[calc(var(--u)*1.6)]">
+              <div className="flex min-h-0 min-w-0 flex-col justify-center gap-[0.4vh] overflow-hidden p-[calc(var(--u)*1.2)]">
                 <p className="text-[length:calc(var(--u)*1.5)] font-bold tracking-[0.22em] text-brand-yellow">HOT RIGHT NOW</p>
-                <h2 className="font-heading text-[length:calc(var(--u)*2.7)] leading-[1.05]">{spot.title}</h2>
-                <p className="tnum font-heading text-[length:calc(var(--u)*5.2)] leading-none text-brand-yellow">{formatCents(spot.currentBidCents)}</p>
-                <p className="text-[length:calc(var(--u)*2)] font-bold">Bidder <span className="text-brand-yellow">#{spot.leaderNumber ?? '—'}</span> leads · {spot.bidCount} bids</p>
-                {spot.closesAt ? <p className="text-[length:calc(var(--u)*1.7)] text-white/70">Closes in <b className="tnum text-white">{hms(secsUntil(spot.closesAt, now))}</b></p> : null}
+                <h2 className="line-clamp-2 font-heading text-[length:calc(var(--u)*2.4)] leading-[1.05]">{spot.title}</h2>
+                <p className="tnum font-heading text-[length:calc(var(--u)*4.4)] leading-none text-brand-yellow">{formatCents(spot.currentBidCents)}</p>
+                <p className="text-[length:calc(var(--u)*1.8)] font-bold">Bidder <span className="text-brand-yellow">#{spot.leaderNumber ?? '—'}</span> leads · {spot.bidCount} {spot.bidCount === 1 ? 'bid' : 'bids'}</p>
+                {spot.closesAt ? <p className="text-[length:calc(var(--u)*1.5)] text-white/70">Closes in <b className="tnum text-white">{hms(secsUntil(spot.closesAt, now))}</b></p> : null}
               </div>
             </div>
           ) : (
@@ -578,7 +578,7 @@ function Ticker({ state, reduced }: { state: GameState; reduced: boolean }) {
     </span>
   )
   return (
-    <div className="relative flex h-[8vh] shrink-0 items-center overflow-hidden border-t-4 border-brand-yellow bg-gradient-to-b from-neutral-900 to-black">
+    <div className="relative flex h-[7vh] shrink-0 items-center overflow-hidden border-t-4 border-brand-yellow bg-gradient-to-b from-neutral-900 to-black">
       <div className="relative z-10 flex h-full shrink-0 items-center gap-[calc(var(--u)*0.8)] bg-brand-yellow px-[calc(var(--u)*2)] text-[length:calc(var(--u)*2.2)] font-black tracking-widest text-black shadow-[8px_0_16px_rgba(0,0,0,0.6)]">
         <span className="h-[calc(var(--u)*1.2)] w-[calc(var(--u)*1.2)] animate-pulse rounded-full bg-red-600" />LIVE
       </div>

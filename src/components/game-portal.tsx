@@ -73,7 +73,7 @@ export function PowerUpActions({ item, me, onChanged }: { item: Ctx; me: Me | nu
 }
 
 function Activate({ code, item, def, onDone }: { code: string; item: Ctx; def: Def; onDone: () => void }) {
-  const needsBid = code === 'challenge_flag'
+  const needsBid = code === 'challenge_flag' || code === 'resurrection'
   const needsTarget = code === 'block'
   const [amount, setAmount] = useState(needsBid && item.minNextCents ? String(item.minNextCents / 100) : '')
   const [target, setTarget] = useState('')
@@ -82,7 +82,7 @@ function Activate({ code, item, def, onDone }: { code: string; item: Ctx; def: D
   const [done, setDone] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const key = useRef(newKey())
-  const body = () => ({ itemId: item.id, code, amountCents: needsBid ? parseDollars(amount) ?? undefined : undefined, targetNumber: needsTarget ? parseInt(target, 10) || undefined : undefined })
+  const body = () => ({ itemId: item.id, code, amountCents: needsBid && amount.trim() ? parseDollars(amount) ?? 0 : undefined, targetNumber: needsTarget ? parseInt(target, 10) || undefined : undefined })
 
   async function check() {
     setBusy(true)
@@ -114,7 +114,7 @@ function Activate({ code, item, def, onDone }: { code: string; item: Ctx; def: D
       <p className="font-bold">{def.name}</p>
       <p className="text-sm text-muted-foreground">{def.description}</p>
       {needsBid ? (
-        <label className="mt-3 block text-sm font-semibold">Your challenging bid $<Input value={amount} onChange={(e) => { setAmount(e.target.value); setPlan(null) }} inputMode="decimal" className="mt-1 h-12 text-lg font-bold" /></label>
+        <label className="mt-3 block text-sm font-semibold">{code === 'resurrection' ? 'Your bid (optional — clear it to just reopen) $' : 'Your challenging bid $'}<Input value={amount} onChange={(e) => { setAmount(e.target.value); setPlan(null) }} inputMode="decimal" className="mt-1 h-12 text-lg font-bold" /></label>
       ) : null}
       {needsTarget ? (
         <label className="mt-3 block text-sm font-semibold">Paddle number to block<Input value={target} onChange={(e) => { setTarget(e.target.value); setPlan(null) }} inputMode="numeric" className="mt-1 h-12 text-lg font-bold" /></label>

@@ -194,14 +194,24 @@ async function plan(c: pg.PoolClient, item: ItemLock, def: PowerUpDef, a: Activa
       const want = def.config.seconds ?? 60
       if (remaining < ev!.min_reopen_seconds) throw new AppError('TOO_LATE', `Only ${Math.max(remaining, 0)} seconds are left in the window — too little to reopen fairly.`, 409)
       const seconds = Math.min(want, remaining)
+      // Optional challenge: a bid placed together with the reopening. If the bid is refused, the Resurrection is not used.
+      const bid = a.amountCents
+      if (bid != null) {
+        if (!Number.isInteger(bid) || bid <= 0) throw new AppError('BID_REQUIRED', 'Enter a valid bid, or leave it blank to reopen without bidding.', 422)
+        if (item.current_bidder_id === bidder.id) throw new AppError('ALREADY_LEADING', 'You already have the highest bid.', 409)
+        const minNext = minNextBid(item)
+        if (bid < minNext) throw new AppError('TOO_LOW', `Your bid must be at least ${formatCents(minNext)}.`, 422, { minNextCents: minNext })
+      }
+      const base = `Reopens this auction for ${seconds} seconds${seconds < want ? ` (the last-chance window only has ${remaining} seconds left, so that is all there is)` : ''}. Bidding resumes from ${formatCents(item.current_bid_cents)}.`
       return {
         seconds,
-        effect: `Reopens this auction for ${seconds} seconds${seconds < want ? ` (the last-chance window only has ${remaining} seconds left, so that is all there is)` : ''}. Bidding resumes from ${formatCents(item.current_bid_cents)}. Everyone can bid — it does not make you the winner.`,
+        effect: bid != null ? `${base} Places your bid of ${formatCents(bid)} too, then everyone can respond. If your bid is refused, the Resurrection is not used.` : `${base} Everyone can bid — it does not make you the winner.`,
         headline: 'RESURRECTION! THIS AUCTION IS BACK!',
         interrupt: 'resurrection',
         apply: async () => {
           await transition(c, item, 'reopened', { reason: 'Resurrection', actor: { type: 'bidder', id: bidder.id }, set: { timer_phase: 'reopen', deadline_at: new Date(now.getTime() + seconds * 1000), reopened_at: now } })
-          return { seconds }
+          if (bid != null) await appendAcceptedBid(c, item, { bidderId: bidder.id, amountCents: bid, source: 'mobile', adminId: null })
+          return bid != null ? { seconds, amountCents: bid } : { seconds }
         },
       }
     }
