@@ -580,12 +580,12 @@ function CommercialBreak({ c, now, muted, onSound, reduced, joinUrl }: { c: NonN
             <img src={img(item.imagePath)!} alt="" className="h-[11vh] w-[calc(var(--u)*13)] shrink-0 rounded-xl object-cover" />
           ) : null}
           <div className="min-w-0 flex-1">
-            <p className="text-[length:calc(var(--u)*1.5)] font-black tracking-[0.2em]">WHILE YOU WATCH — BID ON ITEM #{item.number}</p>
+            <p className="text-[length:calc(var(--u)*1.5)] font-black tracking-[0.2em]">{item.kind === 'live' ? 'COMING UP LIVE TONIGHT' : 'WHILE YOU WATCH — BID ON ITEM'} #{item.number}</p>
             <p className="line-clamp-2 font-heading text-[length:calc(var(--u)*2.8)] leading-tight">{item.title}</p>
           </div>
           <div className="shrink-0 text-right">
-            <p className="tnum font-heading text-[length:calc(var(--u)*4)] leading-none">{item.currentBidCents ? formatCents(item.currentBidCents) : 'Open!'}</p>
-            <p className="text-[length:calc(var(--u)*1.5)] font-bold">Bid from your phone: {joinUrl.replace(/^https?:\/\//, '')}</p>
+            <p className="tnum font-heading text-[length:calc(var(--u)*4)] leading-none">{item.currentBidCents ? formatCents(item.currentBidCents) : item.kind === 'live' ? 'LIVE!' : 'Open!'}</p>
+            <p className="text-[length:calc(var(--u)*1.5)] font-bold">{item.kind === 'live' ? 'Bid from your phone when it goes live' : `Bid from your phone: ${joinUrl.replace(/^https?:\/\//, '')}`}</p>
           </div>
         </div>
       ) : <div className="mb-[3vh]" />}

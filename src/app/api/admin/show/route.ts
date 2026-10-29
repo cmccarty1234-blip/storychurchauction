@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { body, route, uuid } from '@/lib/api'
-import { query, tx } from '@/lib/db'
+import { one, query, tx } from '@/lib/db'
 import { getEvent } from '@/lib/events'
 import { announce } from '@/lib/announce'
 import { audit } from '@/lib/audit'
@@ -70,9 +70,11 @@ export const POST = route(async (req) => {
     case 'commercial-play': {
       const clip = commercialByKey(b.key)
       if (!clip) throw new AppError('NOT_FOUND', 'That commercial isn’t in the list.', 404)
+      // The host's pick wins; otherwise the clip's own linked item, found by title.
+      const linked = b.itemId ?? (clip.promote ? (await one<{ id: string }>(`select id from auction_items where event_id = $1 and title ilike $2 and status <> 'cancelled' order by item_number limit 1`, [ev.id, `%${clip.promote}%`]))?.id ?? null : null)
       await tx(async (c) => {
-        await c.query('update events set commercial_key = $2, commercial_item_id = $3, commercial_started_at = now() where id = $1', [ev.id, clip.key, b.itemId ?? null])
-        await audit({ eventId: ev.id, actorType: 'admin', actorId: admin.id, action: 'host.commercial', details: { key: clip.key, itemId: b.itemId ?? null } }, c)
+        await c.query('update events set commercial_key = $2, commercial_item_id = $3, commercial_started_at = now() where id = $1', [ev.id, clip.key, linked])
+        await audit({ eventId: ev.id, actorType: 'admin', actorId: admin.id, action: 'host.commercial', details: { key: clip.key, itemId: linked } }, c)
         await notify(c, { t: 'game' })
       })
       return { ok: true }

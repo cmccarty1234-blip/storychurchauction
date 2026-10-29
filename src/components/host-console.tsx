@@ -303,7 +303,7 @@ export function HostConsole({ isAdmin }: { isAdmin: boolean }) {
             <li key={c.key} className="flex flex-wrap items-center gap-3 rounded-xl border p-3">
               <p className="min-w-0 flex-1 font-bold">{c.title} <span className="font-normal text-muted-foreground">· {c.seconds}s</span></p>
               <select aria-label={`Item to promote with ${c.title}`} className="h-14 min-w-0 max-w-full rounded-xl border bg-white px-3" value={promo[c.key] ?? ''} onChange={(e) => setPromo((p) => ({ ...p, [c.key]: e.target.value }))}>
-                <option value="">No item — just the commercial</option>
+                <option value="">{c.promote ? `Auto — promotes the “${c.promote}” item` : 'No item — just the commercial'}</option>
                 {data?.silent.map((s) => <option key={s.id} value={s.id}>Promote #{s.item_number} {s.title}</option>)}
               </select>
               <button className={gold} disabled={busy || !!state.commercial || !!state.event.emergency} onClick={() => show({ action: 'commercial-play', key: c.key, itemId: promo[c.key] || undefined }, `Playing “${c.title}”.`)}><Play className="inline size-5" /> Play</button>

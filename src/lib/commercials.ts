@@ -1,13 +1,14 @@
 /**
  * Commercial breaks the host can play on the projector. Each is a YouTube video shown full-screen in a retro TV frame,
- * with a banner promoting a silent item the host picks at play time (item numbers can change, so they aren't stored here).
+ * with a banner promoting an item. `promote` is a piece of that item's TITLE (not its number, which can change); it is looked up
+ * when the commercial is played, and the host can still pick a different item.
  * `seconds` is how long the takeover stays up — the video's length plus a moment. The projector needs internet to play it.
  */
-export type Commercial = { key: string; title: string; youtubeId: string; seconds: number; tagline: string }
+export type Commercial = { key: string; title: string; youtubeId: string; seconds: number; tagline: string; promote?: string }
 
 export const COMMERCIALS: Commercial[] = [
-  { key: 'ihop-passport', title: 'IHOP International Passport Breakfast', youtubeId: 'iawBwfVtopA', seconds: 33, tagline: 'A word from our sponsors…' },
-  { key: 'broadmoor', title: 'The Broadmoor Hotel: Legendary. Historic. Timeless.', youtubeId: 'KLWjfvweSA4', seconds: 32, tagline: 'A word from our sponsors…' },
+  { key: 'ihop-passport', title: 'IHOP International Passport Breakfast', youtubeId: 'iawBwfVtopA', seconds: 33, tagline: 'A word from our sponsors…', promote: 'IHOP' },
+  { key: 'broadmoor', title: 'The Broadmoor Hotel: Legendary. Historic. Timeless.', youtubeId: 'KLWjfvweSA4', seconds: 32, tagline: 'A word from our sponsors…', promote: 'Broadmoor Stay' },
 ]
 
 export const commercialByKey = (key: string | null | undefined) => COMMERCIALS.find((c) => c.key === key) ?? null

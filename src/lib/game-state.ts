@@ -62,7 +62,7 @@ export type GameState = {
     tagline: string
     startedAt: string
     endsAt: string
-    item: { id: string; number: number; title: string; imagePath: string | null; currentBidCents: number | null } | null
+    item: { id: string; number: number; kind: 'silent' | 'live'; title: string; imagePath: string | null; currentBidCents: number | null } | null
   }
   room: null | {
     id: string
@@ -167,7 +167,7 @@ export async function gameState(eventId: string): Promise<GameState> {
   let commercial: GameState['commercial'] = null
   try {
     const c = await one<any>(
-      `select e.commercial_key, e.commercial_started_at, i.id, i.item_number, i.title, i.image_path, i.current_bid_cents
+      `select e.commercial_key, e.commercial_started_at, i.id, i.item_number, i.kind, i.title, i.image_path, i.current_bid_cents
          from events e left join auction_items i on i.id = e.commercial_item_id where e.id = $1 and e.commercial_started_at is not null`,
       [eventId],
     )
@@ -182,7 +182,7 @@ export async function gameState(eventId: string): Promise<GameState> {
           tagline: clip.tagline,
           startedAt: c.commercial_started_at.toISOString(),
           endsAt: endsAt.toISOString(),
-          item: c.id ? { id: c.id, number: c.item_number, title: c.title, imagePath: c.image_path, currentBidCents: c.current_bid_cents } : null,
+          item: c.id ? { id: c.id, number: c.item_number, kind: c.kind, title: c.title, imagePath: c.image_path, currentBidCents: c.current_bid_cents } : null,
         }
       }
     }
