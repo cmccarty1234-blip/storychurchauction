@@ -595,6 +595,7 @@ function Overlay({ a, state, reduced }: { a: Ann; state: GameState; reduced: boo
             <span key={i} aria-hidden className="sc-ring pointer-events-none absolute left-1/2 top-[45%] block size-[40vh] -translate-x-1/2 -translate-y-1/2 rounded-full border-[calc(var(--u)*0.6)]" style={{ borderColor: fx.accent, '--delay': `${i * 0.45}s` } as React.CSSProperties} />
           ))
         : null}
+      {fx?.rays ? <div aria-hidden className="sc-rays pointer-events-none absolute left-1/2 top-[45%] size-[190vmax] opacity-40" style={{ transform: 'translate(-50%, -50%)', backgroundImage: `repeating-conic-gradient(from 0deg, ${fx.accent} 0deg 6deg, transparent 6deg 18deg)`, maskImage: 'radial-gradient(circle, black 0%, transparent 38%)', WebkitMaskImage: 'radial-gradient(circle, black 0%, transparent 38%)' }} /> : null}
       {fx?.flash && flashOn && !reduced ? <div aria-hidden className="sc-flash pointer-events-none absolute inset-0 bg-white" /> : null}
       <div className="absolute top-[3vh]"><Logo className="h-[6vh]" /></div>
       {isSold ? <Confetti /> : null}

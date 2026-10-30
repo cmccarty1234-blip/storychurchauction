@@ -17,6 +17,8 @@ export type PowerUpFx = {
   /** Background layer: glyphs drifting up, or rings expanding from the middle. */
   layer: { kind: 'up' | 'rings'; glyph?: string; count: number }
   flash: boolean
+  /** Slowly turning rays of light behind everything. */
+  rays?: boolean
   sound: Note[]
   /** How long it stays up, in ms. */
   ms: number
@@ -24,13 +26,15 @@ export type PowerUpFx = {
 
 export const POWERUP_FX: Record<string, PowerUpFx> = {
   'powerup.resurrection': {
-    icon: '👻', tag: 'POWER-UP · RESURRECTION', accent: '#4ade80', tint: 'rgba(34,197,94,0.28)', motion: 'sc-pop', shake: false,
-    layer: { kind: 'up', glyph: '✦', count: 26 }, flash: false, ms: 6500,
+    icon: '✝️', tag: 'POWER-UP · RESURRECTION', accent: '#fde68a', tint: 'rgba(250,204,21,0.3)', motion: 'sc-pop', shake: false, rays: true,
+    layer: { kind: 'up', glyph: '✦', count: 26 }, flash: false, ms: 7000,
+    // A soft choir-like swell (a C major chord building up), then bright bells on top.
     sound: [
-      { f: 130, at: 0, ms: 900, type: 'sine', to: 330, vol: 0.12 },
-      { f: 523, at: 120, ms: 320, type: 'triangle' }, { f: 659, at: 240, ms: 320, type: 'triangle' },
-      { f: 784, at: 360, ms: 320, type: 'triangle' }, { f: 1047, at: 480, ms: 700, type: 'triangle' },
-      { f: 2093, at: 640, ms: 700, type: 'sine', vol: 0.05 },
+      { f: 131, at: 0, ms: 3200, type: 'sine', vol: 0.1 }, { f: 262, at: 150, ms: 3000, type: 'triangle', vol: 0.07 },
+      { f: 330, at: 450, ms: 2800, type: 'triangle', vol: 0.07 }, { f: 392, at: 750, ms: 2600, type: 'triangle', vol: 0.07 },
+      { f: 523, at: 1050, ms: 2400, type: 'sine', vol: 0.08 },
+      { f: 1047, at: 1500, ms: 900, type: 'sine', vol: 0.1 }, { f: 1319, at: 1800, ms: 900, type: 'sine', vol: 0.1 },
+      { f: 1568, at: 2100, ms: 1400, type: 'sine', vol: 0.1 }, { f: 2093, at: 2300, ms: 1600, type: 'sine', vol: 0.05 },
     ],
   },
   'powerup.final_call': {

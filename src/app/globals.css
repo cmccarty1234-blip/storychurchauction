@@ -153,6 +153,7 @@ h3, h4 { font-weight: 700; letter-spacing: -0.005em; }
 @keyframes sc-flash { 0% { opacity: 1 } 100% { opacity: 0 } }
 @keyframes sc-bounce-in { 0% { transform: translateX(-120vw) skewX(-20deg) } 60% { transform: translateX(3vw) skewX(6deg) } 80% { transform: translateX(-1vw) } 100% { transform: translateX(0) skewX(0) } }
 @keyframes sc-swing { 0%, 100% { transform: rotate(-14deg) } 50% { transform: rotate(14deg) } }
+@keyframes sc-spin { to { transform: translate(-50%, -50%) rotate(360deg) } }
 @keyframes sc-pulse { 0%, 100% { transform: scale(1) } 50% { transform: scale(1.07) } }
 .sc-shake { animation: sc-shake 0.7s ease-out both }
 .sc-slam { animation: sc-slam 0.7s cubic-bezier(0.2, 1, 0.3, 1) both }
@@ -161,6 +162,7 @@ h3, h4 { font-weight: 700; letter-spacing: -0.005em; }
 .sc-flash { animation: sc-flash 0.5s ease-out both }
 .sc-bounce-in { animation: sc-bounce-in 0.9s cubic-bezier(0.2, 0.9, 0.3, 1) both }
 .sc-swing { animation: sc-swing 0.5s ease-in-out infinite }
+.sc-rays { animation: sc-spin 24s linear infinite }
 .sc-pulse { animation: sc-pulse 0.6s ease-in-out infinite }
 .sc-tv-on { animation: sc-tv-on 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) both }
 .sc-blink { animation: sc-blink 1s step-end infinite }
