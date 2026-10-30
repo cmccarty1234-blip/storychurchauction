@@ -239,7 +239,7 @@ html,body{height:auto} .page{height:11in;break-after:page;gap:0.1in;padding-bott
 <section class="panel"><span class="pill k">Running a live item &mdash; &ldquo;On the block&rdquo;</span>
   <ol style="margin-top:7px">
     <li>Introduce the item. Under <b>Up next</b>, tap <b>Start</b> (the top one is gold).</li>
-    <li><b>Broadmoor</b> and <b>Royal Gorge</b> play their commercial by themselves; <b>bidding opens when it ends</b> (or tap <b>Skip it &amp; open bidding</b>).</li>
+    <li><b>Every live item plays a commercial first</b> &mdash; its own clip, or a 12-second spot with its photo and opening bid. <b>Bidding opens when it ends</b> (or tap <b>Skip it &amp; open bidding</b>).</li>
     <li>The clock starts with a <b>60-second opening period</b>. After that, <b>every bid restarts a 15-second countdown</b>.</li>
     <li><b>Phone bids</b> arrive by themselves. For a <b>paddle bid</b> from the room: type the <b>paddle #</b> and the <b>amount</b>, tap <b>Enter paddle bid</b>.</li>
         <li>At zero the item goes into <b>Last Chance</b> for 5 minutes (<b>Last-chance window</b> panel). It is <b>not final</b> until the timer ends, or you tap <b>Finalize now</b> (tap twice). Then <b>Start</b> the next item.</li>
@@ -265,7 +265,7 @@ html,body{height:auto} .page{height:11in;break-after:page;gap:0.1in;padding-bott
     <li>The projector becomes a retro TV and the break lasts <b>exactly as long as the clip</b>. Then it returns by itself.</li>
     <li><b>Stop it</b> ends one early. Clips linked to a live item show <b>Skip it &amp; open bidding</b> instead.</li>
   </ol>
-  <p class="note"><b>No sound?</b> Click once anywhere on the projector page (a &ldquo;Click here for sound&rdquo; chip shows). You can&rsquo;t start a break during an Emergency stop or while another is playing. <b>Broadmoor &amp; Royal Gorge</b> start on their own when you start the live item; the <b>Chick-fil-A</b> clips and <b>IHOP</b> are yours to play.</p></section>
+  <p class="note"><b>No sound?</b> Click once anywhere on the projector page (a &ldquo;Click here for sound&rdquo; chip shows). You can&rsquo;t start a break during an Emergency stop or while another is playing. <b>Live items</b> start their commercial on their own when you tap Start (Broadmoor and Royal Gorge have clips; the rest get the 12-second spot). The <b>Chick-fil-A</b> clips and <b>IHOP</b> promote silent items &mdash; you play those.</p></section>
 <div class="two" style="gap:0.14in">
   <section class="panel"><span class="pill y">Chili cook-off</span>
     <ol style="margin-top:6px;gap:4px"><li style="font-size:10pt">Under <b>Chili cook-off</b>, tap <b>Open voting</b>. Guests vote at <b>/chili</b>: <b>$1 = 1 vote</b>.</li><li style="font-size:10pt">Tap <b>Show the chili board</b> to put the standings on the projector.</li><li style="font-size:10pt">Tap <b>Close voting</b>, then show the board. Most dollars wins.</li></ol>

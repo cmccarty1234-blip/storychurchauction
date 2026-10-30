@@ -7,14 +7,15 @@ import { one, tx } from './db'
 import { audit } from './audit'
 import { notify } from './realtime'
 import { startLiveItem } from './bidding'
-import { COMMERCIALS, commercialByKey, type Commercial } from './commercials'
+import { AppError } from './errors'
+import { COMMERCIALS, HOUSE_COMMERCIAL, commercialByKey, type Commercial } from './commercials'
 
-/** The auto-play commercial linked (by title) to this item, if any. */
+/** The commercial that plays when this item is started: its own clip (linked by title), else the house spot for any live item. */
 export async function autoCommercialFor(itemId: string): Promise<Commercial | null> {
-  const it = await one<{ title: string }>('select title from auction_items where id = $1', [itemId])
+  const it = await one<{ title: string; kind: string }>('select title, kind from auction_items where id = $1', [itemId])
   if (!it) return null
   const t = it.title.toLowerCase()
-  return COMMERCIALS.find((c) => c.autoOnStart && c.promote && t.includes(c.promote.toLowerCase())) ?? null
+  return COMMERCIALS.find((c) => c.autoOnStart && c.promote && t.includes(c.promote.toLowerCase())) ?? (it.kind === 'live' ? HOUSE_COMMERCIAL : null)
 }
 
 /** Host tapped Start. Returns whether a commercial is now playing first (otherwise the item was started straight away). */
@@ -23,15 +24,18 @@ export async function startItemWithCommercial(itemId: string, adminId: string) {
   if (clip) {
     // Only when the start would succeed anyway — otherwise let startLiveItem report the real problem (busy block, emergency…).
     const ok = await tx(async (c) => {
-      const row = await one<{ status: string; kind: string; event_id: string; busy: boolean; emergency: boolean; playing: boolean }>(
+      const row = await one<{ status: string; kind: string; event_id: string; busy: boolean; emergency: boolean; playing: boolean; pending: boolean }>(
         `select i.status, i.kind, i.event_id,
                 exists (select 1 from auction_items x where x.event_id = i.event_id and x.kind = 'live' and x.status in ('open','paused')) as busy,
                 e.emergency_stop_at is not null as emergency,
-                (e.commercial_started_at is not null and e.commercial_started_at + make_interval(secs => 120) > clock_timestamp()) as playing
+                (e.commercial_started_at is not null and e.commercial_started_at + make_interval(secs => 120) > clock_timestamp()) as playing,
+                e.commercial_start_item_id is not null as pending
            from auction_items i join events e on e.id = i.event_id where i.id = $1 for update of e`,
         [itemId],
         c,
       )
+      // Another item is already waiting out its commercial: don't let a second Start jump the queue.
+      if (row?.pending && row.playing) throw new AppError('COMMERCIAL_ACTIVE', 'An item is about to open after its commercial. Wait for it, or tap Skip it & open bidding.', 409)
       if (!row || row.status !== 'upcoming' || row.kind !== 'live' || row.busy || row.emergency || row.playing) return false
       await c.query(
         'update events set commercial_key = $2, commercial_item_id = $3, commercial_started_at = now(), commercial_start_item_id = $3, commercial_admin_id = $4 where id = $1',

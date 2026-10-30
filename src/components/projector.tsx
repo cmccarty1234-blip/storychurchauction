@@ -617,7 +617,10 @@ function CommercialBreak({ c, now, muted, onSound, reduced, joinUrl }: { c: NonN
   // The break ends the moment the video itself finishes (YouTube posts its state to the page), however long it took to load.
   const [ended, setEnded] = useState(false)
   const expectedMs = new Date(c.endsAt).getTime() - new Date(c.startedAt).getTime()
+  const isHouse = !c.youtubeId // the built-in spot has no video: it simply runs its length
+  const byClock = isHouse || c.fixed // ...and a fixed-length break ends on the clock, not when the video says it is done
   useEffect(() => {
+    if (byClock) return
     const t0 = Date.now()
     let lastSignal = t0
     let duration = 0
@@ -641,7 +644,7 @@ function CommercialBreak({ c, now, muted, onSound, reduced, joinUrl }: { c: NonN
       window.removeEventListener('message', onMsg)
       clearInterval(id)
     }
-  }, [expectedMs])
+  }, [expectedMs, byClock])
   const total = expectedMs
   const leftMs = Math.max(0, new Date(c.endsAt).getTime() - now)
   const src = `https://www.youtube-nocookie.com/embed/${c.youtubeId}?autoplay=1&mute=${startMuted ? 1 : 0}&controls=0&rel=0&modestbranding=1&playsinline=1&iv_load_policy=3&disablekb=1&fs=0&cc_load_policy=0&enablejsapi=1&origin=${encodeURIComponent(new URL(joinUrl).origin)}`
@@ -659,7 +662,7 @@ function CommercialBreak({ c, now, muted, onSound, reduced, joinUrl }: { c: NonN
       .catch(() => {})
     return () => { alive = false }
   }, [itemNumber, joinUrl])
-  if (ended) return null
+  if (ended || (byClock && now >= new Date(c.endsAt).getTime())) return null
   return (
     <div className="fixed inset-0 z-30 flex flex-col items-center overflow-hidden bg-black text-white" role="region" aria-label="Commercial break">
       <div className={`absolute inset-0 ${anim('sc-stripes')}`} aria-hidden />
@@ -667,7 +670,7 @@ function CommercialBreak({ c, now, muted, onSound, reduced, joinUrl }: { c: NonN
         <p className="flex items-center gap-[calc(var(--u)*1)] whitespace-nowrap font-heading text-[length:calc(var(--u)*3)] tracking-widest text-brand-yellow">
           <span className={`inline-block size-[calc(var(--u)*1.4)] rounded-full bg-red-600 ${anim('sc-blink')}`} />COMMERCIAL BREAK
         </p>
-        {muted ? (
+        {muted && !isHouse ? (
           <button onClick={onSound} className={`whitespace-nowrap rounded-full bg-brand-yellow px-[calc(var(--u)*2)] py-[0.8vh] text-[length:calc(var(--u)*1.8)] font-black text-ink ${anim('sc-blink')}`}><VolumeX className="mr-2 inline size-[1.1em]" />Click here for sound</button>
         ) : null}
         <p className="tnum whitespace-nowrap text-[length:calc(var(--u)*2)] font-bold text-white/70">Back to the auction in :{String(Math.ceil(leftMs / 1000)).padStart(2, '0')}</p>
@@ -675,7 +678,24 @@ function CommercialBreak({ c, now, muted, onSound, reduced, joinUrl }: { c: NonN
       <div className="relative z-10 flex min-h-0 flex-1 flex-col items-center justify-center">
         <div className={`rounded-[calc(var(--u)*2)] border-[calc(var(--u)*1)] border-neutral-700 bg-neutral-900 p-[calc(var(--u)*0.8)] shadow-[0_0_80px_rgba(245,197,24,0.35)] ${anim('sc-tv-on')}`}>
           <div className="relative aspect-video h-[52vh] overflow-hidden rounded-[calc(var(--u)*1)] bg-black">
-            <iframe ref={frame} key={c.startedAt} src={src} onLoad={() => frame.current?.contentWindow?.postMessage(JSON.stringify({ event: 'listening', id: 1, channel: 'widget' }), '*')} title={c.title} allow="autoplay; encrypted-media" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen tabIndex={-1} className="pointer-events-none size-full scale-[1.12] border-0" />
+            {isHouse ? (
+              <div className="absolute inset-0 flex items-end bg-gradient-to-br from-neutral-800 to-black">
+                {item?.imagePath ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={img(item.imagePath)!} alt="" className="absolute inset-0 size-full object-cover" />
+                ) : null}
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" aria-hidden />
+                <div className={`relative z-10 w-full p-[calc(var(--u)*2.5)] ${anim('sc-rise')}`}>
+                  <p className="text-[length:calc(var(--u)*1.8)] font-black tracking-[0.3em] text-brand-yellow">UP NEXT ON THE BLOCK</p>
+                  <p className="line-clamp-2 font-heading text-[length:calc(var(--u)*4.4)] leading-tight">{item ? item.title : c.title}</p>
+                  {item ? (
+                    <p className="mt-[0.5vh] text-[length:calc(var(--u)*2.2)] font-bold text-white/85">
+                      {item.donor ? `Donated by ${item.donor} · ` : ''}Opening bid <span className="tnum text-brand-yellow">{formatCents(item.startingBidCents)}</span>
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+            ) : <iframe ref={frame} key={c.startedAt} src={src} onLoad={() => frame.current?.contentWindow?.postMessage(JSON.stringify({ event: 'listening', id: 1, channel: 'widget' }), '*')} title={c.title} allow="autoplay; encrypted-media" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen tabIndex={-1} className="pointer-events-none size-full scale-[1.12] border-0" />}
             <div className="pointer-events-none absolute inset-0 opacity-30" style={{ backgroundImage: 'repeating-linear-gradient(0deg, rgba(0,0,0,0.55) 0 2px, transparent 2px 4px)' }} aria-hidden />
             <div className="pointer-events-none absolute inset-0 shadow-[inset_0_0_120px_rgba(0,0,0,0.65)]" aria-hidden />
           </div>
