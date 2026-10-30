@@ -227,21 +227,59 @@ const checkout = async () => `${head('Checkout', 'Volunteer guide · Checkout ta
 <p class="rule" style="font-size:10.2pt"><b>Paid twice, paid too much, or wrong item?</b> Stop and get <b>Brandon or Dee</b>. Mistakes are corrected by <b>voiding with a reason</b> &mdash; never deleted. A guest who overpaid online shows a <b>refund due</b> alert: Brandon or Dee refunds them in Square.</p>
 </div></body></html>`
 
-// ───────────────── Host run of show + emergency card ─────────────────
-const hostSheet = async () => `${head('Host run of show', 'Host guide')}
-<div><h1 style="font-size:34pt">Host run of show</h1><p class="sub">You run the room. The system runs the clocks. Open <b>${host}/admin/show</b> on your tablet or phone.</p></div>
-<div class="two">
+// ───────────────── Host guide (2 pages): run of show, the block, commercials, emergency card ─────────────────
+const hostSheet = async () => `${head('Host guide', 'Host guide · 1 of 2')}
+<style>
+html,body{height:auto} .page{height:11in;break-after:page;gap:0.1in;padding-bottom:0.3in} .page:last-of-type{break-after:auto}
+.page ol li{font-size:10.4pt;line-height:1.27} .panel{padding:0.1in 0.2in} .chk li{font-size:10.2pt;margin:3px 0} .note{font-size:9.4pt;margin-top:6px} table.t{font-size:9.8pt} .rule{font-size:10pt;padding:0.09in 0.18in} h1{font-size:28pt}
+</style>
+<div><h1>Host guide</h1><p class="sub">You run the room; the system runs the clocks. Open <b>${host}/admin/show</b> on your tablet or phone. The projector is <b>${host}/display</b>.</p></div>
 <section class="panel"><span class="pill y">Before doors</span>
-  <ul class="chk" style="margin-top:8px"><li>Projector open on <b>${host}/display</b>, full screen.</li><li>Projector set to <b>Welcome</b>.</li><li>Game mode <b>on</b>; goal and prices set.</li><li>Items shown to guests; photos checked.</li><li>Paddles, bid slips and cash boxes at their desks.</li><li>Test on a real phone: register, bid, buy a Power-Up.</li></ul></section>
-<section class="panel"><span class="pill k">Each live item</span>
-  <ol style="margin-top:8px"><li>Introduce it. Tap <b>Start</b> under <b>Up next</b>.</li><li>The clerk enters <b>paddle bids</b>. Phone bids arrive by themselves.</li><li>Hype the room as the <b>countdown</b> runs. Every bid restarts it.</li><li>At zero the item is in <b>Last Chance</b> for 5 minutes. Start the next item.</li></ol></section>
+  <ul class="chk" style="margin-top:6px;columns:2;column-gap:0.25in"><li>Projector open on <b>/display</b>, full screen, set to <b>Welcome</b>.</li><li><b>One click</b> on the projector page so videos have sound.</li><li>Game mode <b>on</b>; goal and prices set.</li><li>Items shown to guests; desks stocked.</li><li>Test on a real phone: register, bid, buy a Power-Up.</li></ul></section>
+<section class="panel"><span class="pill k">Running a live item &mdash; &ldquo;On the block&rdquo;</span>
+  <ol style="margin-top:7px">
+    <li>Introduce the item. Under <b>Up next</b>, tap <b>Start</b> (the top one is gold).</li>
+    <li><b>Broadmoor</b> and <b>Royal Gorge</b> play their commercial by themselves; <b>bidding opens when it ends</b> (or tap <b>Skip it &amp; open bidding</b>).</li>
+    <li>The clock starts with a <b>60-second opening period</b>. After that, <b>every bid restarts a 15-second countdown</b>.</li>
+    <li><b>Phone bids</b> arrive by themselves. For a <b>paddle bid</b> from the room: type the <b>paddle #</b> and the <b>amount</b>, tap <b>Enter paddle bid</b>.</li>
+        <li>At zero the item goes into <b>Last Chance</b> for 5 minutes (<b>Last-chance window</b> panel). It is <b>not final</b> until the timer ends, or you tap <b>Finalize now</b> (tap twice). Then <b>Start</b> the next item.</li>
+  </ol></section>
+<div class="two" style="gap:0.14in">
+  <section class="panel"><span class="pill y">Buttons on the block</span>
+    <table class="t" style="margin-top:5px"><tr><td class="p">Pause / Resume</td><td>Holds <b>this item&rsquo;s</b> time. <b>+15 s</b> adds time.</td></tr><tr><td class="p">End bidding</td><td>Tap twice. Starts Last Chance now.</td></tr><tr><td class="p">Emergency stop</td><td>Freezes <b>everything</b>. See below.</td></tr></table></section>
+  <section class="panel"><span class="pill y">The screen calls it for you</span>
+    <ul class="chk" style="margin-top:5px"><li><b>10 s</b> GOING ONCE &middot; <b>5 s</b> GOING TWICE &middot; <b>2 s</b> FINAL CALL</li><li>Each higher bid flashes <b>+$</b> with a <b>ka-ching</b>.</li><li><b>3+ bids in 20 s</b> shows a <b>BIDDING WAR</b> banner.</li></ul></section>
 </div>
-<section class="panel"><span class="pill y">Projector screens &mdash; tap to switch</span>
-  <table class="t" style="margin-top:6px"><tr><td class="p">Welcome</td><td>Doors open. QR to register.</td><td class="p">Live item</td><td>Forces the item view.</td></tr>
-  <tr><td class="p">Auction</td><td>Totals, closing clock, spotlight.</td><td class="p">Thank you</td><td>End of night: total raised, pickup info.</td></tr></table>
-  <p class="note"><b>Room Events</b> (Lightning Round, Battle, Jackpot) start with one tap and run themselves. The projector announces them.</p></section>
-<section class="panel" style="border:3px solid #b3261e"><span class="pill" style="background:#b3261e;color:#fff">Emergency card</span>
-  <ul class="chk" style="margin-top:8px"><li><b>Pause</b> = routine break for ONE item. Time is held, nothing is lost.</li><li><b>Emergency stop</b> = freezes ALL bidding and ALL clocks (fire alarm, fight, medical). Tap twice and say why. Everyone sees &ldquo;Please stand by.&rdquo;</li><li><b>Resume bidding</b> gives every guest back the time lost &mdash; including the silent closing time.</li><li><b>Wi-Fi trouble?</b> Phones reconnect by themselves. Don&rsquo;t re-enter a bid until it shows as missing. Paddle bids still work.</li><li><b>Wrong bid entered?</b> Use <b>Undo</b> with a reason in the Live console.</li></ul></section>
+<section class="panel"><span class="pill k">Last Chance &amp; Power-Ups</span>
+  <p style="margin-top:6px;font-size:10.2pt;line-height:1.32">Guests buy Power-Ups <b>online from 5:00 PM</b> or at the Bid Desk, and play them from <b>Live &#9889;</b> on their phone. <b>Resurrection</b> (live items only) works during Last Chance, and a Power-Up never wins by itself &mdash; they still have to out-bid.</p></section>
+<section class="panel" style="border:3px solid #b3261e"><span class="pill" style="background:#b3261e;color:#fff">Something is wrong</span>
+  <ul class="chk" style="margin-top:6px"><li><b>Emergency stop</b> freezes ALL bidding and clocks (fire alarm, fight, medical). Tap twice and say why. <b>Resume bidding</b> gives everyone back the time lost, silent closing time too.</li><li><b>Wi-Fi trouble?</b> Phones reconnect by themselves; paddle bids still work. <b>Wrong bid?</b> <b>Undo</b> with a reason in the Live console.</li></ul></section>
+</div>
+<div class="page"><div class="bar"></div>
+<header><img src="${logo}" alt="Story Church"><span class="tag">Host guide · 2 of 2</span></header>
+<div><h1 style="font-size:26pt">Commercials, chili &amp; the screen</h1></div>
+<section class="panel"><span class="pill k">Commercial breaks</span>
+  <ol style="margin-top:7px">
+    <li>On the host page, find <b>Commercial breaks</b>. The projector needs <b>internet</b>.</li>
+    <li>Pick the <b>silent item to promote</b> (it shows underneath the clip with a QR code), or leave it on <b>Auto</b> &mdash; the clips are already linked to their items. Tap <b>Play</b>.</li>
+    <li>The projector becomes a retro TV and the break lasts <b>exactly as long as the clip</b>. Then it returns by itself.</li>
+    <li><b>Stop it</b> ends one early. Clips linked to a live item show <b>Skip it &amp; open bidding</b> instead.</li>
+  </ol>
+  <p class="note"><b>No sound?</b> Click once anywhere on the projector page (a &ldquo;Click here for sound&rdquo; chip shows). You can&rsquo;t start a break during an Emergency stop or while another is playing. <b>Broadmoor &amp; Royal Gorge</b> start on their own when you start the live item; the <b>Chick-fil-A</b> clips and <b>IHOP</b> are yours to play.</p></section>
+<div class="two" style="gap:0.14in">
+  <section class="panel"><span class="pill y">Chili cook-off</span>
+    <ol style="margin-top:6px;gap:4px"><li style="font-size:10pt">Under <b>Chili cook-off</b>, tap <b>Open voting</b>. Guests vote at <b>/chili</b>: <b>$1 = 1 vote</b>.</li><li style="font-size:10pt">Tap <b>Show the chili board</b> to put the standings on the projector.</li><li style="font-size:10pt">Tap <b>Close voting</b>, then show the board. Most dollars wins.</li></ol>
+    <p class="note" style="font-size:9.2pt">Chili money is paid at checkout and counted <b>separately</b>.</p></section>
+  <section class="panel"><span class="pill y">Room Events</span>
+    <p style="margin-top:6px;font-size:10pt;line-height:1.3"><b>&#9889; Lightning Round:</b> $1 bids on every open silent item for 60 s. <b>Battle of the Room:</b> teams are dealt automatically. <b>Mystery Jackpot:</b> type the prize, tap it, then <b>Draw winner</b> (a random registered guest; <b>Redraw</b> needs a reason). <b>End it now</b> stops any of them.</p></section>
+</div>
+<section class="panel"><span class="pill k">Projector screens &mdash; tap to switch</span>
+  <table class="t" style="margin-top:5px"><tr><td class="p">Welcome</td><td>Doors open. QR to register.</td><td class="p">Chili board</td><td>Chili standings.</td></tr>
+  <tr><td class="p">Auction</td><td>Totals, closing clock, spotlight.</td><td class="p">Pie finale</td><td>Pie Brandon in the Face.</td></tr>
+  <tr><td class="p">Live item</td><td>Forces the item view.</td><td class="p">Thank you</td><td>Total raised, pickup info.</td></tr>
+  <tr><td class="p">Automatic</td><td>Hands control back to the system.</td><td class="p">Flash it / Pin</td><td>Type an announcement; <b>Flash</b> shows it briefly, <b>Pin</b> keeps it.</td></tr></table></section>
+<section class="panel"><span class="pill y">Pie Brandon in the Face (finale)</span>
+  <p style="margin-top:6px;font-size:10.2pt;line-height:1.32">Tap <b>Show the pie screen</b>. People are called up <b>in the order they signed up</b> (the top row says <b>NEXT</b>). Tap <b>Splat!</b> as each pie is thrown &mdash; it can&rsquo;t be thrown twice.</p></section>
 <div class="foot"><p><b class="u">Silent auction closes ${CLOSE_TIME}.</b>Switch to <b>Thank you</b> when checkout opens. Church phone: ${CHURCH_PHONE}.</p></div>
 </div></body></html>`
 
