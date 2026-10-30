@@ -37,6 +37,9 @@ export const COMMERCIALS: Commercial[] = [
  */
 export const HOUSE_COMMERCIAL: Commercial = { key: 'house', title: 'Up next on the block', youtubeId: '', seconds: 12, tagline: 'Brought to you by our generous neighbors…' }
 
+/** Live items that should start straight away: no clip and no house spot (matched by a piece of the title). */
+export const NO_COMMERCIAL = ['Spa Basket']
+
 /** How long past `seconds` a break may stay up while waiting for the video to report that it finished. */
 export const GRACE_MS = 45_000
 

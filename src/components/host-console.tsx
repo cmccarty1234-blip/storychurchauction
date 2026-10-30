@@ -241,6 +241,50 @@ export function HostConsole({ isAdmin }: { isAdmin: boolean }) {
         </ul>
       </section>
 
+      <section className="rounded-2xl border bg-card p-4">
+        <h2 className="mb-1 flex items-center gap-2 text-2xl"><Tv className="size-6" /> Commercial breaks</h2>
+        <p className="mb-3 text-sm text-muted-foreground">Takes over the projector with a retro TV commercial. Pick a silent item to promote underneath it, then tap Play. The projector needs internet.</p>
+        {playing ? (
+          <div className="mb-3 flex flex-wrap items-center gap-3 rounded-xl bg-brand-yellow px-4 py-3 text-ink">
+            <p className="min-w-0 flex-1 font-bold">On the projector now: {playing.title} · {mmss(secsUntil(playing.endsAt, t))} left</p>
+            <button className={dark} disabled={busy} onClick={() => show({ action: 'commercial-stop' }, playing.opensItem ? 'Skipped — bidding is open.' : 'Commercial stopped.')}>{playing.opensItem ? 'Skip it & open bidding' : 'Stop it'}</button>
+          </div>
+        ) : null}
+        <ul className="space-y-3">
+          {COMMERCIALS.map((c) => (
+            <li key={c.key} className="flex flex-wrap items-center gap-3 rounded-xl border p-3">
+              <p className="min-w-0 flex-1 font-bold">{c.title} <span className="font-normal text-muted-foreground">· {c.seconds}s</span></p>
+              <select aria-label={`Item to promote with ${c.title}`} className="h-14 min-w-0 max-w-full rounded-xl border bg-white px-3" value={promo[c.key] ?? ''} onChange={(e) => setPromo((p) => ({ ...p, [c.key]: e.target.value }))}>
+                <option value="">{c.promote ? `Auto — promotes the “${c.promote}” item` : 'No item — just the commercial'}</option>
+                {data?.silent.map((s) => <option key={s.id} value={s.id}>Promote #{s.item_number} {s.title}</option>)}
+              </select>
+              <button className={gold} disabled={busy || !!playing || !!state.event.emergency} onClick={() => show({ action: 'commercial-play', key: c.key, itemId: promo[c.key] || undefined }, `Playing “${c.title}”.`)}><Play className="inline size-5" /> Play</button>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <div className="rounded-2xl border bg-card p-4">
+          <h2 className="mb-2 text-2xl">Power-Ups just played</h2>
+          {data?.recentActs.length ? data.recentActs.map((a, i) => <p key={i} className="text-lg">{a.name} — bidder #{a.bidder_number} on item #{a.item_number}</p>) : <p className="text-muted-foreground">None yet.</p>}
+        </div>
+        <div className="rounded-2xl border bg-card p-4">
+          <h2 className="mb-2 flex items-center gap-2 text-2xl"><Megaphone className="size-6" /> Projector</h2>
+          <div className="flex flex-wrap gap-2">
+            {([['welcome', 'Welcome'], ['dashboard', 'Auction'], ['live', 'Live item'], ['pie', 'Pie finale'], ['chili', 'Chili board'], ['thanks', 'Thank you'], ['auto', 'Automatic']] as const).map(([m, label]) => (
+              <button key={m} className={state.event.displayMode === m ? gold : ghost} aria-pressed={state.event.displayMode === m} disabled={busy} onClick={() => show({ action: 'display', mode: m })}>{label}</button>
+            ))}
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <input aria-label="Announcement" placeholder="Type an announcement…" maxLength={140} className="h-14 min-w-0 flex-1 rounded-xl border px-3" value={announce} onChange={(e) => setAnnounce(e.target.value)} />
+            <button className={gold} disabled={busy || !announce.trim()} onClick={async () => { const r = await show({ action: 'announce', headline: announce.trim() }, 'Announcement sent.'); if (r.ok) setAnnounce('') }}>Flash it</button>
+            <button className={ghost} disabled={busy || !announce.trim()} onClick={() => show({ action: 'display', mode: 'message', message: announce.trim() }, 'Message pinned on the projector.')}><Plus className="inline size-5" /> Pin</button>
+          </div>
+          <p className="mt-2 text-xs text-muted-foreground">Projector address: <b>/display</b> (open it full-screen on the projector computer). {isAdmin ? '' : 'Settings are administrator-only.'}</p>
+        </div>
+      </section>
+
       {/* ── Room Events ── */}
       <section className="rounded-2xl border bg-card p-4">
         <h2 className="mb-2 text-2xl">Room Events</h2>
@@ -309,49 +353,6 @@ export function HostConsole({ isAdmin }: { isAdmin: boolean }) {
         <p className="mt-1 text-sm font-semibold">Total raised: {formatCents(state.chili.totalCents)}</p>
       </section>
 
-      <section className="rounded-2xl border bg-card p-4">
-        <h2 className="mb-1 flex items-center gap-2 text-2xl"><Tv className="size-6" /> Commercial breaks</h2>
-        <p className="mb-3 text-sm text-muted-foreground">Takes over the projector with a retro TV commercial. Pick a silent item to promote underneath it, then tap Play. The projector needs internet.</p>
-        {playing ? (
-          <div className="mb-3 flex flex-wrap items-center gap-3 rounded-xl bg-brand-yellow px-4 py-3 text-ink">
-            <p className="min-w-0 flex-1 font-bold">On the projector now: {playing.title} · {mmss(secsUntil(playing.endsAt, t))} left</p>
-            <button className={dark} disabled={busy} onClick={() => show({ action: 'commercial-stop' }, playing.opensItem ? 'Skipped — bidding is open.' : 'Commercial stopped.')}>{playing.opensItem ? 'Skip it & open bidding' : 'Stop it'}</button>
-          </div>
-        ) : null}
-        <ul className="space-y-3">
-          {COMMERCIALS.map((c) => (
-            <li key={c.key} className="flex flex-wrap items-center gap-3 rounded-xl border p-3">
-              <p className="min-w-0 flex-1 font-bold">{c.title} <span className="font-normal text-muted-foreground">· {c.seconds}s</span></p>
-              <select aria-label={`Item to promote with ${c.title}`} className="h-14 min-w-0 max-w-full rounded-xl border bg-white px-3" value={promo[c.key] ?? ''} onChange={(e) => setPromo((p) => ({ ...p, [c.key]: e.target.value }))}>
-                <option value="">{c.promote ? `Auto — promotes the “${c.promote}” item` : 'No item — just the commercial'}</option>
-                {data?.silent.map((s) => <option key={s.id} value={s.id}>Promote #{s.item_number} {s.title}</option>)}
-              </select>
-              <button className={gold} disabled={busy || !!playing || !!state.event.emergency} onClick={() => show({ action: 'commercial-play', key: c.key, itemId: promo[c.key] || undefined }, `Playing “${c.title}”.`)}><Play className="inline size-5" /> Play</button>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <div className="rounded-2xl border bg-card p-4">
-          <h2 className="mb-2 text-2xl">Power-Ups just played</h2>
-          {data?.recentActs.length ? data.recentActs.map((a, i) => <p key={i} className="text-lg">{a.name} — bidder #{a.bidder_number} on item #{a.item_number}</p>) : <p className="text-muted-foreground">None yet.</p>}
-        </div>
-        <div className="rounded-2xl border bg-card p-4">
-          <h2 className="mb-2 flex items-center gap-2 text-2xl"><Megaphone className="size-6" /> Projector</h2>
-          <div className="flex flex-wrap gap-2">
-            {([['welcome', 'Welcome'], ['dashboard', 'Auction'], ['live', 'Live item'], ['pie', 'Pie finale'], ['chili', 'Chili board'], ['thanks', 'Thank you'], ['auto', 'Automatic']] as const).map(([m, label]) => (
-              <button key={m} className={state.event.displayMode === m ? gold : ghost} aria-pressed={state.event.displayMode === m} disabled={busy} onClick={() => show({ action: 'display', mode: m })}>{label}</button>
-            ))}
-          </div>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <input aria-label="Announcement" placeholder="Type an announcement…" maxLength={140} className="h-14 min-w-0 flex-1 rounded-xl border px-3" value={announce} onChange={(e) => setAnnounce(e.target.value)} />
-            <button className={gold} disabled={busy || !announce.trim()} onClick={async () => { const r = await show({ action: 'announce', headline: announce.trim() }, 'Announcement sent.'); if (r.ok) setAnnounce('') }}>Flash it</button>
-            <button className={ghost} disabled={busy || !announce.trim()} onClick={() => show({ action: 'display', mode: 'message', message: announce.trim() }, 'Message pinned on the projector.')}><Plus className="inline size-5" /> Pin</button>
-          </div>
-          <p className="mt-2 text-xs text-muted-foreground">Projector address: <b>/display</b> (open it full-screen on the projector computer). {isAdmin ? '' : 'Settings are administrator-only.'}</p>
-        </div>
-      </section>
     </div>
   )
 }

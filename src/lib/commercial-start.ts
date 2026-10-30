@@ -8,13 +8,14 @@ import { audit } from './audit'
 import { notify } from './realtime'
 import { startLiveItem } from './bidding'
 import { AppError } from './errors'
-import { COMMERCIALS, HOUSE_COMMERCIAL, commercialByKey, type Commercial } from './commercials'
+import { COMMERCIALS, HOUSE_COMMERCIAL, NO_COMMERCIAL, commercialByKey, type Commercial } from './commercials'
 
 /** The commercial that plays when this item is started: its own clip (linked by title), else the house spot for any live item. */
 export async function autoCommercialFor(itemId: string): Promise<Commercial | null> {
   const it = await one<{ title: string; kind: string }>('select title, kind from auction_items where id = $1', [itemId])
   if (!it) return null
   const t = it.title.toLowerCase()
+  if (NO_COMMERCIAL.some((n) => t.includes(n.toLowerCase()))) return null
   return COMMERCIALS.find((c) => c.autoOnStart && c.promote && t.includes(c.promote.toLowerCase())) ?? (it.kind === 'live' ? HOUSE_COMMERCIAL : null)
 }
 

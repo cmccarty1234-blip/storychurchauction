@@ -6,7 +6,7 @@ import { minNextBid } from '@/lib/bidding'
 import { LiveRefresh } from '@/components/live-refresh'
 import { LiveConsole, type ConsoleItem, type DoneItem, type QueueItem } from '@/components/live-console'
 
-export const metadata = { title: 'Live console' }
+export const metadata = { title: 'Clerk' }
 
 export default async function LiveConsolePage() {
   const admin = await requireAdminPage()
@@ -37,8 +37,11 @@ export default async function LiveConsolePage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3">
-        <h1 className="text-3xl font-extrabold">Live auction console</h1>
-        <LiveRefresh fallbackMs={3000} showStatus />
+        <h1 className="text-3xl font-extrabold">Clerk — bids &amp; results</h1>
+        <div className="flex items-center gap-3">
+          {admin.role !== 'volunteer' ? <a href="/admin/show" className="rounded-full border px-4 py-2 text-sm font-bold hover:bg-secondary">Host console →</a> : null}
+          <LiveRefresh fallbackMs={3000} showStatus />
+        </div>
       </div>
       <LiveConsole
         active={active}

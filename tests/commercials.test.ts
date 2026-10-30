@@ -101,6 +101,14 @@ describe('commercial before a live item opens', () => {
     expect((await gameState(ev.id)).commercial).toBeNull()
   })
 
+  it('Spa Basket gets no commercial at all, not even the house spot', async () => {
+    const { admin } = await setup()
+    const spa = await makeItem(ev.id, { kind: 'live', title: 'Spa Basket', num: 114 })
+    expect(await autoCommercialFor(spa.id)).toBeNull()
+    expect(await startItemWithCommercial(spa.id, admin.id)).toEqual({ commercial: false })
+    expect(await status(spa.id)).toBe('open')
+  })
+
   it('a second Start while an item waits out its commercial is refused, and a busy block is reported', async () => {
     const { admin, it } = await setup()
     const other = await makeItem(ev.id, { kind: 'live', title: 'Plain Chairs', num: 105 })
