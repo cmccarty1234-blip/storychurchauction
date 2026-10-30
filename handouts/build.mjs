@@ -148,7 +148,7 @@ const bidDesk = async () => `${head('Bid Desk', 'Volunteer guide · Bid Desk')}
   </ol></section>
 <div class="two">
   <section class="panel"><span class="pill k">Keep it fast</span>
-    <ul class="chk" style="margin-top:8px"><li>Guests can come to the <b>Bid Desk</b>, and runners also take bids <b>on the spot</b> with their phone.</li><li>Paper slips are only a backup. A runner collects them <b>every 3 minutes</b>.</li><li>Silent bidding <b>closes at ${CLOSE_TIME}</b>. The system refuses anything later.</li><li><b>Slip cutoff: 8:20 PM.</b> After that, bid only on the spot.</li><li><b>Power-Ups and Pie Brandon sign-ups are sold here too</b> &mdash; see the &ldquo;Selling Power-Ups&rdquo; sheet.</li><li><b>Chili votes</b> are on the guest&rsquo;s own phone at <b>${host}/chili</b> &mdash; you don&rsquo;t take that money here.</li></ul></section>
+    <ul class="chk" style="margin-top:8px"><li>Guests can come to the <b>Bid Desk</b>, and runners also take bids <b>on the spot</b> with their phone.</li><li>Paper slips are only a backup. A runner collects them <b>every 3 minutes</b>.</li><li>Silent bidding <b>closes at ${CLOSE_TIME}</b>. The system refuses anything later.</li><li><b>Slip cutoff: 8:20 PM.</b> After that, bid only on the spot.</li><li><b>Power-Ups and Pie Brandon sign-ups are sold here too</b> (Power-Ups are also sold online from 5:00 PM) &mdash; see the &ldquo;Selling Power-Ups&rdquo; sheet.</li><li><b>Chili votes</b> are on the guest&rsquo;s own phone at <b>${host}/chili</b> &mdash; you don&rsquo;t take that money here.</li></ul></section>
   <section class="panel"><span class="pill y">If something goes wrong</span>
     <ul class="chk" style="margin-top:8px"><li>No green message = <b>no bid</b>. Try again; it never double-bids.</li><li>&ldquo;Bid just changed&rdquo;: someone beat it. Show the guest the new minimum.</li><li>Wrong guest or amount? Tell <b>Brandon or Dee</b>. Don&rsquo;t retype it.</li></ul></section>
 </div>
@@ -168,7 +168,7 @@ const slips = async () => `${head('Bid slips', 'Cut along the dashed lines')}
 // ───────────────── Selling Power-Ups at the Bid Desk (volunteers) ─────────────────
 const puDesk = async () => `${head('Selling Power-Ups', 'Volunteer guide · Bid Desk')}
 <style>.page{gap:0.09in;padding-bottom:0.28in} ol li{font-size:10.2pt;line-height:1.26} .panel{padding:0.1in 0.2in} h1{font-size:28pt} table.t{font-size:9.8pt} .note{font-size:9.4pt} .rule{font-size:10pt;padding:0.1in 0.18in} .foot{padding:0.1in 0.2in} .foot p{font-size:9.8pt}</style>
-<div><h1>Selling<br>Power-Ups</h1><p class="sub">Power-Ups <b>and Pie Brandon sign-ups</b> are sold <b>only at the Bid Desk</b>, in person. There is no online payment &mdash; you take the money, record it, and it is added to the guest&rsquo;s account.</p></div>
+<div><h1>Selling<br>Power-Ups</h1><p class="sub"><b>Pie Brandon sign-ups</b> are sold <b>only at the Bid Desk</b>. <b>Power-Ups</b> are sold here too, and from <b>5:00 PM</b> guests can also buy them online. Here, you take the money, record it, and it is added to the guest&rsquo;s account.</p></div>
 <section class="panel"><span class="pill y">Selling one</span>
   <ol style="margin-top:8px">
     <li>Sign in at <b>${host}/admin</b>. Tap <b>Power-Ups</b>.</li>
@@ -179,18 +179,18 @@ const puDesk = async () => `${head('Selling Power-Ups', 'Volunteer guide · Bid 
   </ol></section>
 <section class="panel"><span class="pill k">What they&rsquo;re buying</span>
   <table class="t" style="margin-top:8px"><tr><th>Item</th><th>Price</th><th>What it is</th></tr>${puRows}${pieRows}</table>
-  <p class="note">An administrator can change prices. A Power-Up is used <b>once</b> and is not refunded after use. <b>Pies:</b> the host calls people up in the order they signed up.</p></section>
+  <p class="note"><b>Bought online?</b> A guest who paid in the app already has them in <b>My Power-Ups</b> &mdash; don&rsquo;t sell them again. Not showing after a few minutes? Get <b>Brandon or Dee</b>. An online sale you void must be refunded in Square by hand. An administrator can change prices. A Power-Up is used <b>once</b> and is not refunded after use. <b>Pies:</b> the host calls people up in the order they signed up.</p></section>
 <p class="rule"><b>Never</b> add a Power-Up without receiving payment. Wrong guest or quantity? Tell <b>Brandon or Dee</b> &mdash; sales are corrected with a record, never erased. Power-Up and pie money is counted <b>separately</b> from auction winnings and is <b>not</b> added to anyone&rsquo;s checkout.</p>
 <div class="foot"><p><b class="u">Count your cash drawer</b>At the end of the night the <b>Power-Ups</b> page shows total sales by cash / check / card. Your drawer should match.</p></div>
 </div></body></html>`
 
 // ───────────────── Power-Ups (guests) ─────────────────
 const puGuest = async () => `${head('Power-Ups', 'Community auction · Fri Oct 30')}
-<div><h1>Power-Ups</h1><p class="sub">Change how an auction ends. Buy them at the <b>Bid Desk</b> and use them from your phone.</p></div>
+<div><h1>Power-Ups</h1><p class="sub">Change how an auction ends. Buy them <b>in the app from 5:00 PM</b>, or at the <b>Bid Desk</b>, and use them from your phone.</p></div>
 <section class="panel"><table class="t"><tr><th>Power-Up</th><th>Price</th><th>What it does</th></tr>${puRows}</table></section>
 <section class="panel"><span class="pill y">How to use one</span>
   <ol style="margin-top:8px">
-    <li>Buy it <b>only at the Bid Desk</b> (cash, check or card). Tell the volunteer your <b>paddle number</b> &mdash; it&rsquo;s added to your account right away.</li>
+    <li>Buy it <b>online from 5:00 PM</b>: open <b>Live &#9889;</b> &rarr; <b>Power-Up store</b> &rarr; <b>Buy online</b> and pay by card. Or buy at the <b>Bid Desk</b> (cash, check or card) and tell the volunteer your <b>paddle number</b>. Either way it&rsquo;s added to your account right away.</li>
     <li>On your phone, tap <b>Live &#9889;</b>. Your Power-Ups are under <b>My Power-Ups</b>.</li>
     <li>When one can be used, a <b>&ldquo;Use &hellip;&rdquo;</b> button appears. Tap it to see <b>exactly what will happen</b>, then confirm.</li>
   </ol>
@@ -220,7 +220,7 @@ const checkout = async () => `${head('Checkout', 'Volunteer guide · Checkout ta
 </div>
 <div class="two" style="gap:0.14in">
   <section class="panel" style="padding:0.1in 0.18in"><span class="pill k">Good to know</span>
-    <ul class="chk" style="margin-top:6px"><li style="font-size:10pt">Items in a <b>Last Chance</b> window aren&rsquo;t won yet &mdash; they appear when final.</li><li style="font-size:10pt"><b>Power-Ups and pies</b> were paid at the Bid Desk &mdash; not at checkout.</li></ul></section>
+    <ul class="chk" style="margin-top:6px"><li style="font-size:10pt">Items in a <b>Last Chance</b> window aren&rsquo;t won yet &mdash; they appear when final.</li><li style="font-size:10pt"><b>Power-Ups and pies</b> were paid for already (in the app or at the Bid Desk) &mdash; not at checkout.</li></ul></section>
   <section class="panel" style="padding:0.1in 0.18in"><span class="pill y">Can&rsquo;t stay tonight?</span>
     <p style="margin-top:6px;font-size:10.2pt;line-height:1.32">Guests call the church at <b>${CHURCH_PHONE}</b>. We&rsquo;ll call back and set a pickup time. Don&rsquo;t promise a time yourself.</p></section>
 </div>
