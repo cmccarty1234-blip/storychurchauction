@@ -123,15 +123,20 @@ const reg = async () => `${head('How to register', 'Community auction · Fri Oct
 
 
 const POWERUPS = [
-  ['Resurrection', '$30', 'Reopens an auction that just closed, for up to 60 seconds. Once per item.'],
+  ['Resurrection', '$30', 'Live items only. Brings an item in its Last Chance window back for 60 seconds, once per item. Add your own bid to take the lead.'],
   ['Final Call', '$15', 'Adds 30 seconds to a running timer.'],
   ['The Knockout', '$30', 'Ends bidding now; the leader becomes the provisional winner. Only on items with a Knockout minimum.'],
-  ['Challenge Flag', '$20', 'Challenge a live item in its Last Chance window with a higher bid. 20 seconds for everyone to respond.'],
 ]
+const PIES = [
+  ['Pie Brandon: small', '$100', 'Sign up to throw a small pie at the finale.'],
+  ['Pie Brandon: LARGE', '$200', 'Sign up to throw a LARGE pie at the finale.'],
+]
+const pieRows = PIES.map(([n, p, d]) => `<tr><td class="p">${n}</td><td class="p">${p}</td><td>${d}</td></tr>`).join('')
 const puRows = POWERUPS.map(([n, p, d]) => `<tr><td class="p">${n}</td><td class="p">${p}</td><td>${d}</td></tr>`).join('')
 
 // ───────────────── Bid Desk (volunteers) ─────────────────
 const bidDesk = async () => `${head('Bid Desk', 'Volunteer guide · Bid Desk')}
+<style>.page{gap:0.1in;padding-bottom:0.3in} ol li{font-size:10.6pt;line-height:1.28} .panel{padding:0.13in 0.2in} h1{font-size:32pt}</style>
 <div><h1>Bid Desk</h1><p class="sub">For guests <b>without a smartphone</b>: you place their silent-auction bids on your phone. Walk the room &mdash; don&rsquo;t wait behind a table.</p></div>
 <section class="panel"><span class="pill y">Placing a bid</span>
   <ol style="margin-top:8px">
@@ -143,7 +148,7 @@ const bidDesk = async () => `${head('Bid Desk', 'Volunteer guide · Bid Desk')}
   </ol></section>
 <div class="two">
   <section class="panel"><span class="pill k">Keep it fast</span>
-    <ul class="chk" style="margin-top:8px"><li>Take bids <b>on the spot</b>, not at a desk.</li><li>Paper slips are only a backup. A runner collects them <b>every 3 minutes</b>.</li><li>Silent bidding <b>closes at ${CLOSE_TIME}</b>. The system refuses anything later.</li><li><b>Slip cutoff: 8:20 PM.</b> After that, bid only on the spot.</li><li><b>Power-Ups are sold here too</b> &mdash; see the &ldquo;Selling Power-Ups&rdquo; sheet.</li></ul></section>
+    <ul class="chk" style="margin-top:8px"><li>Take bids <b>on the spot</b>, not at a desk.</li><li>Paper slips are only a backup. A runner collects them <b>every 3 minutes</b>.</li><li>Silent bidding <b>closes at ${CLOSE_TIME}</b>. The system refuses anything later.</li><li><b>Slip cutoff: 8:20 PM.</b> After that, bid only on the spot.</li><li><b>Power-Ups and Pie Brandon sign-ups are sold here too</b> &mdash; see the &ldquo;Selling Power-Ups&rdquo; sheet.</li><li><b>Chili votes</b> are on the guest&rsquo;s own phone at <b>${host}/chili</b> &mdash; you don&rsquo;t take that money here.</li></ul></section>
   <section class="panel"><span class="pill y">If something goes wrong</span>
     <ul class="chk" style="margin-top:8px"><li>No green message = <b>no bid</b>. Try again; it never double-bids.</li><li>&ldquo;Bid just changed&rdquo;: someone beat it. Show the guest the new minimum.</li><li>Wrong guest or amount? Tell an <b>administrator</b>. Don&rsquo;t retype it.</li></ul></section>
 </div>
@@ -162,19 +167,20 @@ const slips = async () => `${head('Bid slips', 'Cut along the dashed lines')}
 
 // ───────────────── Selling Power-Ups at the Bid Desk (volunteers) ─────────────────
 const puDesk = async () => `${head('Selling Power-Ups', 'Volunteer guide · Bid Desk')}
-<div><h1>Selling<br>Power-Ups</h1><p class="sub">Power-Ups are sold <b>only at the Bid Desk</b>, in person. There is no online payment &mdash; you take the money, record it, and it is added to the guest&rsquo;s account.</p></div>
+<style>.page{gap:0.09in;padding-bottom:0.28in} ol li{font-size:10.2pt;line-height:1.26} .panel{padding:0.1in 0.2in} h1{font-size:28pt} table.t{font-size:9.8pt} .note{font-size:9.4pt} .rule{font-size:10pt;padding:0.1in 0.18in} .foot{padding:0.1in 0.2in} .foot p{font-size:9.8pt}</style>
+<div><h1>Selling<br>Power-Ups</h1><p class="sub">Power-Ups <b>and Pie Brandon sign-ups</b> are sold <b>only at the Bid Desk</b>, in person. There is no online payment &mdash; you take the money, record it, and it is added to the guest&rsquo;s account.</p></div>
 <section class="panel"><span class="pill y">Selling one</span>
   <ol style="margin-top:8px">
     <li>Sign in at <b>${host}/admin</b>. Tap <b>Power-Ups</b>.</li>
     <li>Type the guest&rsquo;s <b>paddle number</b>. Check that the <b>name</b> shown matches the person in front of you.</li>
-    <li>Choose the <b>Power-Up</b>, the <b>quantity</b> and <b>how they paid</b> (cash, check, or card terminal).</li>
+    <li>Choose the <b>Power-Up or pie</b>, the <b>quantity</b> and <b>how they paid</b> (cash, check, or <b>card terminal</b> &mdash; the on-site kiosk, only after it says <b>Approved</b>).</li>
     <li><b>Take the payment first.</b> Then tick <b>&ldquo;I have received $__&rdquo;</b> and tap <b>Record sale</b>.</li>
     <li>It shows in the guest&rsquo;s <b>My Power-Ups</b> instantly. Tell them: &ldquo;Use it from the <b>Live &#9889;</b> page.&rdquo;</li>
   </ol></section>
 <section class="panel"><span class="pill k">What they&rsquo;re buying</span>
-  <table class="t" style="margin-top:8px"><tr><th>Power-Up</th><th>Price</th><th>What it does</th></tr>${puRows}</table>
-  <p class="note">An administrator can change prices. A Power-Up is used <b>once</b> and is not refunded after use.</p></section>
-<p class="rule"><b>Never</b> add a Power-Up without receiving payment. Wrong guest or quantity? Tell an <b>administrator</b> &mdash; sales are corrected with a record, never erased. Power-Up money is counted <b>separately</b> from auction winnings and is <b>not</b> added to anyone&rsquo;s checkout.</p>
+  <table class="t" style="margin-top:8px"><tr><th>Item</th><th>Price</th><th>What it is</th></tr>${puRows}${pieRows}</table>
+  <p class="note">An administrator can change prices. A Power-Up is used <b>once</b> and is not refunded after use. <b>Pies:</b> the host calls people up in the order they signed up.</p></section>
+<p class="rule"><b>Never</b> add a Power-Up without receiving payment. Wrong guest or quantity? Tell an <b>administrator</b> &mdash; sales are corrected with a record, never erased. Power-Up and pie money is counted <b>separately</b> from auction winnings and is <b>not</b> added to anyone&rsquo;s checkout.</p>
 <div class="foot"><p><b class="u">Count your cash drawer</b>At the end of the night the <b>Power-Ups</b> page shows total sales by cash / check / card. Your drawer should match.</p></div>
 </div></body></html>`
 
@@ -188,7 +194,7 @@ const puGuest = async () => `${head('Power-Ups', 'Community auction · Fri Oct 3
     <li>On your phone, tap <b>Live &#9889;</b>. Your Power-Ups are under <b>My Power-Ups</b>.</li>
     <li>When one can be used, a <b>&ldquo;Use &hellip;&rdquo;</b> button appears. Tap it to see <b>exactly what will happen</b>, then confirm.</li>
   </ol>
-  <p class="note"><b>Last Chance:</b> when a live item&rsquo;s countdown ends, it enters a <b>5-minute window</b>. Nothing is final yet &mdash; this is when Resurrection and Challenge Flag work. A Power-Up never makes you the winner by itself: you still have to out-bid.</p></section>
+  <p class="note"><b>Last Chance:</b> when a live item&rsquo;s countdown ends, it enters a <b>5-minute window</b>. Nothing is final yet &mdash; this is when Resurrection works. A Power-Up never makes you the winner by itself: you still have to out-bid.</p></section>
 <div class="foot"><div class="q">${await qr(SITE + '/play')}</div><p><b class="u">${host}/play</b>Every guest can use these. Ask a volunteer if you&rsquo;re not sure.</p></div>
 </div></body></html>`
 
