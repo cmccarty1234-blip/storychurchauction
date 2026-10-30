@@ -17,6 +17,7 @@ export const COMMERCIALS: Commercial[] = [
   { key: 'chickfila-honest-1', title: 'If Chick-fil-A Commercials Were Honest (pt 1) — for the 2nd package', youtubeId: 'fwi1rMr9oko', seconds: 30, tagline: 'A word from our sponsors…', promote: 'Sandwiches (2 of 2)' },
   { key: 'chickfila-honest', title: 'If Chick-fil-A Commercials Were Honest (pt 2) — for the 1st package', youtubeId: 'LXdxNhv4eXw', seconds: 30, tagline: 'A word from our sponsors…', promote: 'Sandwiches (1 of 2)' },
   { key: 'royal-gorge', title: 'The Royal Gorge Route Railroad Experience', youtubeId: 'eeQusf7Gp0E', seconds: 30, tagline: 'A word from our sponsors…', promote: 'Royal Gorge Train', autoOnStart: true },
+  { key: 'mercyme', title: 'MercyMe — Coming November 5, 2026 (Broadmoor World Arena)', youtubeId: 'OG7-gbbOj8I', seconds: 30.4, tagline: 'A word from our sponsors…', promote: 'Mercy Me', autoOnStart: true },
   { key: 'broadmoor', title: 'The Broadmoor Hotel: Legendary. Historic. Timeless.', youtubeId: 'KLWjfvweSA4', seconds: 30.2, tagline: 'A word from our sponsors…', promote: 'Broadmoor Stay', autoOnStart: true },
 ]
 
