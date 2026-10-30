@@ -23,6 +23,7 @@ export const COMMERCIALS: Commercial[] = [
   { key: 'peppertree', title: 'Peppertree Restaurant — Loving Living Local (FOX21)', youtubeId: 'IfczFda3wFg', seconds: 50, startAt: 6, tagline: 'A word from our sponsors…', promote: 'Peppertree', autoOnStart: true, fixed: true },
   { key: 'overdrive', title: 'Overdrive Raceway — 45MPH Karts in Colorado Springs', youtubeId: 'ghjuJzkiALg', seconds: 40, tagline: 'A word from our sponsors…', promote: 'Overdrive', autoOnStart: true, fixed: true },
   { key: 'xmas-wrapping', title: 'How to Wrap a Christmas Present in Under 30 Seconds… Badly!', youtubeId: '_GSstmTqeBs', seconds: 26, tagline: 'A word from our sponsors…', promote: 'Christmas Wrapping', autoOnStart: true },
+  { key: 'skydive', title: 'Skydive Colorado (Orange Skies Skydiving Center)', youtubeId: '4ISnUtq6VMs', seconds: 49, tagline: 'A word from our sponsors…', promote: 'Sky Diving', autoOnStart: true },
   { key: 'broadmoor', title: 'The Broadmoor Hotel: Legendary. Historic. Timeless.', youtubeId: 'KLWjfvweSA4', seconds: 30.2, tagline: 'A word from our sponsors…', promote: 'Broadmoor Stay', autoOnStart: true },
 ]
 
