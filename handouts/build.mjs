@@ -378,21 +378,29 @@ const ROSTER_LIVE = [
 ]
 const roster = async () => {
   const esc = (t) => t.replace(/&/g, '&amp;')
-  const row = ([n, t, p]) => `<div class="rr"><b class="rn">#${n}</b><span class="rt">${esc(t)}</span><span class="rp">$${p}</span></div>`
+  const row = ([n, t]) => `<div class="rr"><b class="rn">#${n}</b><span class="rt">${esc(t)}</span></div>`
+  // A strip of photos for the big live items (shrunk copies of the photos on the site live in handouts/roster-photos).
+  const FEATURED = [102, 103, 104, 105, 107, 109]
+  const tiles = FEATURED.map((n) => {
+    const it = ROSTER_LIVE.find((x) => x[0] === n)
+    const img = 'data:image/jpeg;base64,' + readFileSync(`handouts/roster-photos/${n}.jpg`).toString('base64')
+    return `<div class="ft"><img src="${img}" alt=""><p><b>#${n}</b> ${esc(it[1])}</p></div>`
+  }).join('')
   const per = Math.ceil(ROSTER_SILENT.length / 2.4) // fills the first two columns, the rest shares the third with the live items
   const col1 = ROSTER_SILENT.slice(0, per)
   const col2 = ROSTER_SILENT.slice(per, per * 2)
   const col3 = ROSTER_SILENT.slice(per * 2)
   return `${head('Item roster', 'Community auction · Fri Oct 30')}
-<style>.page{gap:0.1in;padding:0.34in 0.4in 0.3in} .cols{display:grid;grid-template-columns:repeat(3,1fr);gap:0.16in;flex:1;min-height:0} .rc{display:flex;flex-direction:column} .rh{font-weight:800;font-size:9.5pt;letter-spacing:.14em;text-transform:uppercase;background:#101010;color:#f5c518;padding:4px 8px;border-radius:6px;margin-bottom:3px} .rh.lv{margin-top:0.12in} .rr{display:flex;gap:6px;align-items:baseline;padding:3px 0;border-bottom:1px solid #e7e4dd;font-size:8.6pt;line-height:1.15} .rn{font-family:'Archivo Black',Impact,sans-serif;font-weight:400;min-width:0.4in} .rt{flex:1;font-weight:600} .rp{font-weight:800;white-space:nowrap} .rr.live .rn{color:#b3261e}</style>
+<style>.page{gap:0.1in;padding:0.34in 0.4in 0.3in} .cols{display:grid;grid-template-columns:repeat(3,1fr);gap:0.16in;flex:1;min-height:0} .rc{display:flex;flex-direction:column} .rh{font-weight:800;font-size:9.5pt;letter-spacing:.14em;text-transform:uppercase;background:#101010;color:#f5c518;padding:4px 8px;border-radius:6px;margin-bottom:3px} .rh.lv{margin-top:0.12in} .rr{display:flex;gap:6px;align-items:baseline;padding:3px 0;border-bottom:1px solid #e7e4dd;font-size:8.6pt;line-height:1.15} .rn{font-family:'Archivo Black',Impact,sans-serif;font-weight:400;min-width:0.4in} .rt{flex:1;font-weight:600} .ft img{width:100%;height:0.9in;object-fit:cover;border-radius:6px;display:block} .ft p{font-size:8.4pt;font-weight:600;line-height:1.12;margin-top:3px} .ft b{color:#b3261e;font-family:'Archivo Black',Impact,sans-serif;font-weight:400} .feat{display:grid;grid-template-columns:repeat(6,1fr);gap:0.1in} .rr.live .rn{color:#b3261e}</style>
 <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:0.2in"><div><h1 style="font-size:30pt">Item roster</h1><p class="sub" style="font-size:10.6pt">Everything up for bid tonight. <b>Silent</b> items close at <b>${CLOSE_TIME}</b>. <b>Live</b> items are called from the stage.</p></div>
   <div style="display:flex;align-items:center;gap:0.12in;background:#f5c518;border-radius:10px;padding:0.07in 0.14in"><div style="background:#fff;padding:3px;border-radius:5px;width:0.7in;height:0.7in">${await qr(SITE)}</div><p style="font-size:9.6pt;line-height:1.25;font-weight:700"><b>Scan to bid</b><br>${host}</p></div></div>
+<div class="feat">${tiles}</div>
 <div class="cols">
   <div class="rc"><div class="rh">Silent auction</div>${col1.map(row).join('')}</div>
   <div class="rc"><div class="rh">Silent auction</div>${col2.map(row).join('')}</div>
   <div class="rc"><div class="rh">Silent auction</div>${col3.map(row).join('')}<div class="rh lv" style="background:#b3261e;color:#fff">Live auction · from the stage</div>${ROSTER_LIVE.map((r) => row(r).replace('class="rr"', 'class="rr live"')).join('')}</div>
 </div>
-<div class="foot" style="padding:0.08in 0.2in"><p style="font-size:9.4pt"><b>Prices are the starting bid.</b> Chili: vote $1 each at <b>${host}/chili</b> &middot; Pie Brandon in the Face: sign up at the Bid Desk or in the app &middot; Power-Ups: Resurrection, Final Call, Knockout. Questions? Ask any volunteer.</p></div>
+<div class="foot" style="padding:0.08in 0.2in"><p style="font-size:9.4pt">Chili: vote $1 each at <b>${host}/chili</b> &middot; Pie Brandon in the Face: sign up at the Bid Desk or in the app &middot; Power-Ups: Resurrection, Final Call, Knockout. Questions? Ask any volunteer.</p></div>
 </div></body></html>`
 }
 
