@@ -354,54 +354,50 @@ html,body{height:auto} .page{height:11in;break-after:page;gap:0.1in;padding-bott
 <div class="foot"><p><b class="u">Your story matters.</b>Thank volunteers, donors and guests, early and often. Church phone: ${CHURCH_PHONE}.</p></div>
 </div></body></html>`
 
-// ───────────────── Table signs: one page per table (16), listing the silent and live items on it ─────────────────
-// Items as of Oct 30 (from the Items page). To change a table, edit TABLES below and run the build again.
-const SILENT_ITEMS = [
-  [1, 'IHOP: 4 Free Entrees'], [2, "Raising Cane's"], [3, 'Massage at Hand and Stone'], [4, 'Big O Tires: 1 Oil Change + 1 Alignment (1 of 2)'],
-  [5, 'Overdrive Raceway'], [6, 'Il Vicino: $50 Gift + Bottle of Hot Oil'], [7, 'Chick-fil-A: 15 Sandwiches (1 of 2)'], [8, 'Rocket Fizz 1'],
-  [10, 'Peppertree: $300 Gift (2 of 2)'], [11, 'Photo Shoot with Thomas Williams'], [13, 'Taekwondo: 2-Hour Self-Defense Class (10 People)'],
-  [14, 'Eye Exams for Two (1 of 2)'], [15, 'The Melting Pot'], [18, 'Large Bundt Cake'], [19, 'Think Pink Basket'], [20, 'Paintball: 10 Players (1 of 3)'],
-  [23, 'Games Basket'], [26, 'Tools Basket'], [27, "Aleka's Basket"], [28, 'Ultimate Kids Basket'], [29, 'Autumn Plants'], [30, "Leandra's Basket"],
-  [31, "Sophie's Kitchen Basket"], [33, '6 Movie Tickets'], [35, 'Me Gente Car Shop'], [36, 'Bonny and Read: $100 Gift'],
-  [37, "Christmas Stockings, Placemats, & Ornaments, & Heidrich's Christmas Tree Farm $50 Gift Card"], [38, '5 Free Barber Cuts'], [39, '5 Homemade Soaps'],
-  [41, 'Dance / Ballet Classes'], [43, 'Counseling Sessions (3 Sessions)'], [44, 'Original Painting (2-piece)'], [45, 'Alaskan Gold Dust'], [46, 'Coffee Basket'],
-  [47, 'Pie A'], [48, 'Pie B'], [49, 'Pie C'], [50, 'Aroma Basket'], [51, 'Pumpkin Bread'], [52, 'Banana Bread'], [54, 'Worship Piano or Drum Lessons'],
-  [55, 'Paintball: 10 Players (2 of 3)'], [56, 'Paintball: 10 Players (3 of 3)'], [57, 'Big O Tires: 1 Oil Change + 1 Alignment (2 of 2)'],
-  [58, 'Eye Exams for Two (2 of 2)'], [61, 'Chick-fil-A: 15 Sandwiches (2 of 2)'], [62, 'Taekwondo: Birthday Party'], [63, 'Taekwondo for a Family'], [64, 'Taekwondo Camp'],
-  [65, 'Sheldon Car Detailing'], [66, "Nancy's Winter Health Basket"], [67, 'Scheels Gift Card'], [68, 'AirCity 360'], [69, 'Colorado Mountain Brewery Gift Card'],
-  [70, 'Hacienda Gift Card'], [71, 'Texas Roadhouse Dinner for 2'], [72, 'Bath & Body Basket'], [80, 'Rocket Fizz 2'],
+// ───────────────── Item roster: one page, the same on all 16 seating tables, listing every silent and live item ─────────────────
+// Items and starting bids as of Oct 30 (from the Items page). To change one, edit the lists below and run the build again.
+const ROSTER_SILENT = [
+  [1, 'IHOP: 4 Free Entrees', 20], [2, "Raising Cane's", 20], [3, 'Massage at Hand and Stone', 75], [4, 'Big O Tires: Oil Change + Alignment (1 of 2)', 100],
+  [5, 'Overdrive Raceway', 30], [6, 'Il Vicino: $50 Gift + Bottle of Hot Oil', 30], [7, 'Chick-fil-A: 15 Sandwiches (1 of 2)', 50], [8, 'Rocket Fizz 1', 25],
+  [10, 'Peppertree: $300 Gift (2 of 2)', 200], [11, 'Photo Shoot with Thomas Williams', 100], [13, 'Taekwondo: 2-Hour Self-Defense Class (10 People)', 100],
+  [14, 'Eye Exams for Two (1 of 2)', 75], [15, 'The Melting Pot', 40], [18, 'Large Bundt Cake', 25], [19, 'Think Pink Basket', 50], [20, 'Paintball: 10 Players (1 of 3)', 50],
+  [23, 'Games Basket', 50], [26, 'Tools Basket', 50], [27, "Aleka's Basket", 25], [28, 'Ultimate Kids Basket', 50], [29, 'Autumn Plants', 20], [30, "Leandra's Basket", 50],
+  [31, "Sophie's Kitchen Basket", 65], [33, '6 Movie Tickets', 50], [35, 'Me Gente Car Shop', 30], [36, 'Bonny and Read: $100 Gift', 50],
+  [37, "Christmas Stockings, Placemats & Ornaments + Heidrich's Tree Farm $50 Gift Card", 75], [38, '5 Free Barber Cuts', 75], [39, '5 Homemade Soaps', 20],
+  [41, 'Dance / Ballet Classes', 100], [43, 'Counseling Sessions (3 Sessions)', 140], [44, 'Original Painting (2-piece)', 25], [45, 'Alaskan Gold Dust', 25], [46, 'Coffee Basket', 60],
+  [47, 'Pie A', 25], [48, 'Pie B', 25], [49, 'Pie C', 25], [50, 'Aroma Basket', 50], [51, 'Pumpkin Bread', 5], [52, 'Banana Bread', 5], [54, 'Worship Piano or Drum Lessons', 200],
+  [55, 'Paintball: 10 Players (2 of 3)', 50], [56, 'Paintball: 10 Players (3 of 3)', 50], [57, 'Big O Tires: Oil Change + Alignment (2 of 2)', 100],
+  [58, 'Eye Exams for Two (2 of 2)', 75], [61, 'Chick-fil-A: 15 Sandwiches (2 of 2)', 50], [62, 'Taekwondo: Birthday Party', 100], [63, 'Taekwondo for a Family', 200], [64, 'Taekwondo Camp', 150],
+  [65, 'Sheldon Car Detailing', 100], [66, "Nancy's Winter Health Basket", 50], [67, 'Scheels Gift Card', 50], [68, 'AirCity 360', 100], [69, 'Colorado Mountain Brewery Gift Card', 50],
+  [70, 'Hacienda Gift Card', 75], [71, 'Texas Roadhouse Dinner for 2', 25], [72, 'Bath & Body Basket', 40], [80, 'Rocket Fizz 2', 25],
 ]
-const LIVE_ITEMS = [
-  [102, 'Mercy Me / Jeremy Camp: 2 Tickets'], [103, 'Third Day: 2 Tickets'], [104, 'The Broadmoor Stay'], [105, 'Royal Gorge Train: 2 Experience Tickets'],
-  [107, 'Horseback Riding Adventure for 2'], [108, 'Fallen Heroes Tattoos'], [109, 'Peppertree: $300 Gift (1 of 2)'], [110, 'Car Detailing'], [111, 'House Cleaning'],
-  [112, 'Handyman: 3 Hours'], [113, 'Books Basket'], [114, 'Spa Basket'], [115, '4 Hours of Christmas Wrapping'], [116, 'Sky Diving COS'],
+const ROSTER_LIVE = [
+  [102, 'Mercy Me / Jeremy Camp: 2 Tickets', 50], [103, 'Third Day: 2 Tickets', 50], [104, 'The Broadmoor Stay', 200], [105, 'Royal Gorge Train: 2 Experience Tickets', 150],
+  [107, 'Horseback Riding Adventure for 2', 200], [108, 'Fallen Heroes Tattoos', 75], [109, 'Peppertree: $300 Gift (1 of 2)', 200], [110, 'Car Detailing', 150], [111, 'House Cleaning', 150],
+  [112, 'Handyman: 3 Hours', 150], [113, 'Books Basket', 40], [114, 'Spa Basket', 125], [115, '4 Hours of Christmas Wrapping', 75], [116, 'Sky Diving COS', 150],
 ]
-const TABLE_COUNT = 16
-// One live item on each of tables 1-14; silent items fill the tables in number order (tables 1-8 get 4, 9-14 get 3, 15-16 get 4).
-const TABLES = (() => {
-  const counts = Array.from({ length: TABLE_COUNT }, (_, i) => (i < 8 ? 4 : i < 14 ? 3 : 4))
-  let k = 0
-  return counts.map((n, i) => {
-    const silent = SILENT_ITEMS.slice(k, k + n).map(([num, title]) => ({ num, title, live: false }))
-    k += n
-    const live = LIVE_ITEMS[i] ? [{ num: LIVE_ITEMS[i][0], title: LIVE_ITEMS[i][1], live: true }] : []
-    return [...live, ...silent].sort((a, b) => a.num - b.num)
-  })
-})()
-const tableSigns = async () => {
-  const qrSvg = await qr(SITE)
-  const pageFor = (items, i) => `<div class="page"><div class="bar"></div>
-<header><img src="${logo}" alt="Story Church"><span class="tag">Community auction · Fri Oct 30</span></header>
-<div><p class="sub" style="font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:#686868">Silent &amp; live auction items</p><h1 style="font-size:96pt;margin-top:0.05in">Table ${i + 1}</h1></div>
-<section class="panel" style="padding:0.12in 0.3in;flex:1"><table class="t ts"><tbody>${items.map((it) => `<tr><td class="num">#${it.num}</td><td class="ttl">${it.title.replace(/&/g, '&amp;')}${it.live ? ' <span class="livetag">LIVE</span>' : ''}</td></tr>`).join('')}</tbody></table></section>
-<div class="foot"><div class="q">${qrSvg}</div><p><b class="u">${host}</b>Scan to register and bid. <b>Silent bidding closes ${CLOSE_TIME}.</b> <b>LIVE</b> items are called from the stage.</p></div>
-</div>`
-  const extra = `html,body{height:auto} .page{height:11in;break-after:page;gap:0.12in} .page:last-of-type{break-after:auto} table.ts{font-size:20pt;width:100%} table.ts td{padding:0.1in 0.1in 0.1in 0;border-bottom:1px solid #e7e4dd;vertical-align:middle} table.ts td.num{font-family:'Archivo Black',Impact,sans-serif;white-space:nowrap;width:1.3in;font-size:24pt} table.ts td.ttl{font-weight:700;line-height:1.15} .livetag{display:inline-block;background:#101010;color:#f5c518;font-size:12pt;font-weight:800;letter-spacing:.1em;padding:3px 10px;border-radius:999px;vertical-align:3px;margin-left:8px}`
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Table signs</title><style>${css}${extra}</style></head><body>${TABLES.map((items, i) => pageFor(items, i)).join('')}</body></html>`
+const roster = async () => {
+  const esc = (t) => t.replace(/&/g, '&amp;')
+  const row = ([n, t, p]) => `<div class="rr"><b class="rn">#${n}</b><span class="rt">${esc(t)}</span><span class="rp">$${p}</span></div>`
+  const per = Math.ceil(ROSTER_SILENT.length / 2.4) // fills the first two columns, the rest shares the third with the live items
+  const col1 = ROSTER_SILENT.slice(0, per)
+  const col2 = ROSTER_SILENT.slice(per, per * 2)
+  const col3 = ROSTER_SILENT.slice(per * 2)
+  return `${head('Item roster', 'Community auction · Fri Oct 30')}
+<style>.page{gap:0.1in;padding:0.34in 0.4in 0.3in} .cols{display:grid;grid-template-columns:repeat(3,1fr);gap:0.16in;flex:1;min-height:0} .rc{display:flex;flex-direction:column} .rh{font-weight:800;font-size:9.5pt;letter-spacing:.14em;text-transform:uppercase;background:#101010;color:#f5c518;padding:4px 8px;border-radius:6px;margin-bottom:3px} .rh.lv{margin-top:0.12in} .rr{display:flex;gap:6px;align-items:baseline;padding:3px 0;border-bottom:1px solid #e7e4dd;font-size:8.6pt;line-height:1.15} .rn{font-family:'Archivo Black',Impact,sans-serif;font-weight:400;min-width:0.4in} .rt{flex:1;font-weight:600} .rp{font-weight:800;white-space:nowrap} .rr.live .rn{color:#b3261e}</style>
+<div style="display:flex;align-items:flex-end;justify-content:space-between;gap:0.2in"><div><h1 style="font-size:30pt">Item roster</h1><p class="sub" style="font-size:10.6pt">Everything up for bid tonight. <b>Silent</b> items close at <b>${CLOSE_TIME}</b>. <b>Live</b> items are called from the stage.</p></div>
+  <div style="display:flex;align-items:center;gap:0.12in;background:#f5c518;border-radius:10px;padding:0.07in 0.14in"><div style="background:#fff;padding:3px;border-radius:5px;width:0.7in;height:0.7in">${await qr(SITE)}</div><p style="font-size:9.6pt;line-height:1.25;font-weight:700"><b>Scan to bid</b><br>${host}</p></div></div>
+<div class="cols">
+  <div class="rc"><div class="rh">Silent auction</div>${col1.map(row).join('')}</div>
+  <div class="rc"><div class="rh">Silent auction</div>${col2.map(row).join('')}</div>
+  <div class="rc"><div class="rh">Silent auction</div>${col3.map(row).join('')}<div class="rh lv" style="background:#b3261e;color:#fff">Live auction · from the stage</div>${ROSTER_LIVE.map((r) => row(r).replace('class="rr"', 'class="rr live"')).join('')}</div>
+</div>
+<div class="foot" style="padding:0.08in 0.2in"><p style="font-size:9.4pt"><b>Prices are the starting bid.</b> Chili: vote $1 each at <b>${host}/chili</b> &middot; Pie Brandon in the Face: sign up at the Bid Desk or in the app &middot; Power-Ups: Resurrection, Final Call, Knockout. Questions? Ask any volunteer.</p></div>
+</div></body></html>`
 }
 
 const edge = ['C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', 'C:/Program Files/Microsoft/Edge/Application/msedge.exe'].find((p) => { try { readFileSync(p, { flag: 'r' }); return true } catch { return false } })
-for (const [name, html] of [['How-To-Bid', await bid()], ['How-To-Register', await reg()], ['How-To-Use-Power-Ups', await puGuest()], ['Volunteer-Bid-Desk', await bidDesk()], ['Volunteer-Bid-Slips', await slips()], ['Volunteer-Bid-Desk-Selling-Power-Ups', await puDesk()], ['Volunteer-Checkout-Table', await checkout()], ['Host-Run-Of-Show', await hostSheet()], ['Team-Meeting-Agenda', await agenda()], ['Table-Signs', await tableSigns()]]) {
+for (const [name, html] of [['How-To-Bid', await bid()], ['How-To-Register', await reg()], ['How-To-Use-Power-Ups', await puGuest()], ['Volunteer-Bid-Desk', await bidDesk()], ['Volunteer-Bid-Slips', await slips()], ['Volunteer-Bid-Desk-Selling-Power-Ups', await puDesk()], ['Volunteer-Checkout-Table', await checkout()], ['Host-Run-Of-Show', await hostSheet()], ['Team-Meeting-Agenda', await agenda()], ['Item-Roster', await roster()]]) {
   const f = path.join(out, `${name}.html`)
   writeFileSync(f, html)
   const pdf = path.join(out, `${name}.pdf`)
