@@ -25,6 +25,7 @@ export const COMMERCIALS: Commercial[] = [
   { key: 'xmas-wrapping', title: 'How to Wrap a Christmas Present in Under 30 Seconds… Badly!', youtubeId: '_GSstmTqeBs', seconds: 26, tagline: 'A word from our sponsors…', promote: 'Christmas Wrapping', autoOnStart: true },
   { key: 'skydive', title: 'Skydive Colorado (Orange Skies Skydiving Center)', youtubeId: '4ISnUtq6VMs', seconds: 49, tagline: 'A word from our sponsors…', promote: 'Sky Diving', autoOnStart: true },
   { key: 'thirdday', title: 'Third Day (Broadmoor World Arena)', youtubeId: '8EgjtdWgels', seconds: 28, tagline: 'A word from our sponsors…', promote: 'Third Day', autoOnStart: true, fixed: true },
+  { key: 'eye-exams', title: 'Eye Exams', youtubeId: 'Jv1zcH8CB7g', seconds: 29, tagline: 'A word from our sponsors…', promote: 'Eye Exam' },
   { key: 'broadmoor', title: 'The Broadmoor Hotel: Legendary. Historic. Timeless.', youtubeId: 'KLWjfvweSA4', seconds: 30.2, tagline: 'A word from our sponsors…', promote: 'Broadmoor Stay', autoOnStart: true },
 ]
 
