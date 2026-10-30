@@ -21,6 +21,7 @@ export const COMMERCIALS: Commercial[] = [
   { key: 'horseback', title: 'Colorado Horseback Riding & Hot Springs Vacation', youtubeId: 'zQiW-GrNvQI', seconds: 15, tagline: 'A word from our sponsors…', promote: 'Horseback', autoOnStart: true, fixed: true },
   { key: 'fallen-heroes', title: 'Fallen Heroes Tattoo & Piercing', youtubeId: '7HfCnUoZApY', seconds: 15, tagline: 'A word from our sponsors…', promote: 'Fallen Heroes', autoOnStart: true, fixed: true },
   { key: 'peppertree', title: 'Peppertree Restaurant — Loving Living Local (FOX21)', youtubeId: 'IfczFda3wFg', seconds: 50, startAt: 6, tagline: 'A word from our sponsors…', promote: 'Peppertree', autoOnStart: true, fixed: true },
+  { key: 'overdrive', title: 'Overdrive Raceway — 45MPH Karts in Colorado Springs', youtubeId: 'ghjuJzkiALg', seconds: 40, tagline: 'A word from our sponsors…', promote: 'Overdrive', autoOnStart: true, fixed: true },
   { key: 'broadmoor', title: 'The Broadmoor Hotel: Legendary. Historic. Timeless.', youtubeId: 'KLWjfvweSA4', seconds: 30.2, tagline: 'A word from our sponsors…', promote: 'Broadmoor Stay', autoOnStart: true },
 ]
 
