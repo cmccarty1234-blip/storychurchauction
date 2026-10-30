@@ -1,53 +1,102 @@
--- Fills in a short description for items that don't have one. It NEVER overwrites a description someone already wrote
--- (only blank ones, plus the one-word "BOGO"), and it only touches items whose title matches exactly.
--- Lines marked "-- confirm" are rough drafts: check them, edit the text if needed, then run.
+-- Beefed-up descriptions (warm and fun), for every item. This REPLACES the current description of each item listed.
+-- Safe by design: an item is only changed when its number AND exact title match, so nothing else can be touched.
+-- Run it in this order, one statement block at a time:
+--   1) the backup (keeps the old text so you can undo)
+--   2) the update
+--   3) (only if you want to undo) the restore at the bottom
+-- Lines marked  -- confirm  are rough drafts: check the wording first and edit it here if it is wrong.
+
+-- 1) BACKUP
+create table if not exists item_description_backup as
+  select id, item_number, title, description, now() as saved_at from auction_items where false;
+insert into item_description_backup (id, item_number, title, description)
+  select id, item_number, title, description from auction_items
+   where event_id = (select id from events order by created_at desc limit 1);
+
+-- 2) UPDATE
 update auction_items i
    set description = v.d, updated_at = now()
   from (values
-    -- gift cards and certificates
-    ('Peppertree: $300 Gift (1 of 2)', 'A $300 gift certificate to Peppertree Restaurant.'),
-    ('Peppertree: $300 Gift (2 of 2)', 'A $300 gift certificate to Peppertree Restaurant.'),
-    ('Bonny and Read: $100 Gift', 'A $100 gift certificate to Bonny and Read.'),
-    ('Scheels Gift Card', 'A gift card to Scheels.'),
-    ('Colorado Mountain Brewery Gift Card', 'A gift card to Colorado Mountain Brewery.'),
-    ('Hacienda Gift Card', 'A gift card to Hacienda.'),
-    ('Texas Roadhouse Dinner for 2', 'Dinner for two at Texas Roadhouse.'),
-    ('6 Movie Tickets', 'Six movie tickets.'),
-    ('Christmas Stockings, Placemats, & Ornaments, & Heidrich''s Christmas Tree Farm $50 Gift Card', 'Christmas stockings, placemats and ornaments, plus a $50 gift card to Heidrich''s Christmas Tree Farm.'),
-    -- services and experiences
-    ('Counseling Sessions (3 Sessions)', 'Three counseling sessions.'),
-    ('The Broadmoor Stay', 'A stay at The Broadmoor, the historic resort in Colorado Springs.'),                      -- confirm: nights / what is included
-    ('Sky Diving COS', 'Skydiving in Colorado Springs. BOGO: buy one, get one free.'),                                  -- confirm
-    ('Photo Shoot with Thomas Williams', 'A photo shoot with Thomas Williams.'),                                        -- confirm: length, number of photos
-    ('The Melting Pot', 'A gift from The Melting Pot, the fondue restaurant.'),                                         -- confirm: gift card or dinner?
-    ('Me Gente Car Shop', 'A service from Me Gente Car Shop.'),                                                         -- confirm: what is included
-    ('Fallen Heroes Tattoos', 'A tattoo session at Fallen Heroes Tattoo & Piercing.'),                                  -- confirm
-    ('Car Detailing', 'A car detailing from CRM Cleaning.'),                                                            -- confirm
-    ('House Cleaning', 'A house cleaning from CRM Cleaning.'),                                                          -- confirm: size of home / hours
-    -- art, plants and food
-    ('Original Painting (2-piece)', 'An original two-piece painting.'),
-    ('Alaskan Gold Dust', 'Gold dust from Alaska.'),                                                                    -- confirm
-    ('Autumn Plants', 'Autumn plants to brighten your porch or table.'),                                                -- confirm
-    ('Pie A', 'A homemade pie from Brenda''s sister.'),                                                                 -- confirm: flavor
-    ('Pie B', 'A homemade pie from Brenda''s sister.'),                                                                 -- confirm: flavor
-    ('Pie C', 'A homemade pie from Brenda''s sister.'),                                                                 -- confirm: flavor
-    ('Pumpkin Bread', 'A loaf of homemade pumpkin bread.'),                                                             -- confirm
-    ('Banana Bread', 'A loaf of homemade banana bread.'),                                                               -- confirm
-    -- baskets (contents not known: confirm what is in each)
-    ('Think Pink Basket', 'A pink-themed gift basket.'),
-    ('Games Basket', 'A basket of games for the family.'),
-    ('Tools Basket', 'A basket of tools.'),
-    ('Ultimate Kids Basket', 'A basket full of fun for kids.'),
-    ('Sophie''s Kitchen Basket', 'A basket of kitchen goodies.'),
-    ('Coffee Basket', 'A basket for coffee lovers.'),
-    ('Aroma Basket', 'A basket of aromas and scents for the home.'),
-    ('Books Basket', 'A basket of books.'),
-    ('Spa Basket', 'A basket for a relaxing spa night at home.')
-  ) as v(t, d)
+    (102, 'Mercy Me / Jeremy Camp: 2 Tickets', 'Two tickets to see MercyMe and Jeremy Camp live at the Broadmoor World Arena. Bring your best friend and your biggest singing voice for an unforgettable night of worship and music.'),
+    (103, 'Third Day: 2 Tickets', 'Two tickets to see Third Day on their 30th Anniversary Tour at the Broadmoor World Arena. Grab a friend and sing along to the songs you grew up on.'),
+    (104, 'The Broadmoor Stay', 'A stay at The Broadmoor, Colorado Springs'' legendary historic resort at the foot of Cheyenne Mountain. Trade the to-do list for a getaway you''ll talk about for years.'),  -- confirm
+    (105, 'Royal Gorge Train: 2 Experience Tickets', 'Two experience tickets on the Royal Gorge Route Railroad, a scenic train ride through the Royal Gorge canyon along the Arkansas River. Sit back, enjoy the view, and let the train do the driving.'),
+    (107, 'Horseback Riding Adventure for 2', 'A horseback riding adventure for two people. Saddle up with someone you love and see Colorado from a whole new view.'),
+    (108, 'Fallen Heroes Tattoos', 'A tattoo from Fallen Heroes Tattoo & Piercing in Old Colorado City. Got a design you''ve been dreaming about? Now''s your chance.'),  -- confirm
+    (109, 'Peppertree: $300 Gift (1 of 2)', 'A $300 gift certificate to Peppertree Restaurant, a Colorado Springs favorite. Dinner for the whole family, or a date night with extra dessert.'),
+    (110, 'Car Detailing', 'A car detailing from CRM Cleaning, so your ride looks fresh inside and out. Nothing feels better than a clean car.'),  -- confirm
+    (111, 'House Cleaning', 'A house cleaning from CRM Cleaning. Come home to a sparkling house and spend your weekend doing literally anything else.'),  -- confirm
+    (112, 'Handyman: 3 Hours', 'Three hours of handyman work from BC. Finally cross off the honey-do list: the wobbly shelf, the sticky door, the thing you keep meaning to fix.'),
+    (113, 'Books Basket', 'A basket of books from The Shupps. Curl up with a blanket and get lost in a good story.'),
+    (114, 'Spa Basket', 'A spa basket from Marina, made for a relaxing night in. Light a candle, take a deep breath, and treat yourself.'),
+    (115, '4 Hours of Christmas Wrapping', 'Four hours of Christmas wrapping from Shaunte, so every present under your tree looks professionally done. Hand off the tape and the scissors and enjoy the holidays.'),
+    (116, 'Sky Diving COS', 'Skydiving in Colorado Springs, and it''s BOGO: buy one, get one free. Bring a friend and take the leap together.'),  -- confirm
+    (1, 'IHOP: 4 Free Entrees', 'Four free entrees at IHOP in Stetson Hills. Pancakes for everybody!'),
+    (2, 'Raising Cane''s', 'A Raising Cane''s prize for the chicken-finger fan in your life. Bring friends and feast.'),  -- confirm
+    (3, 'Massage at Hand and Stone', 'A massage at Hand and Stone. Unwind, melt the stress away, and walk out feeling like a whole new person.'),
+    (4, 'Big O Tires: 1 Oil Change + 1 Alignment (1 of 2)', 'One oil change and one alignment from Big O Tires. Keep your car running smooth and your tires wearing evenly.'),
+    (5, 'Overdrive Raceway', 'A fun, fast day at Overdrive Raceway, where 45-mph karts race around the track in Colorado Springs. Put the pedal down!'),  -- confirm
+    (6, 'Il Vicino: $50 Gift + Bottle of Hot Oil', 'A $50 gift to Il Vicino, plus a bottle of their hot oil to spice up dinner at home. Wood-fired pizza with a little heat.'),
+    (7, 'Chick-fil-A: 15 Sandwiches (1 of 2)', 'Fifteen Chick-fil-A sandwiches. Feed the whole crew, or be the hero of your next party.'),
+    (8, 'Rocket Fizz 1', 'A sweet Rocket Fizz prize for the candy lover in your life.'),  -- confirm
+    (10, 'Peppertree: $300 Gift (2 of 2)', 'A $300 gift certificate to Peppertree Restaurant, a Colorado Springs favorite. Dinner for the whole family, or a date night with extra dessert.'),
+    (11, 'Photo Shoot with Thomas Williams', 'A photo shoot with Thomas Williams. Capture the family, the couple, or just you looking fantastic.'),  -- confirm
+    (13, 'Taekwondo: 2-Hour Self-Defense Class (10 People)', 'A two-hour self-defense class for 10 people with Master Kunkel. Perfect for a group of friends, a family or a team: confidence, fitness and fun.'),
+    (14, 'Eye Exams for Two (1 of 2)', 'Two eye exams. See the world more clearly, and give your eyes a checkup.'),
+    (15, 'The Melting Pot', 'A night out at The Melting Pot, the fondue restaurant. Dip, swirl and share: dinner and a good time all in one.'),  -- confirm
+    (18, 'Large Bundt Cake', 'A large Bundt cake from Nothing Bundt Cakes. Dessert is handled, and everyone will think you baked it.'),
+    (19, 'Think Pink Basket', 'A pink-themed basket from Jen Smith, put together to brighten someone''s day.'),  -- confirm
+    (20, 'Paintball: 10 Players (1 of 3)', 'A paintball package for 10 players from APC Paintball. Gather your group and get ready for some friendly battle.'),
+    (23, 'Games Basket', 'A basket of games from Leah & Adam, so family game night is covered.'),  -- confirm
+    (26, 'Tools Basket', 'A basket of tools from Jim. Handy for the fixer-upper in your family.'),  -- confirm
+    (27, 'Aleka''s Basket', 'A gift basket from Aleka, filled with good things.'),  -- confirm
+    (28, 'Ultimate Kids Basket', 'An ultimate basket of fun for kids, from Kati Robison. The little ones are going to love it.'),  -- confirm
+    (29, 'Autumn Plants', 'Fall plants to freshen up your porch or table.'),  -- confirm
+    (30, 'Leandra''s Basket', 'A gift basket from Leandra, filled with good things.'),  -- confirm
+    (31, 'Sophie''s Kitchen Basket', 'A kitchen basket from Sophie, filled with goodies for the home cook.'),  -- confirm
+    (33, '6 Movie Tickets', 'Six movie tickets. Popcorn night for the whole family!'),
+    (35, 'Me Gente Car Shop', 'A package from Me Gente Car Shop, donated by Arlene Lambert. Keep your car in good hands.'),  -- confirm
+    (36, 'Bonny and Read: $100 Gift', 'A $100 gift to Bonny and Read. Treat yourself, or someone you love.'),
+    (37, 'Christmas Stockings, Placemats, & Ornaments, & Heidrich''s Christmas Tree Farm $50 Gift Card', 'A Christmas bundle: stockings, placemats and ornaments, plus a $50 gift card to Heidrich''s Christmas Tree Farm. Everything for a cozy start to the holidays.'),
+    (38, '5 Free Barber Cuts', 'Five free barber cuts from Will. Look sharp all season long.'),
+    (39, '5 Homemade Soaps', 'Five homemade soaps from Will. Handmade, great smelling and gift-ready.'),
+    (41, 'Dance / Ballet Classes', 'Dance and ballet classes from Tina Cook. Twirl, leap and let your little dancer shine.'),  -- confirm
+    (43, 'Counseling Sessions (3 Sessions)', 'Three counseling sessions from Nicole and Lawrence. A gift of support, a listening ear and a fresh start.'),
+    (44, 'Original Painting (2-piece)', 'An original two-piece painting. One of a kind and made to be displayed.'),
+    (45, 'Alaskan Gold Dust', 'Alaskan gold dust, a tiny piece of the Last Frontier. A fun conversation starter and a one-of-a-kind keepsake.'),  -- confirm
+    (46, 'Coffee Basket', 'A coffee basket from Erin and Jeff, perfect for slow mornings.'),  -- confirm
+    (47, 'Pie A', 'A homemade pie from Brenda''s sister. Dessert for your next family dinner, no baking required.'),  -- confirm
+    (48, 'Pie B', 'A homemade pie from Brenda''s sister. Dessert for your next family dinner, no baking required.'),  -- confirm
+    (49, 'Pie C', 'A homemade pie from Brenda''s sister. Dessert for your next family dinner, no baking required.'),  -- confirm
+    (50, 'Aroma Basket', 'An aroma basket from Logan, filled with scents to make your home smell wonderful.'),  -- confirm
+    (51, 'Pumpkin Bread', 'Homemade pumpkin bread from Logan. Warm, spiced and perfect with your morning coffee.'),  -- confirm
+    (52, 'Banana Bread', 'Homemade banana bread from Logan. Soft, sweet and perfect with your morning coffee.'),  -- confirm
+    (54, 'Worship Piano or Drum Lessons', 'Five sessions of worship piano or drum lessons ($100 per hour) from Dee. Learn to lead worship, or take your playing to the next level.'),
+    (55, 'Paintball: 10 Players (2 of 3)', 'A paintball package for 10 players from APC Paintball. Gather your group and get ready for some friendly battle.'),
+    (56, 'Paintball: 10 Players (3 of 3)', 'A paintball package for 10 players from APC Paintball. Gather your group and get ready for some friendly battle.'),
+    (57, 'Big O Tires: 1 Oil Change + 1 Alignment (2 of 2)', 'One oil change and one alignment from Big O Tires. Keep your car running smooth and your tires wearing evenly.'),
+    (58, 'Eye Exams for Two (2 of 2)', 'Two eye exams. See the world more clearly, and give your eyes a checkup.'),
+    (61, 'Chick-fil-A: 15 Sandwiches (2 of 2)', 'Fifteen Chick-fil-A sandwiches. Feed the whole crew, or be the hero of your next party.'),
+    (62, 'Taekwondo: Birthday Party', 'A taekwondo birthday party with Master Kunkel. Kicks, laughs and a birthday kid who''ll talk about it for months.'),
+    (63, 'Taekwondo for a Family', 'Taekwondo for a family with Master Kunkel. Learn together and get strong together.'),
+    (64, 'Taekwondo Camp', 'A taekwondo camp with Master Kunkel. A great way for kids to build confidence and burn off some energy.'),
+    (65, 'Sheldon Car Detailing', 'A car detailing package valued at $200 from Sheldon Car Detailing. Give your car the spa day it deserves.'),
+    (66, 'Nancy''s Winter Health Basket', 'Get over your winter cold or flu in a flash with all these cold and flu supplies. Put together with care by Nancy Harmon.'),
+    (67, 'Scheels Gift Card', 'A gift card to Scheels, donated by Leah. Gear up for your next adventure.'),
+    (68, 'AirCity 360', 'A visit to AirCity 360 in Colorado Springs. Jump, flip and play: fun for all ages.'),  -- confirm
+    (69, 'Colorado Mountain Brewery Gift Card', 'A gift card to Colorado Mountain Brewery. Grab some friends and enjoy a meal together.'),
+    (70, 'Hacienda Gift Card', 'A gift card to Hacienda. Chips, salsa and a great meal with people you love.'),  -- confirm
+    (71, 'Texas Roadhouse Dinner for 2', 'Dinner for two at Texas Roadhouse. Hot rolls, a great meal, and a date night to look forward to.'),
+    (72, 'Bath & Body Basket', 'A Bath & Body basket featuring 10,000 Wishes. Soak, relax and smell amazing.'),
+    (80, 'Rocket Fizz 2', 'A candy basket from Rocket Fizz. Sweet tooth, meet your dream basket.')
+  ) as v(n, t, d)
  where i.event_id = (select id from events order by created_at desc limit 1)
-   and i.title = v.t
-   and coalesce(i.description, '') in ('', 'BOGO');
+   and i.item_number = v.n
+   and i.title = v.t;
 
--- Not drafted (nothing to go on from the title): "Aleka's Basket", "Leandra's Basket". Tell me what is in them and I'll add them.
--- To see what is still blank afterwards:
---   select item_number, title from auction_items where coalesce(description, '') = '' and status <> 'cancelled' order by item_number;
+-- How many matched? (should be 72)
+select count(*) as items_with_new_text from auction_items i
+  join item_description_backup b on b.id = i.id where i.description is distinct from b.description;
+
+-- 3) UNDO (only if you want the old text back)
+-- update auction_items i set description = b.description, updated_at = now() from item_description_backup b where b.id = i.id;
