@@ -194,22 +194,31 @@ const puGuest = async () => `${head('Power-Ups', 'Community auction · Fri Oct 3
 
 // ───────────────── Checkout table (volunteers) ─────────────────
 const checkout = async () => `${head('Checkout', 'Volunteer guide · Checkout table')}
-<div><h1>Checkout<br>table</h1><p class="sub">Guests pay for what they won, then pick it up. Nobody leaves with an item until it is <b>paid and released</b>.</p></div>
-<section class="panel"><span class="pill y">Checking someone out</span>
-  <ol style="margin-top:8px">
-    <li>Sign in at <b>${host}/admin</b>. Tap <b>Checkout</b>. Search by <b>name or bidder number</b>.</li>
-    <li>Open the guest. You&rsquo;ll see <b>every item they won</b>, what each cost, and the <b>balance</b>.</li>
-    <li>Take the payment. Choose <b>cash, check, or card terminal</b>, enter the amount, and confirm. Add the check number or terminal receipt as a reference.</li>
-    <li>When an item is <b>fully paid</b>, tap <b>Release</b>, hand over the item, and have the guest confirm.</li>
-    <li>Print the <b>receipt</b> if they want one.</li>
-  </ol></section>
-<div class="two">
-  <section class="panel"><span class="pill k">Good to know</span>
-    <ul class="chk" style="margin-top:8px"><li>Items in a <b>Last Chance</b> window aren&rsquo;t won yet &mdash; they appear when final.</li><li>Partial payments are fine; the balance stays on screen.</li><li><b>Power-Ups are not part of checkout</b> &mdash; they were paid for at the Bid Desk.</li></ul></section>
-  <section class="panel"><span class="pill y">Can&rsquo;t stay tonight?</span>
-    <p style="margin-top:8px;font-size:11pt;line-height:1.35">Guests who can&rsquo;t attend call the church at <b>${CHURCH_PHONE}</b>. We&rsquo;ll call back and set a pickup time. Don&rsquo;t promise a time yourself.</p></section>
+<style>.page{gap:0.1in;padding-bottom:0.3in}</style>
+<div><h1 style="font-size:28pt">Checkout table</h1><p class="sub">Nobody leaves with an item until it is <b>paid and released</b>. <b>Always trust the Checkout screen &mdash; not a phone screenshot.</b></p></div>
+<section class="panel" style="padding:0.1in 0.2in"><span class="pill y">Step 1 &middot; every guest</span>
+  <p style="margin-top:6px;font-size:11.4pt;line-height:1.35">Sign in at <b>${host}/admin</b> &rarr; <b>Checkout</b> &rarr; search by <b>name or bidder number</b> &rarr; open the guest. You&rsquo;ll see everything they won and the <b>balance due</b>.</p></section>
+<div class="two" style="gap:0.14in">
+  <section class="panel" style="padding:0.1in 0.18in"><span class="pill k">A &middot; Paid in the app (best)</span>
+    <ol style="margin-top:6px;gap:5px"><li style="font-size:10.2pt">Guest opens <b>My wins</b> &rarr; <b>Pay now</b> &rarr; pays with card, Apple Pay or Google Pay.</li><li style="font-size:10.2pt">They show you their <b>receipt</b>. You open their page &mdash; it says <b>Paid online (Square)</b> and the balance is <b>$0</b>.</li><li style="font-size:10.2pt">Balance $0? <b>Release</b> each item and hand it over.</li></ol>
+    <p class="note" style="font-size:9.4pt">Screen still shows a balance? <b>Refresh</b> and wait a minute. Still not there? Get an administrator &mdash; don&rsquo;t release yet.</p></section>
+  <section class="panel" style="padding:0.1in 0.18in"><span class="pill k">B &middot; Paid at the kiosk</span>
+    <ol style="margin-top:6px;gap:5px"><li style="font-size:10.2pt">Guest pays the <b>full balance</b> at the card kiosk and waits for <b>Approved</b>.</li><li style="font-size:10.2pt">The kiosk does <b>not</b> tell the app. On the guest&rsquo;s page, record a payment: method <b>Card terminal</b>, the <b>same amount</b>, and the kiosk receipt number as the reference.</li><li style="font-size:10.2pt">Balance $0? <b>Release</b> and hand over.</li></ol>
+    <p class="note" style="font-size:9.4pt"><b>Record it once.</b> If they already paid in the app, don&rsquo;t record the kiosk too.</p></section>
 </div>
-<p class="rule"><b>Overpaid or paid the wrong item?</b> Stop and ask an <b>administrator</b>. Payments are corrected by voiding with a reason &mdash; they&rsquo;re never deleted.</p>
+<div class="two" style="gap:0.14in">
+  <section class="panel" style="padding:0.1in 0.18in"><span class="pill y">C &middot; Cash or check</span>
+    <ol style="margin-top:6px;gap:5px"><li style="font-size:10.2pt">Count it. Record the payment: <b>Cash</b> or <b>Check</b> + amount (check number as the reference).</li><li style="font-size:10.2pt">Partial payments are fine &mdash; the balance stays on screen. <b>Release</b> only fully paid items.</li></ol></section>
+  <section class="panel" style="padding:0.1in 0.18in"><span class="pill y">Chili cook-off votes</span>
+    <p style="margin-top:6px;font-size:10.2pt;line-height:1.32">If the guest voted, a <b>Chili cook-off votes</b> box appears on their page. It is <b>separate</b> from their items and is <b>not</b> paid in the app. Collect it, then tap <b>Cash</b>, <b>Check</b> or <b>Card terminal</b>. Mistaken tap? <b>Remove</b> (unpaid votes only).</p></section>
+</div>
+<div class="two" style="gap:0.14in">
+  <section class="panel" style="padding:0.1in 0.18in"><span class="pill k">Good to know</span>
+    <ul class="chk" style="margin-top:6px"><li style="font-size:10pt">Items in a <b>Last Chance</b> window aren&rsquo;t won yet &mdash; they appear when final.</li><li style="font-size:10pt"><b>Power-Ups and pies</b> were paid at the Bid Desk &mdash; not at checkout.</li></ul></section>
+  <section class="panel" style="padding:0.1in 0.18in"><span class="pill y">Can&rsquo;t stay tonight?</span>
+    <p style="margin-top:6px;font-size:10.2pt;line-height:1.32">Guests call the church at <b>${CHURCH_PHONE}</b>. We&rsquo;ll call back and set a pickup time. Don&rsquo;t promise a time yourself.</p></section>
+</div>
+<p class="rule" style="font-size:10.2pt"><b>Paid twice, paid too much, or wrong item?</b> Stop and get an <b>administrator</b>. Mistakes are corrected by <b>voiding with a reason</b> &mdash; never deleted. A guest who overpaid online shows a <b>refund due</b> alert: the administrator refunds them in Square.</p>
 </div></body></html>`
 
 // ───────────────── Host run of show + emergency card ─────────────────
