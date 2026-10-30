@@ -137,7 +137,7 @@ const puRows = POWERUPS.map(([n, p, d]) => `<tr><td class="p">${n}</td><td class
 // ───────────────── Bid Desk (volunteers) ─────────────────
 const bidDesk = async () => `${head('Bid Desk', 'Volunteer guide · Bid Desk')}
 <style>.page{gap:0.1in;padding-bottom:0.3in} ol li{font-size:10.6pt;line-height:1.28} .panel{padding:0.13in 0.2in} h1{font-size:32pt}</style>
-<div><h1>Bid Desk</h1><p class="sub">For guests <b>without a smartphone</b>: you place their silent-auction bids on your phone. Walk the room &mdash; don&rsquo;t wait behind a table.</p></div>
+<div><h1>Bid Desk</h1><p class="sub">The <b>Bid Desk is home base</b>. For guests <b>without a smartphone</b>, you place their silent-auction bids on your phone &mdash; at the desk, or walking the room.</p></div>
 <section class="panel"><span class="pill y">Placing a bid</span>
   <ol style="margin-top:8px">
     <li>Sign in at <b>${host}/admin</b> on your phone. Tap <b>Bid desk</b> in the menu.</li>
@@ -148,9 +148,9 @@ const bidDesk = async () => `${head('Bid Desk', 'Volunteer guide · Bid Desk')}
   </ol></section>
 <div class="two">
   <section class="panel"><span class="pill k">Keep it fast</span>
-    <ul class="chk" style="margin-top:8px"><li>Take bids <b>on the spot</b>, not at a desk.</li><li>Paper slips are only a backup. A runner collects them <b>every 3 minutes</b>.</li><li>Silent bidding <b>closes at ${CLOSE_TIME}</b>. The system refuses anything later.</li><li><b>Slip cutoff: 8:20 PM.</b> After that, bid only on the spot.</li><li><b>Power-Ups and Pie Brandon sign-ups are sold here too</b> &mdash; see the &ldquo;Selling Power-Ups&rdquo; sheet.</li><li><b>Chili votes</b> are on the guest&rsquo;s own phone at <b>${host}/chili</b> &mdash; you don&rsquo;t take that money here.</li></ul></section>
+    <ul class="chk" style="margin-top:8px"><li>Guests can come to the <b>Bid Desk</b>, and runners also take bids <b>on the spot</b> with their phone.</li><li>Paper slips are only a backup. A runner collects them <b>every 3 minutes</b>.</li><li>Silent bidding <b>closes at ${CLOSE_TIME}</b>. The system refuses anything later.</li><li><b>Slip cutoff: 8:20 PM.</b> After that, bid only on the spot.</li><li><b>Power-Ups and Pie Brandon sign-ups are sold here too</b> &mdash; see the &ldquo;Selling Power-Ups&rdquo; sheet.</li><li><b>Chili votes</b> are on the guest&rsquo;s own phone at <b>${host}/chili</b> &mdash; you don&rsquo;t take that money here.</li></ul></section>
   <section class="panel"><span class="pill y">If something goes wrong</span>
-    <ul class="chk" style="margin-top:8px"><li>No green message = <b>no bid</b>. Try again; it never double-bids.</li><li>&ldquo;Bid just changed&rdquo;: someone beat it. Show the guest the new minimum.</li><li>Wrong guest or amount? Tell an <b>administrator</b>. Don&rsquo;t retype it.</li></ul></section>
+    <ul class="chk" style="margin-top:8px"><li>No green message = <b>no bid</b>. Try again; it never double-bids.</li><li>&ldquo;Bid just changed&rdquo;: someone beat it. Show the guest the new minimum.</li><li>Wrong guest or amount? Tell <b>Brandon or Dee</b>. Don&rsquo;t retype it.</li></ul></section>
 </div>
 <p class="rule"><b>Never</b> bid without the guest telling you the amount, and never bid for yourself. Bids are binding, and every bid you place is recorded under your name.</p>
 <div class="foot"><p><b class="u">Paddle number lost?</b>Look the guest up under <b>Bidders</b> in the menu by name. Don&rsquo;t guess.</p></div>
@@ -180,7 +180,7 @@ const puDesk = async () => `${head('Selling Power-Ups', 'Volunteer guide · Bid 
 <section class="panel"><span class="pill k">What they&rsquo;re buying</span>
   <table class="t" style="margin-top:8px"><tr><th>Item</th><th>Price</th><th>What it is</th></tr>${puRows}${pieRows}</table>
   <p class="note">An administrator can change prices. A Power-Up is used <b>once</b> and is not refunded after use. <b>Pies:</b> the host calls people up in the order they signed up.</p></section>
-<p class="rule"><b>Never</b> add a Power-Up without receiving payment. Wrong guest or quantity? Tell an <b>administrator</b> &mdash; sales are corrected with a record, never erased. Power-Up and pie money is counted <b>separately</b> from auction winnings and is <b>not</b> added to anyone&rsquo;s checkout.</p>
+<p class="rule"><b>Never</b> add a Power-Up without receiving payment. Wrong guest or quantity? Tell <b>Brandon or Dee</b> &mdash; sales are corrected with a record, never erased. Power-Up and pie money is counted <b>separately</b> from auction winnings and is <b>not</b> added to anyone&rsquo;s checkout.</p>
 <div class="foot"><p><b class="u">Count your cash drawer</b>At the end of the night the <b>Power-Ups</b> page shows total sales by cash / check / card. Your drawer should match.</p></div>
 </div></body></html>`
 
@@ -207,7 +207,7 @@ const checkout = async () => `${head('Checkout', 'Volunteer guide · Checkout ta
 <div class="two" style="gap:0.14in">
   <section class="panel" style="padding:0.1in 0.18in"><span class="pill k">A &middot; Paid in the app (best)</span>
     <ol style="margin-top:6px;gap:5px"><li style="font-size:10.2pt">Guest opens <b>My wins</b> &rarr; <b>Pay now</b> &rarr; pays with a credit or debit card.</li><li style="font-size:10.2pt">They show you their <b>receipt</b>. You open their page &mdash; it says <b>Paid online (Square)</b> and the balance is <b>$0</b>.</li><li style="font-size:10.2pt">Balance $0? <b>Release</b> each item and hand it over.</li></ol>
-    <p class="note" style="font-size:9.4pt">Screen still shows a balance? <b>Refresh</b> and wait a minute. Still not there? Get an administrator &mdash; don&rsquo;t release yet.</p></section>
+    <p class="note" style="font-size:9.4pt">Screen still shows a balance? <b>Refresh</b> and wait a minute. Still not there? Get <b>Brandon or Dee</b> &mdash; don&rsquo;t release yet.</p></section>
   <section class="panel" style="padding:0.1in 0.18in"><span class="pill k">B &middot; Paid at the kiosk</span>
     <ol style="margin-top:6px;gap:5px"><li style="font-size:10.2pt">Guest pays the <b>full balance</b> at the card kiosk and waits for <b>Approved</b>.</li><li style="font-size:10.2pt">The kiosk does <b>not</b> tell the app. On the guest&rsquo;s page, record a payment: method <b>Card terminal</b>, the <b>same amount</b>, and the kiosk receipt number as the reference.</li><li style="font-size:10.2pt">Balance $0? <b>Release</b> and hand over.</li></ol>
     <p class="note" style="font-size:9.4pt"><b>Record it once.</b> If they already paid in the app, don&rsquo;t record the kiosk too.</p></section>
@@ -224,7 +224,7 @@ const checkout = async () => `${head('Checkout', 'Volunteer guide · Checkout ta
   <section class="panel" style="padding:0.1in 0.18in"><span class="pill y">Can&rsquo;t stay tonight?</span>
     <p style="margin-top:6px;font-size:10.2pt;line-height:1.32">Guests call the church at <b>${CHURCH_PHONE}</b>. We&rsquo;ll call back and set a pickup time. Don&rsquo;t promise a time yourself.</p></section>
 </div>
-<p class="rule" style="font-size:10.2pt"><b>Paid twice, paid too much, or wrong item?</b> Stop and get an <b>administrator</b>. Mistakes are corrected by <b>voiding with a reason</b> &mdash; never deleted. A guest who overpaid online shows a <b>refund due</b> alert: the administrator refunds them in Square.</p>
+<p class="rule" style="font-size:10.2pt"><b>Paid twice, paid too much, or wrong item?</b> Stop and get <b>Brandon or Dee</b>. Mistakes are corrected by <b>voiding with a reason</b> &mdash; never deleted. A guest who overpaid online shows a <b>refund due</b> alert: Brandon or Dee refunds them in Square.</p>
 </div></body></html>`
 
 // ───────────────── Host run of show + emergency card ─────────────────
