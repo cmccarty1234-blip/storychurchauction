@@ -7,6 +7,7 @@ import { GRACE_MS } from '@/lib/commercials'
 import { formatCents } from '@/lib/money'
 import { liveClock, mmss, secsUntil, useGameState, useTicker } from '@/lib/game-client'
 import type { GameState, StageItem } from '@/lib/game-state'
+import { powerupFx, type Note } from '@/lib/powerup-fx'
 
 type Ann = GameState['announcements'][number]
 
@@ -31,12 +32,41 @@ function useBeeper(muted: boolean) {
   }
 }
 
+/** Plays a short sequence of synthesized notes (the Power-Up sounds). Silent until the page has sound. */
+function useSynth(muted: boolean) {
+  const ctx = useRef<AudioContext | null>(null)
+  return (notes: Note[]) => {
+    if (muted) return
+    try {
+      ctx.current ??= new AudioContext()
+      const c = ctx.current
+      const t0 = c.currentTime
+      for (const n of notes) {
+        const start = t0 + n.at / 1000
+        const end = start + n.ms / 1000
+        const o = c.createOscillator()
+        const g = c.createGain()
+        o.type = n.type ?? 'sine'
+        o.frequency.setValueAtTime(n.f, start)
+        if (n.to) o.frequency.exponentialRampToValueAtTime(n.to, end)
+        g.gain.setValueAtTime(0.0001, start)
+        g.gain.exponentialRampToValueAtTime(n.vol ?? 0.14, start + 0.015)
+        g.gain.exponentialRampToValueAtTime(0.0001, end)
+        o.connect(g).connect(c.destination)
+        o.start(start)
+        o.stop(end + 0.03)
+      }
+    } catch {}
+  }
+}
+
 export function Projector({ qr, chiliQr, joinUrl }: { qr: string; chiliQr?: string; joinUrl: string }) {
   const { state, online, now } = useGameState(1000)
   useTicker(100)
   const [reduced, setReduced] = useState(false)
   const [muted, setMuted] = useState(true)
   const beep = useBeeper(muted)
+  const synth = useSynth(muted)
 
   useEffect(() => {
     const id = setTimeout(() => {
@@ -72,12 +102,14 @@ export function Projector({ qr, chiliQr, joinUrl }: { qr: string; chiliQr?: stri
     if (!overlay && queue.current.length) {
       const next = queue.current.shift()!
       setOverlay(next)
-      beep(next.kind === 'item.sold' ? 988 : 660, 260)
+      const fx = powerupFx(next.kind)
+      if (fx) synth(fx.sound)
+      else beep(next.kind === 'item.sold' ? 988 : 660, 260)
     }
   }, [state, overlay]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!overlay) return
-    const ms = overlay.kind === 'room.jackpot.winner' ? 11000 : overlay.kind === 'item.sold' ? 8000 : 5500
+    const ms = overlay.kind === 'room.jackpot.winner' ? 11000 : overlay.kind === 'item.sold' ? 8000 : (powerupFx(overlay.kind)?.ms ?? 5500)
     const id = setTimeout(() => setOverlay(null), ms)
     return () => clearTimeout(id)
   }, [overlay])
@@ -156,7 +188,7 @@ export function Projector({ qr, chiliQr, joinUrl }: { qr: string; chiliQr?: stri
       ) : null}
       <Ticker state={state} reduced={reduced} />
       {state.commercial && !state.event.emergency && new Date(state.commercial.endsAt).getTime() + GRACE_MS > t ? <CommercialBreak key={state.commercial.startedAt} c={state.commercial} now={t} muted={muted} onSound={() => setMuted(false)} reduced={reduced} joinUrl={joinUrl} /> : null}
-      {overlay ? <Overlay a={overlay} state={state} /> : null}
+      {overlay ? <Overlay a={overlay} state={state} reduced={reduced} /> : null}
       {!online ? <div className="fixed left-4 top-4 rounded bg-amber-500 px-3 py-1 text-sm font-bold text-black">Reconnecting…</div> : null}
       <div className="fixed bottom-14 right-3 z-50 flex gap-2 opacity-30 transition hover:opacity-100 focus-within:opacity-100">
         <button aria-label={muted ? 'Turn sound on' : 'Mute sound'} onClick={() => setMuted((m) => !m)} className="rounded-full bg-white/15 p-3 text-white hover:bg-white/30">
@@ -538,16 +570,44 @@ function BattleView({ state, now }: { state: GameState; now: number }) {
 }
 
 // ───────────────────────── Modes C & E: overlays ─────────────────────────
-function Overlay({ a, state }: { a: Ann; state: GameState }) {
+function Overlay({ a, state, reduced }: { a: Ann; state: GameState; reduced: boolean }) {
   const isSold = a.kind === 'item.sold'
   const isJackpot = a.kind === 'room.jackpot.winner'
+  const fx = powerupFx(a.kind)
+  // The Knockout's white flash is a quick 0.6 s pop, and is skipped entirely when motion is reduced.
+  const [flashOn, setFlashOn] = useState(true)
+  useEffect(() => {
+    const id = setTimeout(() => setFlashOn(false), 600)
+    return () => clearTimeout(id)
+  }, [])
   const item = a.itemId ? [...state.lastChance, ...state.reopened, state.stage].find((i) => i?.id === a.itemId) : null
+  // Particles are laid out once per overlay (a fixed spread, so nothing random is drawn).
+  const bits = useMemo(() => Array.from({ length: fx?.layer.count ?? 0 }, (_, i) => ({ left: (i * 37 + 11) % 100, delay: (i % 9) * 0.45, dur: 3 + (i % 5) * 0.7, size: 2.5 + (i % 4) * 1.1 })), [fx])
   return (
-    <div className="fixed inset-0 z-40 flex flex-col items-center justify-center bg-ink/95 px-[calc(var(--u)*5)] text-center" role="alert">
+    <div className={`fixed inset-0 z-40 flex flex-col items-center justify-center overflow-hidden bg-ink/95 px-[calc(var(--u)*5)] text-center ${fx?.shake ? 'sc-shake' : ''}`} role="alert" style={fx ? { backgroundImage: `radial-gradient(circle at 50% 45%, ${fx.tint}, transparent 70%)` } : undefined}>
+      {fx?.layer.kind === 'up'
+        ? bits.map((b, i) => (
+            <span key={i} aria-hidden className="sc-spirit pointer-events-none absolute bottom-0 block" style={{ left: `${b.left}%`, fontSize: `calc(var(--u) * ${b.size})`, color: fx.accent, '--d': `${b.dur}s`, '--delay': `${b.delay}s` } as React.CSSProperties}>{fx.layer.glyph}</span>
+          ))
+        : null}
+      {fx?.layer.kind === 'rings'
+        ? bits.map((b, i) => (
+            <span key={i} aria-hidden className="sc-ring pointer-events-none absolute left-1/2 top-[45%] block size-[40vh] -translate-x-1/2 -translate-y-1/2 rounded-full border-[calc(var(--u)*0.6)]" style={{ borderColor: fx.accent, '--delay': `${i * 0.45}s` } as React.CSSProperties} />
+          ))
+        : null}
+      {fx?.flash && flashOn && !reduced ? <div aria-hidden className="sc-flash pointer-events-none absolute inset-0 bg-white" /> : null}
       <div className="absolute top-[3vh]"><Logo className="h-[6vh]" /></div>
       {isSold ? <Confetti /> : null}
       {isJackpot ? (
         <Jackpot a={a} />
+      ) : fx ? (
+        <>
+          <p className="relative z-10 text-[length:calc(var(--u)*2)] font-black tracking-[0.3em]" style={{ color: fx.accent }}>{fx.tag}</p>
+          <p className={`relative z-10 text-[length:calc(var(--u)*13)] leading-none ${a.kind === 'powerup.final_call' ? 'sc-swing' : ''}`} aria-hidden>{fx.icon}</p>
+          <p className={`relative z-10 mt-[1vh] font-heading text-[length:calc(var(--u)*8.5)] leading-[1.02] ${fx.motion}`} style={{ color: fx.accent, textShadow: `0 0 40px ${fx.accent}` }}>{a.headline}</p>
+          {a.body ? <p className="relative z-10 mt-4 text-[length:calc(var(--u)*3)] font-bold">{a.body}</p> : null}
+          {item ? <p className="relative z-10 mt-2 text-[length:calc(var(--u)*2.2)] text-white/70">Currently {formatCents(item.currentBidCents)}{item.provisionalUntil ? ' · last-chance window open' : ''}</p> : null}
+        </>
       ) : (
         <>
           <p className="sc-pop font-heading text-[length:calc(var(--u)*8.5)] leading-[1.02] text-brand-yellow">{isSold ? 'SOLD!' : a.headline}</p>
