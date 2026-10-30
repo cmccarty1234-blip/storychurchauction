@@ -618,9 +618,14 @@ function CommercialBreak({ c, now, muted, onSound, reduced, joinUrl }: { c: NonN
   const [ended, setEnded] = useState(false)
   const expectedMs = new Date(c.endsAt).getTime() - new Date(c.startedAt).getTime()
   const isHouse = !c.youtubeId // the built-in spot has no video: it simply runs its length
-  const byClock = isHouse || c.fixed // ...and a fixed-length break ends on the clock, not when the video says it is done
+  // A fixed-length break (a trimmed or held clip) runs on the clock, but the clock starts when the host tapped Start — a slow-loading
+  // video starts late. So it also follows the player: the countdown shows the video's real time left, and the break isn't dropped
+  // while the video is still playing (up to LATE_MS past the clock). Once the video reports it is over, only the clock is left.
+  const LATE_MS = 8000
+  const [pos, setPos] = useState<number | null>(null) // seconds into the video, as the player reports it
+  const [videoDone, setVideoDone] = useState(false)
   useEffect(() => {
-    if (byClock) return
+    if (isHouse) return
     const t0 = Date.now()
     let lastSignal = t0
     let duration = 0
@@ -629,6 +634,11 @@ function CommercialBreak({ c, now, muted, onSound, reduced, joinUrl }: { c: NonN
       try {
         const m = JSON.parse(e.data)
         lastSignal = Date.now()
+        if (c.fixed) {
+          if (typeof m.info?.currentTime === 'number') setPos(m.info.currentTime)
+          if (((m.event === 'onStateChange' && m.info === 0) || (m.event === 'infoDelivery' && m.info?.playerState === 0)) && Date.now() - t0 >= 4000) setVideoDone(true)
+          return
+        }
         if (typeof m.info?.duration === 'number' && m.info.duration > 0) duration = m.info.duration
         // "Ended" counts only for the commercial itself — a pre-roll ad ending reports a different (shorter) duration.
         const ended = (m.event === 'onStateChange' && m.info === 0) || (m.event === 'infoDelivery' && m.info?.playerState === 0)
@@ -638,15 +648,17 @@ function CommercialBreak({ c, now, muted, onSound, reduced, joinUrl }: { c: NonN
     window.addEventListener('message', onMsg)
     // If YouTube goes quiet well after the video should be over (blocked, closed, offline), stop waiting for it.
     const id = setInterval(() => {
-      if (Date.now() - t0 > expectedMs + 6000 && Date.now() - lastSignal > 4000) setEnded(true)
+      if (!c.fixed && Date.now() - t0 > expectedMs + 6000 && Date.now() - lastSignal > 4000) setEnded(true)
     }, 1000)
     return () => {
       window.removeEventListener('message', onMsg)
       clearInterval(id)
     }
-  }, [expectedMs, byClock])
+  }, [expectedMs, isHouse, c.fixed])
   const total = expectedMs
-  const leftMs = Math.max(0, new Date(c.endsAt).getTime() - now)
+  const clockLeftMs = Math.max(0, new Date(c.endsAt).getTime() - now)
+  const videoLeftMs = c.fixed && pos != null && !videoDone ? Math.max(0, (c.startAt + expectedMs / 1000 - pos) * 1000) : 0
+  const leftMs = Math.min(Math.max(clockLeftMs, videoLeftMs), clockLeftMs + LATE_MS)
   const src = `https://www.youtube-nocookie.com/embed/${c.youtubeId}?autoplay=1&mute=${startMuted ? 1 : 0}&controls=0&rel=0&modestbranding=1&playsinline=1&iv_load_policy=3&disablekb=1&fs=0&cc_load_policy=0${c.fixed ? `&start=${c.startAt}&end=${c.startAt + Math.ceil(expectedMs / 1000)}` : ''}&enablejsapi=1&origin=${encodeURIComponent(new URL(joinUrl).origin)}`
   const item = c.item
   const anim = (cls: string) => (reduced ? '' : cls)
@@ -662,7 +674,8 @@ function CommercialBreak({ c, now, muted, onSound, reduced, joinUrl }: { c: NonN
       .catch(() => {})
     return () => { alive = false }
   }, [itemNumber, joinUrl])
-  if (ended || (byClock && now >= new Date(c.endsAt).getTime())) return null
+  const clockOver = now >= new Date(c.endsAt).getTime()
+  if (ended || (isHouse && clockOver) || (c.fixed && clockOver && (videoDone || pos == null || videoLeftMs <= 500 || now >= new Date(c.endsAt).getTime() + LATE_MS))) return null
   return (
     <div className="fixed inset-0 z-30 flex flex-col items-center overflow-hidden bg-black text-white" role="region" aria-label="Commercial break">
       <div className={`absolute inset-0 ${anim('sc-stripes')}`} aria-hidden />
