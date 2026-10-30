@@ -199,7 +199,7 @@ export function Projector({ qr, chiliQr, joinUrl }: { qr: string; chiliQr?: stri
   } else if ((state.stage || state.reopened[0]) && state.event.displayMode !== 'dashboard') {
     main = <LiveView state={state} item={state.stage ?? state.reopened[0]} now={t} />
   } else {
-    main = <Dashboard state={state} now={t} qr={qr} joinUrl={joinUrl} />
+    main = <Dashboard state={state} now={t} qr={qr} chiliQr={chiliQr} joinUrl={joinUrl} />
   }
 
   return (
@@ -210,6 +210,7 @@ export function Projector({ qr, chiliQr, joinUrl }: { qr: string; chiliQr?: stri
           <p className="font-heading text-[length:calc(var(--u)*2.2)]">PIE BRANDON IN THE FACE — sign up in the app or at the Bid Desk! Small {formatCents(state.pies.smallPriceCents)} · LARGE {formatCents(state.pies.largePriceCents)}</p>
         </div>
       ) : null}
+      {['live', 'lightning', 'battle'].includes(room?.code ?? (state.stage || state.reopened[0] ? 'live' : '')) && !state.event.emergency && state.event.displayMode !== 'chili' ? <ChiliStrip state={state} qr={chiliQr} /> : null}
       <Ticker state={state} reduced={reduced} />
       {state.commercial && !state.event.emergency && new Date(state.commercial.endsAt).getTime() + GRACE_MS > t ? <CommercialBreak key={state.commercial.startedAt} c={state.commercial} now={t} muted={muted} onSound={() => setMuted(false)} reduced={reduced} joinUrl={joinUrl} /> : null}
       {overlay ? <Overlay a={overlay} state={state} reduced={reduced} /> : null}
@@ -398,7 +399,7 @@ function QrCard({ qr, joinUrl, big = false }: { qr: string; joinUrl: string; big
   )
 }
 
-function Dashboard({ state, now, qr, joinUrl }: { state: GameState; now: number; qr: string; joinUrl: string }) {
+function Dashboard({ state, now, qr, chiliQr, joinUrl }: { state: GameState; now: number; qr: string; chiliQr?: string; joinUrl: string }) {
   const tt = state.totals
   // One headline number: every winning/leading bid plus Power-Up sales.
   const committed = tt.leadingCents + tt.finalizedCents + tt.powerupCents + tt.pieCents + tt.chiliCents
@@ -449,6 +450,8 @@ function Dashboard({ state, now, qr, joinUrl }: { state: GameState; now: number;
           </p>
         </div>
       ) : null}
+
+      {chiliQr ? <ChiliStrip state={state} qr={chiliQr} /> : null}
 
       {chance.length ? (
         <div className="sc-pop rounded-2xl bg-brand-yellow px-[calc(var(--u)*2)] py-[1vh] text-ink">
@@ -510,6 +513,18 @@ function Welcome({ state, qr, joinUrl }: { state: GameState; qr: string; joinUrl
         <p className="mt-[3vh] font-heading text-[length:calc(var(--u)*2.2)] tracking-wide text-white/70">YOUR STORY MATTERS.</p>
       </div>
       <QrCard qr={qr} joinUrl={joinUrl} big />
+    </div>
+  )
+}
+
+/** A thin strip with a QR code, shown on the main screens while chili voting is open. */
+function ChiliStrip({ state, qr }: { state: GameState; qr?: string }) {
+  if (state.chili.state !== 'open' || !qr) return null
+  return (
+    <div className="flex shrink-0 items-center justify-center gap-[calc(var(--u)*2.5)] bg-orange-600 py-[0.5vh] text-white">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={qr} alt="QR code to vote for a chili" className="size-[calc(var(--u)*5)] rounded-md bg-white p-[0.3vh]" />
+      <p className="whitespace-nowrap font-heading text-[length:calc(var(--u)*2.4)] leading-tight">CHILI COOK-OFF — TASTE &amp; VOTE! <span className="font-sans font-bold">$1 = 1 vote · scan the code</span></p>
     </div>
   )
 }
