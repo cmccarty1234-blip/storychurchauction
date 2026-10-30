@@ -27,6 +27,7 @@ const Body = z.discriminatedUnion('action', [
   z.object({ action: z.literal('jackpot-draw'), sessionId: uuid, reason: z.string().max(200).optional() }),
   z.object({ action: z.literal('commercial-play'), key: z.string().max(60), itemId: uuid.optional() }),
   z.object({ action: z.literal('commercial-stop') }),
+  z.object({ action: z.literal('powerup-test'), code: z.enum(['resurrection', 'final_call', 'knockout', 'block', 'back_in']) }),
   z.object({ action: z.literal('chili-state'), state: z.enum(['off', 'open', 'closed']) }),
 ])
 
@@ -78,6 +79,20 @@ export const POST = route(async (req) => {
         await c.query('update events set commercial_key = $2, commercial_item_id = $3, commercial_started_at = now() where id = $1', [ev.id, clip.key, linked])
         await audit({ eventId: ev.id, actorType: 'admin', actorId: admin.id, action: 'host.commercial', details: { key: clip.key, itemId: linked } }, c)
         await notify(c, { t: 'game' })
+      })
+      return { ok: true }
+    }
+    case 'powerup-test': {
+      // Shows a Power-Up's screen effect on the projector with nothing behind it: no item, no bidder, no inventory used.
+      const headline = {
+        resurrection: 'RESURRECTION! THIS AUCTION IS BACK!',
+        final_call: 'FINAL CALL! +30 SECONDS!',
+        knockout: 'KNOCKOUT! BIDDING CLOSED!',
+        block: 'BLOCKED! Bidder #1042 is locked out for 30 seconds',
+        back_in: 'BACK IN! Bidder #1042 is back in the game',
+      }[b.code]
+      await tx(async (c) => {
+        await announce(c, { eventId: ev.id, kind: `powerup.${b.code}`, headline, body: 'TEST — not a real Power-Up', payload: { code: b.code, test: true }, interrupt: true })
       })
       return { ok: true }
     }

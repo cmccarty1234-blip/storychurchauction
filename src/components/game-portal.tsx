@@ -227,7 +227,7 @@ export function GamePortal() {
           <section aria-labelledby="act" className="rounded-2xl border bg-card p-4">
             <h2 id="act" className="text-2xl">What’s happening</h2>
             <ul className="mt-2 space-y-1.5">
-              {state.announcements.filter((a) => a.kind !== 'item.provisional').slice(0, 8).map((a) => (
+              {state.announcements.filter((a) => a.kind !== 'item.provisional' && !a.payload?.test).slice(0, 8).map((a) => (
                 <li key={a.id} className="text-sm"><b>{a.headline}</b>{a.body ? <span className="text-muted-foreground"> — {a.body}</span> : null}</li>
               ))}
               {state.announcements.every((a) => a.kind === 'item.provisional') ? <li className="text-sm text-muted-foreground">Activity will appear here as it happens.</li> : null}

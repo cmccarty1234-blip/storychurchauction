@@ -820,7 +820,7 @@ function Ticker({ state, reduced }: { state: GameState; reduced: boolean }) {
   }
   const bids: TickItem[] = state.recentBids.slice(0, 8).map((b) => ({ tag: 'NEW BID', tone: 'bid', text: `Bidder #${b.bidderNumber} on #${b.itemNumber} ${b.title}`, amount: formatCents(b.amountCents), ago: ago(b.at) }))
   const news: TickItem[] = state.announcements
-    .filter((a) => !a.kind.startsWith('item.provisional'))
+    .filter((a) => !a.kind.startsWith('item.provisional') && !a.payload?.test)
     .slice(0, 6)
     .map((a) => ({ tag: a.kind.startsWith('powerup') ? 'POWER-UP' : a.kind.startsWith('pie') ? 'PIE' : 'NEWS', tone: a.kind.startsWith('pie') ? 'pie' : 'news', text: a.headline, ago: ago(a.at) }))
   const tips: TickItem[] = [

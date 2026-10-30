@@ -264,6 +264,16 @@ export function HostConsole({ isAdmin }: { isAdmin: boolean }) {
         </ul>
       </section>
 
+      <section className="rounded-2xl border bg-card p-4">
+        <h2 className="mb-1 text-2xl">Test a Power-Up animation</h2>
+        <p className="mb-3 text-sm text-muted-foreground">Shows the effect on the projector, with its sound. Nothing is used or changed &mdash; it is only a test.</p>
+        <div className="flex flex-wrap gap-2">
+          {([['resurrection', '✝️ Resurrection'], ['final_call', '🔔 Final Call'], ['knockout', '🥊 Knockout'], ['block', '🛑 Block'], ['back_in', '⚡ Back-In']] as const).map(([code, label]) => (
+            <button key={code} className={ghost} disabled={busy || !!state.event.emergency} onClick={() => show({ action: 'powerup-test', code }, `Testing ${label.slice(3)}.`)}>{label}</button>
+          ))}
+        </div>
+      </section>
+
       <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <div className="rounded-2xl border bg-card p-4">
           <h2 className="mb-2 text-2xl">Power-Ups just played</h2>
