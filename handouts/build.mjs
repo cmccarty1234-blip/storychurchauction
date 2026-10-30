@@ -404,8 +404,39 @@ const roster = async () => {
 </div></body></html>`
 }
 
+// ───────────────── Chili cook-off cards: one page, six cards, each with a QR straight to that chili's vote ─────────────────
+// Names and numbers as seeded for the night. To change one, edit CHILIS and run the build again.
+const CHILIS = [
+  [1, "Dee's Sweet and Swaggy Chili", 'Dee'],
+  [2, "Brandon's Spicy Chicken Chili", 'Brandon'],
+  [3, "Lisa's Dragon Chili", 'Lisa'],
+  [4, "Mr. Ed's Magic Chili", 'Mr. Ed'],
+  [5, "Nicole's Veggie Chili", 'Nicole'],
+  [6, "Reyna's Chicken Verde Pozole", 'Reyna'],
+]
+const chiliCards = async () => {
+  const esc = (t) => t.replace(/&/g, '&amp;')
+  const cards = await Promise.all(CHILIS.map(async ([n, name, cook]) => `<div class="cc"><div class="cn">CHILI #${n}</div>
+    <div class="cb"><h2>${esc(name)}</h2><p class="by">Made by <b>${esc(cook)}</b></p>
+    <div class="cq"><div class="qrb">${await qr(`${SITE}/chili?e=${n}`)}</div><p><b>Scan to vote</b><br>$1 = 1 vote</p></div></div></div>`))
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Chili cook-off cards</title><style>${css}
+html,body{height:auto} .page{gap:0.12in;padding:0.38in 0.4in 0.3in} .cg{flex:1;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(3,1fr);gap:0.14in;min-height:0}
+.cc{border:3px solid #101010;border-radius:14px;overflow:hidden;display:flex;flex-direction:column;background:#fff;min-height:0}
+.cn{background:#f5c518;font-family:'Archivo Black',Impact,sans-serif;font-size:22pt;line-height:1;padding:0.07in 0.18in;border-bottom:3px solid #101010}
+.cb{flex:1;padding:0.08in 0.18in 0.1in;display:flex;flex-direction:column;gap:3px;min-height:0}
+.cb h2{font-size:16pt;margin:0;line-height:1.05} .by{font-size:10.5pt;color:#444}
+.cq{margin-top:auto;display:flex;align-items:center;gap:0.14in} .cq p{font-size:13pt;line-height:1.25;font-weight:600}
+.qrb{width:1.1in;height:1.1in;flex:none;background:#fff;padding:3px;border:2px solid #101010;border-radius:8px} .qrb svg{width:100%;height:100%}
+</style></head><body><div class="page"><div class="bar"></div>
+<header><img src="${logo}" alt="Story Church"><span class="tag">Chili cook-off · $1 = 1 vote</span></header>
+<div><h1 style="font-size:30pt">Chili cook-off</h1><p class="sub" style="font-size:11.5pt">Taste them all, then scan the card of your favorite. <b>Every dollar is a vote &mdash; the most dollars wins.</b> Votes are added to your balance and paid at checkout.</p></div>
+<div class="cg">${cards.join('')}</div>
+<div class="foot" style="padding:0.1in 0.2in"><p style="font-size:10pt">Not registered yet? Scan any card, or go to <b>${host}/chili</b>. Voting closes when the host says so. Questions? Ask any volunteer. <b>Your story matters.</b></p></div>
+</div></body></html>`
+}
+
 const edge = ['C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', 'C:/Program Files/Microsoft/Edge/Application/msedge.exe'].find((p) => { try { readFileSync(p, { flag: 'r' }); return true } catch { return false } })
-for (const [name, html] of [['How-To-Bid', await bid()], ['How-To-Register', await reg()], ['How-To-Use-Power-Ups', await puGuest()], ['Volunteer-Bid-Desk', await bidDesk()], ['Volunteer-Bid-Slips', await slips()], ['Volunteer-Bid-Desk-Selling-Power-Ups', await puDesk()], ['Volunteer-Checkout-Table', await checkout()], ['Host-Run-Of-Show', await hostSheet()], ['Team-Meeting-Agenda', await agenda()], ['Item-Roster', await roster()]]) {
+for (const [name, html] of [['How-To-Bid', await bid()], ['How-To-Register', await reg()], ['How-To-Use-Power-Ups', await puGuest()], ['Volunteer-Bid-Desk', await bidDesk()], ['Volunteer-Bid-Slips', await slips()], ['Volunteer-Bid-Desk-Selling-Power-Ups', await puDesk()], ['Volunteer-Checkout-Table', await checkout()], ['Host-Run-Of-Show', await hostSheet()], ['Team-Meeting-Agenda', await agenda()], ['Item-Roster', await roster()], ['Chili-Cards', await chiliCards()]]) {
   const f = path.join(out, `${name}.html`)
   writeFileSync(f, html)
   const pdf = path.join(out, `${name}.pdf`)

@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { Check, Loader2 } from 'lucide-react'
 import { newKey, post } from '@/lib/client'
@@ -11,10 +11,11 @@ type Entry = { id: string; number: number; name: string; cook: string | null; ce
 type Data = { state: 'off' | 'open' | 'closed'; entries: Entry[]; totalCents: number; signedIn: boolean; mine: { byEntry: Record<string, number>; owedCents: number; paidCents: number } | null }
 
 /** The guest chili page: $1 = 1 vote. Live totals; each vote is added to what the guest owes the desk at checkout. */
-export function ChiliVote() {
+export function ChiliVote({ highlight }: { highlight?: number }) {
   const [data, setData] = useState<Data | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
   const [note, setNote] = useState<{ id: string; ok: boolean; text: string } | null>(null)
+  const scrolled = useRef(false)
 
   const load = useCallback(async () => {
     try {
@@ -30,6 +31,13 @@ export function ChiliVote() {
       clearInterval(id)
     }
   }, [load])
+
+  // Coming from a chili's QR code: bring that chili into view once the list has loaded.
+  useEffect(() => {
+    if (!data || highlight == null || scrolled.current) return
+    scrolled.current = true
+    document.getElementById(`chili-${highlight}`)?.scrollIntoView({ block: 'center' })
+  }, [data, highlight])
 
   async function vote(entry: Entry, votes: number) {
     setBusy(entry.id + votes)
@@ -70,7 +78,7 @@ export function ChiliVote() {
         {byNumber.map((e) => {
           const mine = data.mine?.byEntry[e.id] ?? 0
           return (
-            <li key={e.id} className="rounded-2xl border bg-card p-4 shadow-sm">
+            <li key={e.id} id={`chili-${e.number}`} className={`rounded-2xl border bg-card p-4 shadow-sm ${e.number === highlight ? 'border-2 border-ink ring-4 ring-brand-yellow' : ''}`}>
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Chili #{e.number}</p>
