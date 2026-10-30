@@ -284,8 +284,78 @@ html,body{height:auto} .page{height:11in;break-after:page;gap:0.1in;padding-bott
 <div class="foot"><p><b class="u">Silent auction closes ${CLOSE_TIME}.</b>Switch to <b>Thank you</b> when checkout opens. Church phone: ${CHURCH_PHONE}.</p></div>
 </div></body></html>`
 
+// ───────────────── Volunteer team meeting agenda (page 1) + hosting plan for the hosts (page 2) ─────────────────
+const agenda = async () => `${head('Team meeting', 'Volunteer huddle · 1 of 3')}
+<style>
+html,body{height:auto} .page{height:11in;break-after:page;gap:0.1in;padding-bottom:0.3in} .page:last-of-type{break-after:auto}
+.panel{padding:0.1in 0.2in} ol li{font-size:10.2pt;line-height:1.26} .chk li{font-size:10pt;margin:3px 0} table.t{font-size:10.4pt} table.t td{padding:6px 8px 6px 0} table.hp{font-size:9.6pt} table.hp td{padding:3px 6px 3px 0} .note{font-size:9.2pt;margin-top:5px} h1{font-size:28pt}
+.blank{display:inline-block;min-width:0.9in;border-bottom:1.5px solid #101010;height:0.9em;vertical-align:-1px}
+</style>
+<div><h1>Team meeting</h1><p class="sub">A 20-minute huddle before doors. Everyone leaves knowing <b>where they stand</b> and <b>what to do when something goes wrong</b>.</p></div>
+<div class="two" style="gap:0.14in">
+<section class="panel"><span class="pill k">Agenda</span>
+  <ol style="margin-top:7px;gap:5px">
+    <li><b>Welcome &amp; prayer</b> (2 min). Why we&rsquo;re here: <b>your story matters</b>. Tonight&rsquo;s goal: $<span class="blank"></span></li>
+    <li><b>The night at a glance</b> (3 min). Doors and silent bidding open <b>7:00</b> &middot; chili &amp; pie sign-ups all night &middot; live auction starts <span class="blank"></span> &middot; slip cutoff <b>8:20</b> &middot; silent closes <b>${CLOSE_TIME}</b> &middot; pie finale &middot; checkout &middot; done <b>9:00</b></li>
+    <li><b>Positions &amp; names</b> (6 min). Read the table on this page. Everyone says their name and spot out loud.</li>
+    <li><b>The rules</b> (3 min). Five rules below.</li>
+    <li><b>If something goes wrong</b> (3 min). Who to find, what not to do.</li>
+    <li><b>Phones, sheets &amp; questions</b> (3 min). Sign in, find your sheet, ask anything. Close in prayer.</li>
+  </ol></section>
+<section class="panel"><span class="pill y">Everyone, before we start</span>
+  <ul class="chk" style="margin-top:6px"><li>Phone <b>charged</b> (bring a charger).</li><li>Staff: signed in at <b>${host}/admin</b> and can see your menu.</li><li>You&rsquo;ve got your <b>sheet</b> for your position.</li><li>You know the <b>church phone</b>: ${CHURCH_PHONE}.</li><li>Brandon and Dee: you&rsquo;re the go-to for any problem. Everyone knows your faces.</li></ul>
+  <span class="pill k" style="margin-top:8px">The five rules</span>
+  <ol style="margin-top:6px;gap:3px"><li style="font-size:9.6pt"><b>Bids are binding.</b> Never bid without the guest saying the amount.</li><li style="font-size:9.6pt"><b>Never bid for yourself</b> or hold back a bid.</li><li style="font-size:9.6pt"><b>Money first.</b> Take payment before you record a Power-Up, pie or payment.</li><li style="font-size:9.6pt"><b>Trust the screen,</b> not a phone screenshot.</li><li style="font-size:9.6pt"><b>Mistakes are voided with a reason,</b> never deleted. Wrong bid or amount? Get Brandon or Dee.</li></ol></section>
+</div>
+<section class="panel" style="border:3px solid #b3261e"><span class="pill" style="background:#b3261e;color:#fff">If something goes wrong</span>
+  <ul class="chk" style="margin-top:6px;columns:2;column-gap:0.25in"><li>No green message = <b>no bid</b>. Try again; it never double-bids.</li><li>Guest says they paid but it&rsquo;s not showing? <b>Don&rsquo;t release.</b> Get Brandon or Dee.</li><li>Wi-Fi down? Phones reconnect by themselves. Switch to <b>paper slips</b> and runners.</li><li><b>Fire, fight or medical:</b> the host taps <b>Emergency stop</b>. Everyone freezes bids and follows the host.</li><li>Guest can&rsquo;t stay? Call the church: ${CHURCH_PHONE}. Never promise a pickup time.</li><li>Not sure? <b>Ask, don&rsquo;t guess.</b></li></ul></section>
+<section class="panel"><span class="pill k">What the hosts will announce &mdash; so you know the answers</span>
+  <ul class="chk" style="margin-top:6px"><li>&ldquo;Scan the QR and <b>register</b>. You&rsquo;ll get a number and a PIN.&rdquo;</li><li>&ldquo;<b>Silent items close at ${CLOSE_TIME}.</b>&rdquo;</li><li>&ldquo;<b>Power-Ups</b>: Resurrection, Final Call, Knockout.&rdquo;</li><li>&ldquo;<b>Chili:</b> $1 a vote. Most dollars wins.&rdquo;</li><li>&ldquo;<b>Pie Brandon</b>: sign up at the Bid Desk or in the app.&rdquo;</li><li>&ldquo;<b>Pay</b> in the app, at the kiosk, or at the checkout table.&rdquo;</li></ul></section>
+</div>
+<div class="page"><div class="bar"></div>
+<header><img src="${logo}" alt="Story Church"><span class="tag">Positions · 2 of 3</span></header>
+<div><h1 style="font-size:26pt">Positions we need filled</h1><p class="sub">Write the names in <b>before</b> the meeting. Everyone should know the person on their left and right.</p></div>
+<section class="panel"><span class="pill y">Positions we need filled</span>
+  <table class="t" style="margin-top:5px"><tr><th>Position</th><th>What they do</th><th>Sheet</th><th>Name</th></tr>
+  <tr><td class="p">Door &amp; registration</td><td>Welcome guests. Help them register (bidder # + PIN). Point to chili and the item tables.</td><td>How to register</td><td></td></tr>
+  <tr><td class="p">Bid Desk (home base)</td><td>Brandon &amp; Dee. Place bids for guests without a phone; sell Power-Ups and pies; answer questions.</td><td>Bid Desk · Selling Power-Ups</td><td>Brandon, Dee</td></tr>
+  <tr><td class="p">Runners (2&ndash;4)</td><td>Walk the room. Take bids on the spot on your phone. Collect paper slips every 3 minutes.</td><td>Bid Desk</td><td></td></tr>
+  <tr><td class="p">Live clerk</td><td>On the <b>Clerk</b> screen: enter paddle bids the host calls, accept phone requests, undo a wrong bid.</td><td>Host guide</td><td></td></tr>
+  <tr><td class="p">Projector &amp; sound</td><td>Keep <b>/display</b> full screen with sound on. Watch it; shout if it freezes. Re-click for sound after a reload.</td><td>Host guide</td><td></td></tr>
+  <tr><td class="p">Item tables (silent)</td><td>Keep item cards tidy; help guests scan the QR and bid; no one blocks the table.</td><td>How to bid</td><td></td></tr>
+  <tr><td class="p">Chili table</td><td>Serve the six chilis; remind guests: <b>$1 = 1 vote</b> at /chili; closes at <span class="blank" style="min-width:0.6in"></span>.</td><td>&mdash;</td><td></td></tr>
+  <tr><td class="p">Pie finale crew</td><td>Set up and clean up the pie area; line people up in sign-up order.</td><td>Host guide</td><td></td></tr>
+  <tr><td class="p">Checkout (from ${CLOSE_TIME})</td><td>Find the guest, check the balance, take payment (app, kiosk, cash or check), release the item.</td><td>Checkout table</td><td></td></tr>
+  <tr><td class="p">Hosts</td><td>Cody &amp; Jenn. Run the room and the Host console.</td><td>Host guide</td><td>Cody, Jenn</td></tr></table></section>
+<section class="panel"><span class="pill y">Split the job</span>
+  <p style="margin-top:6px;font-size:10pt;line-height:1.32"><b>One of you drives, one of you talks.</b> The driver has the Host console open (Start, commercials, projector, emergency stop) and never has to look up. The talker has the microphone and the energy. <b>Swap at the intermission</b> so neither of you is worn out for the finale. Keep your phone on the <b>Clerk</b> screen link as a backup. If something breaks, the talker keeps talking while the driver fixes it.</p></section>
+</div>
+<div class="page"><div class="bar"></div>
+<header><img src="${logo}" alt="Story Church"><span class="tag">Hosting plan · 3 of 3</span></header>
+<div><h1 style="font-size:26pt">Hosting well &mdash; Cody &amp; Jenn</h1><p class="sub">7:00 to 9:00. The system runs the clocks; you run the <b>room</b>. Your job is energy, clarity and thank-yous.</p></div>
+<section class="panel"><span class="pill k">The night, minute by minute</span>
+  <table class="t hp" style="margin-top:5px"><tr><th>Time</th><th>What&rsquo;s happening</th><th>Host moves</th></tr>
+  <tr><td class="p">Before 7:00</td><td>Setup. Projector on <b>Welcome</b>. Test a phone.</td><td>Click once on <b>/display</b> for sound. Press each <b>Test a Power-Up</b> button once.</td></tr>
+  <tr><td class="p">7:00</td><td>Doors. Silent bidding is open.</td><td>Greet people. Let the QR do the work.</td></tr>
+  <tr><td class="p">7:10</td><td><b>Welcome from the stage</b> (3&ndash;4 min)</td><td>Why we&rsquo;re here. <b>How to bid</b> (QR). <b>Power-Ups</b> (show the slide, 1 min). <b>Chili</b> voting open. <b>Pie Brandon</b> sign-ups. Switch to <b>Automatic</b>.</td></tr>
+  <tr><td class="p"><span class="blank" style="min-width:0.5in"></span></td><td><b>Live auction starts</b> (14 items)</td><td>Each item takes about <b>3 minutes</b> start to finish. Plan on <b>~45 minutes</b> for all of them, so start no later than <b>7:30</b> if you want them done before silent closes.</td></tr>
+  <tr><td class="p">Between items</td><td>Commercial break, then the next item</td><td>Play a promo for a silent item (IHOP, Overdrive, Chick-fil-A, Eye Exams, AirCity). Remind: chili, pies, Power-Ups.</td></tr>
+  <tr><td class="p">8:20</td><td>Slip cutoff</td><td>Announce: &ldquo;Paper slips are done. Bid on your phone or find a runner.&rdquo;</td></tr>
+  <tr><td class="p">Last 10 min</td><td>Silent closes at <b>${CLOSE_TIME}</b></td><td>Call it: <b>10 minutes, 5, 1</b>. Final Call can add 30 seconds to silent items.</td></tr>
+  <tr><td class="p">${CLOSE_TIME}</td><td>Silent closed. Chili closes.</td><td><b>Chili winner</b> on the chili board. Thank donors. Open <b>Checkout</b>.</td></tr>
+  <tr><td class="p">~8:40</td><td><b>Pie Brandon in the Face</b> finale</td><td>Pie screen. Call people up in order. <b>Splat!</b> each pie.</td></tr>
+  <tr><td class="p">8:55 &ndash; 9:00</td><td>Wrap</td><td>Switch to <b>Thank you</b>. Total raised, pickup info, prayer. &ldquo;Your story matters.&rdquo;</td></tr></table>
+  <p class="note"><b>Fill in the live start time above.</b> If both can&rsquo;t fit, the live items can run <b>after</b> silent closes, or cut a few. Decide before the meeting.</p></section>
+<div>
+<section class="panel"><span class="pill y">Every live item &mdash; the beat</span>
+  <ol style="margin-top:6px;gap:4px"><li style="font-size:9.8pt"><b>Intro</b> (10 sec): what it is and who gave it. <b>Thank the donor by name.</b></li><li style="font-size:9.8pt">Tap <b>Start with video</b>. The commercial plays; let it play. Don&rsquo;t talk over it.</li><li style="font-size:9.8pt">Bidding opens. <b>Hype</b>: say the price, point at the bidder, ask for the next number. The screen calls <b>going once, twice, final</b> for you.</li><li style="font-size:9.8pt"><b>Sold!</b> Say the bidder number. Clap. Thank them.</li><li style="font-size:9.8pt">Queue the next item <b>before</b> the applause ends.</li></ol></section>
+
+</div>
+<div class="foot"><p><b class="u">Your story matters.</b>Thank volunteers, donors and guests, early and often. Church phone: ${CHURCH_PHONE}.</p></div>
+</div></body></html>`
+
 const edge = ['C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', 'C:/Program Files/Microsoft/Edge/Application/msedge.exe'].find((p) => { try { readFileSync(p, { flag: 'r' }); return true } catch { return false } })
-for (const [name, html] of [['How-To-Bid', await bid()], ['How-To-Register', await reg()], ['How-To-Use-Power-Ups', await puGuest()], ['Volunteer-Bid-Desk', await bidDesk()], ['Volunteer-Bid-Slips', await slips()], ['Volunteer-Bid-Desk-Selling-Power-Ups', await puDesk()], ['Volunteer-Checkout-Table', await checkout()], ['Host-Run-Of-Show', await hostSheet()]]) {
+for (const [name, html] of [['How-To-Bid', await bid()], ['How-To-Register', await reg()], ['How-To-Use-Power-Ups', await puGuest()], ['Volunteer-Bid-Desk', await bidDesk()], ['Volunteer-Bid-Slips', await slips()], ['Volunteer-Bid-Desk-Selling-Power-Ups', await puDesk()], ['Volunteer-Checkout-Table', await checkout()], ['Host-Run-Of-Show', await hostSheet()], ['Team-Meeting-Agenda', await agenda()]]) {
   const f = path.join(out, `${name}.html`)
   writeFileSync(f, html)
   const pdf = path.join(out, `${name}.pdf`)
