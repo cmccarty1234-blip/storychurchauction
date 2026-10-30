@@ -282,7 +282,7 @@ export function HostConsole({ isAdmin }: { isAdmin: boolean }) {
         <div className="rounded-2xl border bg-card p-4">
           <h2 className="mb-2 flex items-center gap-2 text-2xl"><Megaphone className="size-6" /> Projector</h2>
           <div className="flex flex-wrap gap-2">
-            {([['welcome', 'Welcome'], ['dashboard', 'Auction'], ['live', 'Live item'], ['pie', 'Pie finale'], ['chili', 'Chili board'], ['thanks', 'Thank you'], ['auto', 'Automatic']] as const).map(([m, label]) => (
+            {([['welcome', 'Welcome'], ['dashboard', 'Auction'], ['live', 'Live item'], ['pie', 'Pie finale'], ['chili', 'Chili board'], ['powerups', 'Power-Ups'], ['thanks', 'Thank you'], ['auto', 'Automatic']] as const).map(([m, label]) => (
               <button key={m} className={state.event.displayMode === m ? gold : ghost} aria-pressed={state.event.displayMode === m} disabled={busy} onClick={() => show({ action: 'display', mode: m })}>{label}</button>
             ))}
           </div>

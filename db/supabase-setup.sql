@@ -699,3 +699,11 @@ alter table powerup_online_orders enable row level security;
 
 insert into schema_migrations (name) values ('0011_online_powerups.sql') on conflict do nothing;
 
+-- ════════════ 0012_powerups_screen.sql ════════════
+-- A "Power-Ups" screen the host can put on the projector: the three Power-Ups explained.
+alter table events drop constraint events_display_mode_check;
+alter table events add constraint events_display_mode_check
+  check (display_mode in ('auto', 'dashboard', 'live', 'message', 'welcome', 'thanks', 'pie', 'chili', 'powerups'));
+
+insert into schema_migrations (name) values ('0012_powerups_screen.sql') on conflict do nothing;
+

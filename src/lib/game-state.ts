@@ -55,6 +55,8 @@ export type GameState = {
   recentBids: { itemNumber: number; title: string; bidderNumber: number; amountCents: number; at: string }[]
   bidsTonight: number
   chili: ChiliBoard
+  /** The Power-Ups for sale (for the projector's Power-Ups screen), with today's prices. */
+  powerups: { code: string; name: string; priceCents: number }[]
   pies: PieSummary & { next: { bidderNumber: number; size: 'small' | 'large' }[] }
   totals: { leadingCents: number; finalizedCents: number; powerupCents: number; pieCents: number; chiliCents: number; paymentsCents: number; outstandingCents: number; itemsSold: number }
   announcements: { id: string; kind: string; headline: string; body: string | null; interrupt: boolean; at: string; itemId: string | null; payload: Record<string, unknown> }[]
@@ -166,6 +168,7 @@ export async function gameState(eventId: string): Promise<GameState> {
   ])
 
   const chili = await chiliBoard(eventId)
+  const powerups = await query<{ code: string; name: string; priceCents: number }>(`select code, name, price_cents as "priceCents" from powerup_defs where category = 'powerup' and enabled order by sort`).catch(() => [])
   let roomOut: GameState['room'] = null
   if (room) {
     roomOut = { id: room.id, code: room.code, endsAt: iso(room.ends_at), config: room.config }
@@ -230,6 +233,7 @@ export async function gameState(eventId: string): Promise<GameState> {
     recentBids: bids.map((b: any) => ({ itemNumber: b.item_number, title: b.title, bidderNumber: b.bidder_number, amountCents: b.amount_cents, at: b.created_at.toISOString() })),
     bidsTonight: totals.bids,
     chili,
+    powerups,
     pies: { ...(await pieSummary(eventId)), next: (await pieLine(eventId)).slice(0, 4).map((p) => ({ bidderNumber: p.bidderNumber, size: p.size })) },
     totals: { leadingCents: totals.leading, finalizedCents: totals.finalized, powerupCents: totals.powerups, pieCents: totals.pies, chiliCents: chili.totalCents, paymentsCents: totals.paid, outstandingCents: totals.finalized - totals.paid, itemsSold: totals.sold },
     announcements: ann.map((a: any) => ({ id: a.id, kind: a.kind, headline: a.headline, body: a.body, interrupt: a.interrupt, at: a.created_at.toISOString(), itemId: a.item_id, payload: a.payload })),

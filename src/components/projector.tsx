@@ -183,6 +183,8 @@ export function Projector({ qr, chiliQr, joinUrl }: { qr: string; chiliQr?: stri
     main = <PieFinale state={state} />
   } else if (state.event.displayMode === 'chili') {
     main = <ChiliBoardView state={state} qr={chiliQr} joinUrl={joinUrl} />
+  } else if (state.event.displayMode === 'powerups') {
+    main = <PowerUpsScreen state={state} qr={qr} joinUrl={joinUrl} />
   } else if (room?.code === 'lightning') {
     main = <LightningView state={state} now={t} />
   } else if (room?.code === 'battle') {
@@ -339,7 +341,7 @@ function ChiliBoardView({ state, qr, joinUrl }: { state: GameState; qr?: string;
             <p className="mt-[0.5vh] text-[length:calc(var(--u)*2.2)] font-bold text-white/80">{closed ? 'Thank you for voting!' : '$1 = 1 vote · the most dollars wins'}</p>
           </div>
           <div className="text-right">
-            <p className="tnum font-heading text-[length:calc(var(--u)*5)] leading-none">{formatCents(ch.totalCents)}</p>
+            <p className="tnum font-heading text-[length:calc(var(--u)*4)] leading-none">{formatCents(ch.totalCents)}</p>
             <p className="text-[length:calc(var(--u)*1.6)] font-bold tracking-[0.2em] text-white/60">RAISED FOR THE CAUSE</p>
           </div>
         </div>
@@ -508,6 +510,51 @@ function Welcome({ state, qr, joinUrl }: { state: GameState; qr: string; joinUrl
         <p className="mt-[3vh] font-heading text-[length:calc(var(--u)*2.2)] tracking-wide text-white/70">YOUR STORY MATTERS.</p>
       </div>
       <QrCard qr={qr} joinUrl={joinUrl} big />
+    </div>
+  )
+}
+
+/** The three Power-Ups explained, for the host to talk through from the stage. */
+function PowerUpsScreen({ state, qr, joinUrl }: { state: GameState; qr: string; joinUrl: string }) {
+  const price = (code: string) => state.powerups.find((p) => p.code === code)?.priceCents
+  const cards = [
+    { code: 'resurrection', tag: 'BRING IT BACK', name: 'RESURRECTION', lines: ['When a live auction ends, it enters a 5-minute Last Chance window.', 'Resurrection reopens it for 60 seconds. Add your own bid to take the lead.'], note: 'Live items only · once per item' },
+    { code: 'final_call', tag: 'BUY MORE TIME', name: 'FINAL CALL', lines: ['Adds 30 seconds to a running timer.', 'Rally the room, find one more bidder, squeeze in a last bid.'], note: 'Live and silent items' },
+    { code: 'knockout', tag: 'END IT NOW', name: 'THE KNOCKOUT', lines: ['Ends bidding on the spot. The leader becomes the provisional winner.', 'Only on items with a Knockout minimum, and only early.'], note: 'Others can still fight back with a Resurrection' },
+  ]
+  return (
+    <div className="flex min-h-0 flex-1 flex-col gap-[calc(var(--u)*1.2)] p-[calc(var(--u)*2)]">
+      <div className="flex items-end justify-between gap-[calc(var(--u)*3)]">
+        <div>
+          <p className="font-heading text-[length:calc(var(--u)*5)] leading-none text-brand-yellow">POWER-UPS</p>
+          <p className="mt-[0.4vh] text-[length:calc(var(--u)*1.8)] font-bold text-white/80">Change how an auction ends. Buy in the app or at the Bid Desk.</p>
+        </div>
+        <div className="flex items-center gap-[calc(var(--u)*1.5)] rounded-2xl bg-brand-yellow px-[calc(var(--u)*1.6)] py-[calc(var(--u)*0.8)] text-ink">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={qr} alt="" className="size-[calc(var(--u)*5.5)] rounded-lg bg-white p-[0.4vh]" />
+          <p className="text-[length:calc(var(--u)*1.4)] font-black leading-tight">Scan to play<br /><span className="font-bold">{joinUrl.replace(/^https?:\/\//, '')}</span></p>
+        </div>
+      </div>
+      <div className="grid min-h-0 flex-1 grid-cols-3 gap-[calc(var(--u)*1.6)]">
+        {cards.map((c) => {
+          const fx = powerupFx(`powerup.${c.code}`)
+          const accent = fx?.accent ?? '#f5c518'
+          const p = price(c.code)
+          return (
+            <div key={c.code} className="sc-pop flex min-h-0 flex-col gap-[calc(var(--u)*0.5)] overflow-hidden rounded-3xl border-[calc(var(--u)*0.3)] bg-white/5 p-[calc(var(--u)*1.5)]" style={{ borderColor: accent, boxShadow: `0 0 60px ${accent}40` }}>
+              <div className="flex items-center justify-between">
+                <span className="text-[length:calc(var(--u)*5.5)] leading-none">{fx?.icon}</span>
+                {p != null ? <span className="tnum font-heading text-[length:calc(var(--u)*5)] leading-none" style={{ color: accent }}>{formatCents(p)}</span> : null}
+              </div>
+              <p className="text-[length:calc(var(--u)*1.3)] font-black tracking-[0.22em]" style={{ color: accent }}>{c.tag}</p>
+              <p className="font-heading text-[length:calc(var(--u)*2.7)] leading-none">{c.name}</p>
+              {c.lines.map((l) => <p key={l} className="text-[length:calc(var(--u)*1.55)] font-semibold leading-snug text-white/90">{l}</p>)}
+              <p className="mt-auto text-[length:calc(var(--u)*1.25)] font-bold text-white/60">{c.note}</p>
+            </div>
+          )
+        })}
+      </div>
+      <p className="text-center text-[length:calc(var(--u)*1.6)] font-bold text-white/80">Open <b className="text-brand-yellow">Live ⚡</b> on your phone → <b className="text-brand-yellow">My Power-Ups</b> → <b className="text-brand-yellow">Use</b>. A Power-Up never wins by itself — you still have to out-bid.</p>
     </div>
   )
 }
