@@ -151,7 +151,7 @@ export function Projector({ qr, chiliQr, joinUrl }: { qr: string; chiliQr?: stri
       {main}
       {state.pies.enabled && ['live', 'lightning', 'battle'].includes(room?.code ?? (state.stage || state.reopened[0] ? 'live' : '')) && !state.event.emergency ? (
         <div className="flex shrink-0 items-center justify-center gap-[calc(var(--u)*2)] bg-brand-yellow py-[0.6vh] text-ink">
-          <p className="font-heading text-[length:calc(var(--u)*2.2)]">PIE BRANDON IN THE FACE — sign up at the Bid Desk! Small {formatCents(state.pies.smallPriceCents)} · LARGE {formatCents(state.pies.largePriceCents)}</p>
+          <p className="font-heading text-[length:calc(var(--u)*2.2)]">PIE BRANDON IN THE FACE — sign up in the app or at the Bid Desk! Small {formatCents(state.pies.smallPriceCents)} · LARGE {formatCents(state.pies.largePriceCents)}</p>
         </div>
       ) : null}
       <Ticker state={state} reduced={reduced} />
@@ -389,7 +389,7 @@ function Dashboard({ state, now, qr, joinUrl }: { state: GameState; now: number;
           <p className="font-heading text-[length:calc(var(--u)*3.4)] leading-none"><PieIcon className="mr-[calc(var(--u)*1)] inline-block size-[1.1em] align-[-0.12em]" />PIE BRANDON IN THE FACE!</p>
           <p className="text-right text-[length:calc(var(--u)*2)] font-extrabold leading-tight">
             Small {formatCents(state.pies.smallPriceCents)} · LARGE {formatCents(state.pies.largePriceCents)}
-            <span className="block text-[length:calc(var(--u)*1.7)] font-bold">{state.pies.smallSold + state.pies.largeSold > 0 ? `${state.pies.smallSold + state.pies.largeSold} pies pledged · ${formatCents(state.pies.cents)} raised` : 'Sign up at the Bid Desk!'}</span>
+            <span className="block text-[length:calc(var(--u)*1.7)] font-bold">{state.pies.smallSold + state.pies.largeSold > 0 ? `${state.pies.smallSold + state.pies.largeSold} pies pledged · ${formatCents(state.pies.cents)} raised` : 'Sign up in the app or at the Bid Desk!'}</span>
           </p>
         </div>
       ) : null}
@@ -465,7 +465,7 @@ function PieFinale({ state }: { state: GameState }) {
     <Center>
       <Logo className="h-[8vh]" />
       <p className="sc-pop mt-[2vh] font-heading text-[length:calc(var(--u)*7)] leading-[0.95] text-brand-yellow"><PieIcon className="mr-[calc(var(--u)*1.5)] inline-block size-[0.95em] align-[-0.1em]" />PIE BRANDON IN THE FACE!</p>
-      <p className="mt-[2vh] text-[length:calc(var(--u)*3)] font-bold">{left > 0 ? `${left} pies waiting` : p.thrown > 0 ? 'Every pie has been thrown!' : 'Sign up at the Bid Desk!'} · {formatCents(p.cents)} raised</p>
+      <p className="mt-[2vh] text-[length:calc(var(--u)*3)] font-bold">{left > 0 ? `${left} pies waiting` : p.thrown > 0 ? 'Every pie has been thrown!' : 'Sign up in the app or at the Bid Desk!'} · {formatCents(p.cents)} raised</p>
       {p.next.length ? (
         <div className="mt-[3vh] w-[calc(var(--u)*70)] rounded-3xl border-4 border-brand-yellow bg-white/5 p-[calc(var(--u)*2)]">
           <p className="text-[length:calc(var(--u)*1.8)] font-bold tracking-[0.25em] text-brand-yellow">UP NEXT</p>
@@ -763,7 +763,7 @@ function Ticker({ state, reduced }: { state: GameState; reduced: boolean }) {
     .slice(0, 6)
     .map((a) => ({ tag: a.kind.startsWith('powerup') ? 'POWER-UP' : a.kind.startsWith('pie') ? 'PIE' : 'NEWS', tone: a.kind.startsWith('pie') ? 'pie' : 'news', text: a.headline, ago: ago(a.at) }))
   const tips: TickItem[] = [
-    ...(state.pies.enabled ? [{ tag: 'PIE BRANDON', tone: 'pie' as const, text: 'Sign up at the Bid Desk — small', amount: `${formatCents(state.pies.smallPriceCents)}, LARGE ${formatCents(state.pies.largePriceCents)}` }] : []),
+    ...(state.pies.enabled ? [{ tag: 'PIE BRANDON', tone: 'pie' as const, text: 'Sign up in the app or at the Bid Desk — small', amount: `${formatCents(state.pies.smallPriceCents)}, LARGE ${formatCents(state.pies.largePriceCents)}` }] : []),
     ...(state.chili.state === 'open' ? [{ tag: 'CHILI', tone: 'pie' as const, text: 'Taste the chili and vote on your phone — $1 = 1 vote! Most dollars wins.' }] : []),
     { tag: 'POWER-UPS', tone: 'tip', text: 'Buy one at the Bid Desk to reopen, extend or end an auction.' },
     ...(close ? [{ tag: 'SILENT CLOSES', tone: 'tip' as const, text: 'Final bids in before', amount: close }] : []),

@@ -107,9 +107,9 @@ describe('buying a Power-Up online', () => {
     expect(await have(g.id)).toBe(2)
   })
 
-  it('only sells enabled Power-Ups (not pies), within sensible quantities and limits', async () => {
+  it('only sells enabled Power-Ups, within sensible quantities and limits', async () => {
     const [g] = await makeBidders(ev.id, 1)
-    await expectError(startPowerUpPayment({ bidderId: g.id, code: 'pie_small', quantity: 1 }), 'NOT_FOUND')
+    await expectError(startPowerUpPayment({ bidderId: g.id, code: 'nope', quantity: 1 }), 'NOT_FOUND')
     await expectError(startPowerUpPayment({ bidderId: g.id, code: 'block', quantity: 1 }), 'POWERUP_DISABLED')
     await expectError(startPowerUpPayment({ bidderId: g.id, code: 'resurrection', quantity: 0 }), 'INVALID_REQUEST')
     await expectError(startPowerUpPayment({ bidderId: g.id, code: 'resurrection', quantity: 11 }), 'INVALID_REQUEST')
@@ -117,6 +117,16 @@ describe('buying a Power-Up online', () => {
     await startPowerUpPayment({ bidderId: g.id, code: 'knockout', quantity: 1 }) // allowed: nothing bought yet
     await handleSquareEvent(done(3000))
     await expectError(startPowerUpPayment({ bidderId: g.id, code: 'knockout', quantity: 1 }), 'LIMIT')
+  })
+
+  it('sells Pie Brandon sign-ups online too, and they become pies to throw', async () => {
+    const [g] = await makeBidders(ev.id, 1)
+    await query(`update powerup_defs set price_cents = 2000 where code = 'pie_small'`)
+    const r = await startPowerUpPayment({ bidderId: g.id, code: 'pie_small', quantity: 2 })
+    expect(r.amountCents).toBe(4000)
+    expect(JSON.parse(String(calls[0].init!.body)).order.line_items[0].name).toMatch(/2 × .*\(Pie sign-up\)/)
+    expect(await handleSquareEvent(done(4000))).toEqual({ credited: 2 })
+    expect(await have(g.id, 'pie_small')).toBe(2)
   })
 
   it('marks the order failed (and credits nothing) if Square cannot be reached', async () => {

@@ -277,7 +277,7 @@ export function HostConsole({ isAdmin }: { isAdmin: boolean }) {
         {data?.pies ? (
           <>
             <p className="text-lg font-bold">{data.pies.smallLeft + data.pies.largeLeft} pies still to throw ({data.pies.smallLeft} small, {data.pies.largeLeft} large) · {formatCents(data.pies.cents)} raised · {data.pies.thrown} thrown</p>
-            {data.pies.line.length === 0 ? <p className="mt-2">Nobody is waiting yet. Sign-ups are sold at the Bid Desk all night.</p> : null}
+            {data.pies.line.length === 0 ? <p className="mt-2">Nobody is waiting yet. Sign-ups are sold online and at the Bid Desk all night.</p> : null}
             <ul className="mt-2 space-y-2">
               {data.pies.line.map((p, i) => (
                 <li key={`${p.bidderNumber}-${p.code}-${i}`} className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-white p-3">

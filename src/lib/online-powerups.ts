@@ -43,7 +43,7 @@ export async function startPowerUpPayment(p: { bidderId: string; code: string; q
     'select code, name, price_cents, enabled, category, max_per_bidder from powerup_defs where code = $1',
     [p.code],
   )
-  if (!def || def.category !== 'powerup') throw new AppError('NOT_FOUND', 'That Power-Up isn’t sold online.', 404)
+  if (!def) throw new AppError('NOT_FOUND', 'That isn’t sold online.', 404)
   if (!def.enabled) throw new AppError('POWERUP_DISABLED', `${def.name} is not for sale right now.`, 409)
   if (def.price_cents <= 0) throw new AppError('INVALID_REQUEST', 'That Power-Up can’t be bought online.', 409)
   if (def.max_per_bidder != null) {
@@ -59,12 +59,12 @@ export async function startPowerUpPayment(p: { bidderId: string; code: string; q
   try {
     const args = {
       idempotencyKey: order!.id,
-      lines: [{ name: `${p.quantity} × ${def.name} (Power-Up)`, amountCents: amount }],
+      lines: [{ name: `${p.quantity} × ${def.name} (${def.category === 'pie' ? 'Pie sign-up' : 'Power-Up'})`, amountCents: amount }],
       referenceId: order!.id,
       buyerEmail: contact?.email ?? null,
       buyerPhone: contact?.phone ?? null,
       redirectUrl: `${appUrl()}/play?bought=1`,
-      note: `Power-Up, bidder #${b.bidder_number} (ref ${order!.id.slice(0, 8)})`,
+      note: `${def.category === 'pie' ? 'Pie sign-up' : 'Power-Up'}, bidder #${b.bidder_number} (ref ${order!.id.slice(0, 8)})`,
     }
     let link
     try {

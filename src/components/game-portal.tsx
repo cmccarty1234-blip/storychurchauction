@@ -391,7 +391,7 @@ function Store({ me }: { me: Me | null }) {
   return (
     <section className="space-y-3">
       {online?.open ? (
-        <p className="rounded-xl bg-brand-yellow p-4 text-sm font-bold">Buy online with a card below, or in person at the Bid Desk. Your Power-Ups appear in “My Power-Ups” as soon as the payment goes through. Pie sign-ups are Bid Desk only.</p>
+        <p className="rounded-xl bg-brand-yellow p-4 text-sm font-bold">Buy online with a card below, or in person at the Bid Desk. Your Power-Ups appear in “My Power-Ups” as soon as the payment goes through.</p>
       ) : (
         <p className="rounded-xl bg-secondary p-4 text-sm font-semibold">
           {online?.enabled && opensTime ? <>Online buying opens at <b>{opensTime}</b>. Until then — and any time — </> : null}
@@ -409,10 +409,13 @@ function Store({ me }: { me: Me | null }) {
       {me.defs.some((d) => d.category === 'pie') ? (
         <div className="rounded-2xl border-2 border-ink bg-brand-yellow p-4">
           <h3 className="text-xl font-extrabold">🥧 Pie Brandon in the Face!</h3>
-          <p className="mt-1 font-semibold">Pie sign-ups are sold <b>only at the Bid Desk</b> (not online). Sign up all night; at the end of the night you&rsquo;ll be called up to throw it.</p>
+          <p className="mt-1 font-semibold">Sign up all night {online?.open ? '— online here, or at the Bid Desk' : 'at the Bid Desk'}. At the end of the night you&rsquo;ll be called up to throw it.</p>
           <ul className="mt-2 space-y-1">
             {me.defs.filter((d) => d.category === 'pie' && d.enabled).map((d) => (
-              <li key={d.code} className="flex items-baseline justify-between"><span className="font-bold">{d.code === 'pie_large' ? 'Large pie' : 'Small pie'}</span><span className="tnum text-xl font-extrabold">{formatCents(d.priceCents)}</span></li>
+              <li key={d.code}>
+                <div className="flex items-baseline justify-between"><span className="font-bold">{d.code === 'pie_large' ? 'Large pie' : 'Small pie'}</span><span className="tnum text-xl font-extrabold">{formatCents(d.priceCents)}</span></div>
+                {online?.open ? <BuyOnline def={d} signedIn={me.signedIn} /> : null}
+              </li>
             ))}
           </ul>
         </div>
