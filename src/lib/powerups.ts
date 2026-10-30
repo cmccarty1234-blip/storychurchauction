@@ -132,17 +132,18 @@ export async function voidPurchase(purchaseId: string, adminId: string, reason: 
 
 /** Power-Up money, reported on its own so it is never mixed with winning bids. */
 export async function powerupRevenue(eventId: string) {
-  const r = await one<{ total: number; units: number; cash: number; check: number; card: number; comp_units: number }>(
+  const r = await one<{ total: number; units: number; cash: number; check: number; card: number; online: number; comp_units: number }>(
     `select coalesce(sum(p.total_cents), 0)::int total, coalesce(sum(p.quantity), 0)::int units,
             coalesce(sum(p.total_cents) filter (where p.method = 'cash'), 0)::int cash,
             coalesce(sum(p.total_cents) filter (where p.method = 'check'), 0)::int "check",
             coalesce(sum(p.total_cents) filter (where p.method = 'card_terminal'), 0)::int card,
+            coalesce(sum(p.total_cents) filter (where p.method = 'online_card'), 0)::int online,
             coalesce(sum(p.quantity) filter (where p.method = 'comp'), 0)::int comp_units
        from powerup_purchases p join powerup_defs d on d.code = p.powerup_code and d.category = 'powerup'
       where p.event_id = $1 and p.voided_at is null`,
     [eventId],
   )
-  return { totalCents: r!.total, units: r!.units, cashCents: r!.cash, checkCents: r!.check, cardCents: r!.card, complimentaryUnits: r!.comp_units }
+  return { totalCents: r!.total, units: r!.units, cashCents: r!.cash, checkCents: r!.check, cardCents: r!.card, onlineCents: r!.online, complimentaryUnits: r!.comp_units }
 }
 
 // ───────────────────────── activation ─────────────────────────

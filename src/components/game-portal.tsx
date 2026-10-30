@@ -13,7 +13,7 @@ import type { StageItem } from '@/lib/game-state'
 
 type Def = { code: string; name: string; description: string; icon: string; priceCents: number; enabled: boolean; category: 'powerup' | 'pie'; kinds: string[]; seconds: number | null }
 type Inv = { code: string; name: string; purchased: number; used: number; available: number }
-export type Me = { signedIn: boolean; bidderNumber?: number; defs: Def[]; inventory: Inv[]; history: { code: string; name: string; item_number: number; title: string; at: string; headline: string | null }[] }
+export type Me = { signedIn: boolean; bidderNumber?: number; online?: { enabled: boolean; open: boolean; opensAt: string | null; timezone: string }; defs: Def[]; inventory: Inv[]; history: { code: string; name: string; item_number: number; title: string; at: string; headline: string | null }[] }
 
 export function useMe() {
   const [me, setMe] = useState<Me | null>(null)
@@ -149,6 +149,17 @@ export function GamePortal() {
   const { me, reload: reloadMe } = useMe()
   useTicker(250)
   const [tab, setTab] = useState<'live' | 'inventory' | 'store'>('live')
+  const [bought, setBought] = useState(false)
+  // Coming back from Square's payment page: show My Power-Ups (they appear as soon as the payment is confirmed).
+  useEffect(() => {
+    const id = setTimeout(() => {
+      if (new URLSearchParams(window.location.search).get('bought') === '1') {
+        setBought(true)
+        setTab('inventory')
+      }
+    }, 0)
+    return () => clearTimeout(id)
+  }, [])
   if (!state) return <p className="py-10 text-center text-lg">Loading the auction…</p>
   const t = now()
   const refresh = () => { void reload(); void reloadMe() }
@@ -226,6 +237,7 @@ export function GamePortal() {
       ) : null}
 
       {tab === 'inventory' ? <Inventory me={me} /> : null}
+      {bought ? <p role="status" className="rounded-xl bg-brand-yellow p-4 font-bold">Thank you! Your Power-Ups show up under “My Power-Ups” as soon as the payment is confirmed — usually a few seconds. Pull down to refresh if you don’t see them yet.</p> : null}
       {tab === 'store' ? <Store me={me} /> : null}
     </div>
   )
@@ -345,16 +357,53 @@ function Inventory({ me }: { me: Me | null }) {
   )
 }
 
+function BuyOnline({ def, signedIn }: { def: Def; signedIn: boolean }) {
+  const [qty, setQty] = useState(1)
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState<string | null>(null)
+  async function buy() {
+    setBusy(true)
+    setErr(null)
+    const r = await post<{ url: string }>('/api/powerups/buy', { code: def.code, quantity: qty })
+    if (r.ok) {
+      window.location.href = r.data.url // Square's secure payment page
+      return
+    }
+    setBusy(false)
+    setErr(r.error.message)
+  }
+  if (!signedIn) return <p className="mt-2 text-sm font-semibold">Sign in to buy online.</p>
+  return (
+    <div className="mt-3 flex flex-wrap items-center gap-2">
+      <select aria-label={`How many ${def.name}`} value={qty} onChange={(e) => setQty(parseInt(e.target.value, 10))} className="h-12 rounded-xl border bg-white px-3 text-base font-bold">
+        {[1, 2, 3, 4, 5].map((n) => <option key={n} value={n}>{n}</option>)}
+      </select>
+      <Button variant="bid" className="h-12 flex-1 text-base" disabled={busy} onClick={buy}>{busy ? <Loader2 className="size-5 animate-spin" /> : `Buy online · ${formatCents(def.priceCents * qty)}`}</Button>
+      {err ? <p role="alert" className="w-full text-sm font-semibold text-danger">{err}</p> : null}
+    </div>
+  )
+}
+
 function Store({ me }: { me: Me | null }) {
   if (!me) return <p>Loading…</p>
+  const online = me.online
+  const opensTime = online?.opensAt ? new Date(online.opensAt).toLocaleTimeString('en-US', { timeZone: online.timezone, hour: 'numeric', minute: '2-digit' }) : null
   return (
     <section className="space-y-3">
-      <p className="rounded-xl bg-secondary p-4 text-sm font-semibold">Power-Ups are bought in person at the bidding desk (cash, check or card). Tell the volunteer your paddle number{me.bidderNumber ? ` — yours is #${me.bidderNumber}` : ''}. They’ll appear in “My Power-Ups” right away. There is no online payment.</p>
+      {online?.open ? (
+        <p className="rounded-xl bg-brand-yellow p-4 text-sm font-bold">Buy online with a card below, or in person at the Bid Desk. Your Power-Ups appear in “My Power-Ups” as soon as the payment goes through.</p>
+      ) : (
+        <p className="rounded-xl bg-secondary p-4 text-sm font-semibold">
+          {online?.enabled && opensTime ? <>Online buying opens at <b>{opensTime}</b>. Until then — and any time — </> : null}
+          Power-Ups can be bought in person at the Bid Desk (cash, check or card). Tell the volunteer your paddle number{me.bidderNumber ? ` — yours is #${me.bidderNumber}` : ''}. They’ll appear in “My Power-Ups” right away.
+        </p>
+      )}
       {me.defs.filter((d) => d.category !== 'pie').map((d) => (
         <div key={d.code} className={`rounded-2xl border bg-card p-4 ${d.enabled ? '' : 'opacity-60'}`}>
           <div className="flex items-baseline justify-between gap-3"><h3 className="text-xl font-extrabold">{d.name}</h3><span className="tnum text-xl font-extrabold">{formatCents(d.priceCents)}</span></div>
           <p className="mt-1">{d.description}</p>
           <p className="mt-1 text-sm text-muted-foreground">Works on: {d.kinds.join(' & ')} auctions{d.enabled ? '' : ' · not available tonight'}</p>
+          {online?.open && d.enabled ? <BuyOnline def={d} signedIn={me.signedIn} /> : null}
         </div>
       ))}
       {me.defs.some((d) => d.category === 'pie') ? (

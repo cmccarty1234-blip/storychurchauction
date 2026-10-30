@@ -2,6 +2,8 @@ import { route } from '@/lib/api'
 import { query } from '@/lib/db'
 import { inventory, listDefs } from '@/lib/powerups'
 import { getBidder } from '@/lib/session'
+import { getEvent } from '@/lib/events'
+import { onlinePowerupsStatus, reconcilePowerUps } from '@/lib/online-powerups'
 
 export const dynamic = 'force-dynamic'
 
@@ -9,7 +11,9 @@ export const dynamic = 'force-dynamic'
 export const GET = route(async () => {
   const defs = (await listDefs()).map((d) => ({ code: d.code, name: d.name, description: d.description, icon: d.icon, priceCents: d.price_cents, enabled: d.enabled, category: d.category, kinds: d.kinds, seconds: d.config.seconds ?? null }))
   const bidder = await getBidder()
-  if (!bidder) return Response.json({ signedIn: false, defs, inventory: [], history: [] }, { headers: { 'Cache-Control': 'no-store' } })
+  const online = await onlinePowerupsStatus((await getEvent()).id)
+  if (!bidder) return Response.json({ signedIn: false, defs, online, inventory: [], history: [] }, { headers: { 'Cache-Control': 'no-store' } })
+  if (online.enabled) await reconcilePowerUps(bidder.id) // pick up a payment Square completed whose webhook is late
   const [inv, history] = await Promise.all([
     inventory(bidder.id),
     query<{ code: string; name: string; item_number: number; title: string; at: Date; headline: string | null }>(
@@ -19,5 +23,5 @@ export const GET = route(async () => {
       [bidder.id],
     ),
   ])
-  return Response.json({ signedIn: true, bidderNumber: bidder.bidder_number, defs, inventory: inv, history: history.map((h) => ({ ...h, at: h.at.toISOString() })) }, { headers: { 'Cache-Control': 'no-store' } })
+  return Response.json({ signedIn: true, bidderNumber: bidder.bidder_number, defs, online, inventory: inv, history: history.map((h) => ({ ...h, at: h.at.toISOString() })) }, { headers: { 'Cache-Control': 'no-store' } })
 })

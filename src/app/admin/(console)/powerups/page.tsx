@@ -44,7 +44,7 @@ export default async function PowerUpsPage() {
       </div>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
-        {[['Power-Up sales', rev.totalCents], ['Cash', rev.cashCents], ['Check', rev.checkCents], ['Card terminal', rev.cardCents]].map(([l, v]) => (
+        {[['Power-Up sales', rev.totalCents], ['Cash', rev.cashCents], ['Check', rev.checkCents], ['Card terminal', rev.cardCents], ['Online (Square)', rev.onlineCents]].map(([l, v]) => (
           <div key={l as string} className="rounded-xl border bg-card p-3"><p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">{l}</p><p className="tnum text-2xl font-extrabold">{formatCents(v as number)}</p></div>
         ))}
         <div className="rounded-xl border bg-card p-3"><p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Units sold</p><p className="tnum text-2xl font-extrabold">{rev.units}{rev.complimentaryUnits ? <span className="text-sm font-medium text-muted-foreground"> ({rev.complimentaryUnits} free)</span> : null}</p></div>

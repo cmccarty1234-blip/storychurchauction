@@ -14,6 +14,7 @@ import { formatCents } from './money'
 import { appUrl } from './appurl'
 import { totals, wonItems } from './checkout'
 import { createPaymentLink, getOrder, getPayment, squareReady } from './square'
+import { applyPowerUpPaid } from './online-powerups'
 
 export async function onlinePaymentsAvailable(eventId: string) {
   const e = await one<{ online_payments: boolean }>('select online_payments from events where id = $1', [eventId])
@@ -110,7 +111,9 @@ export async function handleSquareEvent(evt: any) {
   const pay = evt?.data?.object?.payment
   if (!String(evt?.type ?? '').startsWith('payment.') || !pay) return { ignored: true }
   if (pay.status !== 'COMPLETED' || !pay.order_id || pay.amount_money?.currency !== 'USD') return { ignored: true }
-  return applyCompleted({ orderId: pay.order_id, paymentId: pay.id, amountCents: pay.amount_money.amount, receipt: pay.receipt_number })
+  const r = await applyCompleted({ orderId: pay.order_id, paymentId: pay.id, amountCents: pay.amount_money.amount, receipt: pay.receipt_number })
+  if ('ignored' in r) return applyPowerUpPaid({ orderId: pay.order_id, paymentId: pay.id, amountCents: pay.amount_money.amount }) // not a balance payment: maybe a Power-Up order
+  return r
 }
 
 /** Belt and braces: ask Square about this guest's recent unfinished checkouts (covers a slow or misconfigured webhook). */
