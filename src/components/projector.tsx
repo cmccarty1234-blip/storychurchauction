@@ -67,7 +67,29 @@ export function Projector({ qr, chiliQr, joinUrl }: { qr: string; chiliQr?: stri
   const [muted, setMuted] = useState(true)
   const beep = useBeeper(muted)
   const synth = useSynth(muted)
-
+  // A recorded sound if the Power-Up has one; if the file is missing or won't play, fall back to the synthesized sound.
+  // The recording is faded out over the last second of the overlay, so a long clip never runs on after the animation.
+  const fxAudio = useRef<{ a: HTMLAudioElement; timers: ReturnType<typeof setTimeout>[] } | null>(null)
+  const playFx = (fx: NonNullable<ReturnType<typeof powerupFx>>) => {
+    if (muted) return
+    if (!fx.file) return synth(fx.sound)
+    try {
+      if (fxAudio.current) {
+        fxAudio.current.timers.forEach(clearTimeout)
+        fxAudio.current.a.pause()
+      }
+      const a = new Audio(fx.file)
+      a.volume = 1
+      a.addEventListener('error', () => synth(fx.sound), { once: true })
+      const timers: ReturnType<typeof setTimeout>[] = []
+      for (let i = 0; i < 10; i++) timers.push(setTimeout(() => { a.volume = Math.max(0, 1 - (i + 1) / 10) }, fx.ms - 1000 + i * 100))
+      timers.push(setTimeout(() => a.pause(), fx.ms))
+      fxAudio.current = { a, timers }
+      a.play().catch(() => synth(fx.sound))
+    } catch {
+      synth(fx.sound)
+    }
+  }
   useEffect(() => {
     const id = setTimeout(() => {
       try {
@@ -103,7 +125,7 @@ export function Projector({ qr, chiliQr, joinUrl }: { qr: string; chiliQr?: stri
       const next = queue.current.shift()!
       setOverlay(next)
       const fx = powerupFx(next.kind)
-      if (fx) synth(fx.sound)
+      if (fx) playFx(fx)
       else beep(next.kind === 'item.sold' ? 988 : 660, 260)
     }
   }, [state, overlay]) // eslint-disable-line react-hooks/exhaustive-deps

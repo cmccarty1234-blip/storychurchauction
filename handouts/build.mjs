@@ -354,8 +354,54 @@ html,body{height:auto} .page{height:11in;break-after:page;gap:0.1in;padding-bott
 <div class="foot"><p><b class="u">Your story matters.</b>Thank volunteers, donors and guests, early and often. Church phone: ${CHURCH_PHONE}.</p></div>
 </div></body></html>`
 
+// ───────────────── Table signs: one page per table (16), listing the silent and live items on it ─────────────────
+// Items as of Oct 30 (from the Items page). To change a table, edit TABLES below and run the build again.
+const SILENT_ITEMS = [
+  [1, 'IHOP: 4 Free Entrees'], [2, "Raising Cane's"], [3, 'Massage at Hand and Stone'], [4, 'Big O Tires: 1 Oil Change + 1 Alignment (1 of 2)'],
+  [5, 'Overdrive Raceway'], [6, 'Il Vicino: $50 Gift + Bottle of Hot Oil'], [7, 'Chick-fil-A: 15 Sandwiches (1 of 2)'], [8, 'Rocket Fizz 1'],
+  [10, 'Peppertree: $300 Gift (2 of 2)'], [11, 'Photo Shoot with Thomas Williams'], [13, 'Taekwondo: 2-Hour Self-Defense Class (10 People)'],
+  [14, 'Eye Exams for Two (1 of 2)'], [15, 'The Melting Pot'], [18, 'Large Bundt Cake'], [19, 'Think Pink Basket'], [20, 'Paintball: 10 Players (1 of 3)'],
+  [23, 'Games Basket'], [26, 'Tools Basket'], [27, "Aleka's Basket"], [28, 'Ultimate Kids Basket'], [29, 'Autumn Plants'], [30, "Leandra's Basket"],
+  [31, "Sophie's Kitchen Basket"], [33, '6 Movie Tickets'], [35, 'Me Gente Car Shop'], [36, 'Bonny and Read: $100 Gift'],
+  [37, "Christmas Stockings, Placemats, & Ornaments, & Heidrich's Christmas Tree Farm $50 Gift Card"], [38, '5 Free Barber Cuts'], [39, '5 Homemade Soaps'],
+  [41, 'Dance / Ballet Classes'], [43, 'Counseling Sessions (3 Sessions)'], [44, 'Original Painting (2-piece)'], [45, 'Alaskan Gold Dust'], [46, 'Coffee Basket'],
+  [47, 'Pie A'], [48, 'Pie B'], [49, 'Pie C'], [50, 'Aroma Basket'], [51, 'Pumpkin Bread'], [52, 'Banana Bread'], [54, 'Worship Piano or Drum Lessons'],
+  [55, 'Paintball: 10 Players (2 of 3)'], [56, 'Paintball: 10 Players (3 of 3)'], [57, 'Big O Tires: 1 Oil Change + 1 Alignment (2 of 2)'],
+  [58, 'Eye Exams for Two (2 of 2)'], [61, 'Chick-fil-A: 15 Sandwiches (2 of 2)'], [62, 'Taekwondo: Birthday Party'], [63, 'Taekwondo for a Family'], [64, 'Taekwondo Camp'],
+  [65, 'Sheldon Car Detailing'], [66, "Nancy's Winter Health Basket"], [67, 'Scheels Gift Card'], [68, 'AirCity 360'], [69, 'Colorado Mountain Brewery Gift Card'],
+  [70, 'Hacienda Gift Card'], [71, 'Texas Roadhouse Dinner for 2'], [72, 'Bath & Body Basket'], [80, 'Rocket Fizz 2'],
+]
+const LIVE_ITEMS = [
+  [102, 'Mercy Me / Jeremy Camp: 2 Tickets'], [103, 'Third Day: 2 Tickets'], [104, 'The Broadmoor Stay'], [105, 'Royal Gorge Train: 2 Experience Tickets'],
+  [107, 'Horseback Riding Adventure for 2'], [108, 'Fallen Heroes Tattoos'], [109, 'Peppertree: $300 Gift (1 of 2)'], [110, 'Car Detailing'], [111, 'House Cleaning'],
+  [112, 'Handyman: 3 Hours'], [113, 'Books Basket'], [114, 'Spa Basket'], [115, '4 Hours of Christmas Wrapping'], [116, 'Sky Diving COS'],
+]
+const TABLE_COUNT = 16
+// One live item on each of tables 1-14; silent items fill the tables in number order (tables 1-8 get 4, 9-14 get 3, 15-16 get 4).
+const TABLES = (() => {
+  const counts = Array.from({ length: TABLE_COUNT }, (_, i) => (i < 8 ? 4 : i < 14 ? 3 : 4))
+  let k = 0
+  return counts.map((n, i) => {
+    const silent = SILENT_ITEMS.slice(k, k + n).map(([num, title]) => ({ num, title, live: false }))
+    k += n
+    const live = LIVE_ITEMS[i] ? [{ num: LIVE_ITEMS[i][0], title: LIVE_ITEMS[i][1], live: true }] : []
+    return [...live, ...silent].sort((a, b) => a.num - b.num)
+  })
+})()
+const tableSigns = async () => {
+  const qrSvg = await qr(SITE)
+  const pageFor = (items, i) => `<div class="page"><div class="bar"></div>
+<header><img src="${logo}" alt="Story Church"><span class="tag">Community auction · Fri Oct 30</span></header>
+<div><p class="sub" style="font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:#686868">Silent &amp; live auction items</p><h1 style="font-size:96pt;margin-top:0.05in">Table ${i + 1}</h1></div>
+<section class="panel" style="padding:0.12in 0.3in;flex:1"><table class="t ts"><tbody>${items.map((it) => `<tr><td class="num">#${it.num}</td><td class="ttl">${it.title.replace(/&/g, '&amp;')}${it.live ? ' <span class="livetag">LIVE</span>' : ''}</td></tr>`).join('')}</tbody></table></section>
+<div class="foot"><div class="q">${qrSvg}</div><p><b class="u">${host}</b>Scan to register and bid. <b>Silent bidding closes ${CLOSE_TIME}.</b> <b>LIVE</b> items are called from the stage.</p></div>
+</div>`
+  const extra = `html,body{height:auto} .page{height:11in;break-after:page;gap:0.12in} .page:last-of-type{break-after:auto} table.ts{font-size:20pt;width:100%} table.ts td{padding:0.1in 0.1in 0.1in 0;border-bottom:1px solid #e7e4dd;vertical-align:middle} table.ts td.num{font-family:'Archivo Black',Impact,sans-serif;white-space:nowrap;width:1.3in;font-size:24pt} table.ts td.ttl{font-weight:700;line-height:1.15} .livetag{display:inline-block;background:#101010;color:#f5c518;font-size:12pt;font-weight:800;letter-spacing:.1em;padding:3px 10px;border-radius:999px;vertical-align:3px;margin-left:8px}`
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Table signs</title><style>${css}${extra}</style></head><body>${TABLES.map((items, i) => pageFor(items, i)).join('')}</body></html>`
+}
+
 const edge = ['C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', 'C:/Program Files/Microsoft/Edge/Application/msedge.exe'].find((p) => { try { readFileSync(p, { flag: 'r' }); return true } catch { return false } })
-for (const [name, html] of [['How-To-Bid', await bid()], ['How-To-Register', await reg()], ['How-To-Use-Power-Ups', await puGuest()], ['Volunteer-Bid-Desk', await bidDesk()], ['Volunteer-Bid-Slips', await slips()], ['Volunteer-Bid-Desk-Selling-Power-Ups', await puDesk()], ['Volunteer-Checkout-Table', await checkout()], ['Host-Run-Of-Show', await hostSheet()], ['Team-Meeting-Agenda', await agenda()]]) {
+for (const [name, html] of [['How-To-Bid', await bid()], ['How-To-Register', await reg()], ['How-To-Use-Power-Ups', await puGuest()], ['Volunteer-Bid-Desk', await bidDesk()], ['Volunteer-Bid-Slips', await slips()], ['Volunteer-Bid-Desk-Selling-Power-Ups', await puDesk()], ['Volunteer-Checkout-Table', await checkout()], ['Host-Run-Of-Show', await hostSheet()], ['Team-Meeting-Agenda', await agenda()], ['Table-Signs', await tableSigns()]]) {
   const f = path.join(out, `${name}.html`)
   writeFileSync(f, html)
   const pdf = path.join(out, `${name}.pdf`)

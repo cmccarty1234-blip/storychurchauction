@@ -19,6 +19,8 @@ export type PowerUpFx = {
   flash: boolean
   /** Slowly turning rays of light behind everything. */
   rays?: boolean
+  /** A recorded sound in /public (played instead of the synthesized one). If it can't be played, the synthesized sound is used. */
+  file?: string
   sound: Note[]
   /** How long it stays up, in ms. */
   ms: number
@@ -26,6 +28,7 @@ export type PowerUpFx = {
 
 export const POWERUP_FX: Record<string, PowerUpFx> = {
   'powerup.resurrection': {
+    file: '/sounds/resurrection.mp3',
     icon: '✝️', tag: 'POWER-UP · RESURRECTION', accent: '#fde68a', tint: 'rgba(250,204,21,0.3)', motion: 'sc-pop', shake: false, rays: true,
     layer: { kind: 'up', glyph: '✦', count: 26 }, flash: false, ms: 7000,
     // A soft choir-like swell (a C major chord building up), then bright bells on top.
