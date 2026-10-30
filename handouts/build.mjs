@@ -194,7 +194,8 @@ const puGuest = async () => `${head('Power-Ups', 'Community auction · Fri Oct 3
     <li>On your phone, tap <b>Live &#9889;</b>. Your Power-Ups are under <b>My Power-Ups</b>.</li>
     <li>When one can be used, a <b>&ldquo;Use &hellip;&rdquo;</b> button appears. Tap it to see <b>exactly what will happen</b>, then confirm.</li>
   </ol>
-  <p class="note"><b>Last Chance:</b> when a live item&rsquo;s countdown ends, it enters a <b>5-minute window</b>. Nothing is final yet &mdash; this is when Resurrection works. A Power-Up never makes you the winner by itself: you still have to out-bid.</p></section>
+  <p class="note"><b>Last Chance:</b> when a live item&rsquo;s countdown ends, it enters a <b>5-minute window</b>. Nothing is final yet &mdash; this is when Resurrection works. A Power-Up never makes you the winner by itself: you still have to out-bid.</p>
+  <p class="note"><b>Pie Brandon sign-ups</b> are sold <b>only at the Bid Desk</b> &mdash; not online.</p></section>
 <div class="foot"><div class="q">${await qr(SITE + '/play')}</div><p><b class="u">${host}/play</b>Every guest can use these. Ask a volunteer if you&rsquo;re not sure.</p></div>
 </div></body></html>`
 
