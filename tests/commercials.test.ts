@@ -146,3 +146,20 @@ describe('promos that match several items', () => {
     expect(promos).toEqual(['Sandwiches (2 of 2)', 'Sandwiches (1 of 2)'])
   })
 })
+
+describe('every clip is linked to a real item title from tonight', () => {
+  const live = ['Mercy Me / Jeremy Camp: 2 Tickets', 'Third Day: 2 Tickets', 'The Broadmoor Stay', 'Royal Gorge Train: 2 Experience Tickets', 'Horseback Riding Adventure for 2', 'Fallen Heroes Tattoos', 'Peppertree: $300 Gift (1 of 2)', 'Car Detailing', 'House Cleaning', 'Handyman: 3 Hours', 'Books Basket', 'Spa Basket', '4 Hours of Christmas Wrapping', 'Sky Diving COS']
+  const silent = ['IHOP: 4 Free Entrees', 'Overdrive Raceway', 'Chick-fil-A: 15 Sandwiches (1 of 2)', 'Chick-fil-A: 15 Sandwiches (2 of 2)', 'Eye Exams for Two (1 of 2)', 'Eye Exams for Two (2 of 2)', 'AirCity 360', 'Peppertree: $300 Gift (2 of 2)']
+  const hits = (promote: string, titles: string[]) => titles.filter((t) => t.toLowerCase().includes(promote.toLowerCase()))
+
+  it('each clip matches at least one item, and the auto-start clips match a live item', () => {
+    for (const c of COMMERCIALS) {
+      expect(hits(c.promote!, [...live, ...silent]).length, c.key).toBeGreaterThan(0)
+      if (c.autoOnStart && !['aircity360', 'overdrive'].includes(c.key)) expect(hits(c.promote!, live).length, c.key).toBe(1)
+    }
+  })
+
+  it('the two Chick-fil-A clips each match exactly one package', () => {
+    for (const c of COMMERCIALS.filter((x) => x.key.startsWith('chickfila'))) expect(hits(c.promote!, silent)).toHaveLength(1)
+  })
+})
