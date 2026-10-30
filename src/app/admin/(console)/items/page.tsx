@@ -17,7 +17,10 @@ const STATUS: Record<string, { label: string; cls: string }> = {
   open: { label: 'Open', cls: 'bg-brand-yellow text-ink' },
   paused: { label: 'Paused', cls: 'bg-amber-100 text-amber-900' },
   closed: { label: 'Closed', cls: 'bg-muted text-foreground' },
+  provisional: { label: 'Last chance', cls: 'bg-amber-100 text-amber-900' },
+  reopened: { label: 'Reopened', cls: 'bg-brand-yellow text-ink' },
   finalized: { label: 'Finalized', cls: 'bg-ink text-white' },
+  cancelled: { label: 'Cancelled', cls: 'bg-muted text-muted-foreground' },
 }
 
 export default async function AdminItems({ searchParams }: { searchParams: Promise<{ type?: string }> }) {
@@ -28,7 +31,8 @@ export default async function AdminItems({ searchParams }: { searchParams: Promi
   const items = await listItems(ev.id, { kind, includeDraft: true })
 
   const rows: ItemRow[] = items.map((i) => {
-    const st = STATUS[i.phase === 'closed' && i.status === 'open' ? 'closed' : i.status]
+    const key = i.phase === 'closed' && i.status === 'open' ? 'closed' : i.status
+    const st = STATUS[key] ?? { label: key, cls: 'bg-muted text-foreground' } // never let an unfamiliar status take the whole page down
     return {
       id: i.id,
       number: i.item_number,
