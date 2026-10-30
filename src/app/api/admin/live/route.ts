@@ -8,7 +8,7 @@ import { startItemWithCommercial } from '@/lib/commercial-start'
 import { requireAdmin } from '@/lib/session'
 
 const Body = z.discriminatedUnion('action', [
-  z.object({ action: z.literal('start'), itemId: uuid }),
+  z.object({ action: z.literal('start'), itemId: uuid, withVideo: z.boolean().optional() }),
   z.object({ action: z.literal('pause'), itemId: uuid }),
   z.object({ action: z.literal('resume'), itemId: uuid }),
   z.object({ action: z.literal('close'), itemId: uuid, confirmed: z.boolean() }),
@@ -27,7 +27,7 @@ export const POST = route(async (req) => {
   if (b.action === 'reopen') admin = await requireAdmin('admin')
   switch (b.action) {
     case 'start':
-      return { ok: true, ...(await startItemWithCommercial(b.itemId, admin.id)) }
+      return { ok: true, ...(await startItemWithCommercial(b.itemId, admin.id, b.withVideo !== false)) }
     case 'pause':
     case 'resume':
       await setLiveRunState(b.itemId, b.action, admin.id)

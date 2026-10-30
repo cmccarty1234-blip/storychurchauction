@@ -212,7 +212,10 @@ export function HostConsole({ isAdmin }: { isAdmin: boolean }) {
             {data.queue.map((q, i) => (
               <li key={q.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border p-3">
                 <span className="text-lg font-semibold">#{q.item_number} {q.title} <span className="font-normal text-muted-foreground">· opens at {formatCents(q.starting_bid_cents)}{q.min_qualifying_bid_cents != null ? ` · Knockout unlocks at ${formatCents(q.min_qualifying_bid_cents)}` : ''}</span></span>
-                <button className={i === 0 ? gold : ghost} disabled={busy || !!stage || !!state.event.emergency} onClick={() => live({ action: 'start', itemId: q.id }, `Started #${q.item_number} — if it has a commercial, bidding opens when it ends.`)}><Play className="mr-1 inline size-5" /> Start</button>
+                <span className="flex flex-wrap gap-2">
+                  <button className={i === 0 ? gold : ghost} disabled={busy || !!stage || !!state.event.emergency} onClick={() => live({ action: 'start', itemId: q.id }, `Started #${q.item_number} — bidding opens when its commercial ends.`)}><Play className="mr-1 inline size-5" /> Start with video</button>
+                  <button className={ghost} disabled={busy || !!stage || !!state.event.emergency} onClick={() => live({ action: 'start', itemId: q.id, withVideo: false }, `Started #${q.item_number} — bidding is open.`)}>Start without video</button>
+                </span>
               </li>
             ))}
           </ul>

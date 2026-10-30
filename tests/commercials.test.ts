@@ -94,6 +94,13 @@ describe('commercial before a live item opens', () => {
     expect(await autoCommercialFor(silent.id)).toBeNull()
   })
 
+  it('"Start without video" opens bidding straight away, even for an item that has a clip', async () => {
+    const { admin, it } = await setup()
+    expect(await startItemWithCommercial(it.id, admin.id, false)).toEqual({ commercial: false })
+    expect(await status(it.id)).toBe('open')
+    expect((await gameState(ev.id)).commercial).toBeNull()
+  })
+
   it('a second Start while an item waits out its commercial is refused, and a busy block is reported', async () => {
     const { admin, it } = await setup()
     const other = await makeItem(ev.id, { kind: 'live', title: 'Plain Chairs', num: 105 })

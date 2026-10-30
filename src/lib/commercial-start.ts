@@ -18,9 +18,9 @@ export async function autoCommercialFor(itemId: string): Promise<Commercial | nu
   return COMMERCIALS.find((c) => c.autoOnStart && c.promote && t.includes(c.promote.toLowerCase())) ?? (it.kind === 'live' ? HOUSE_COMMERCIAL : null)
 }
 
-/** Host tapped Start. Returns whether a commercial is now playing first (otherwise the item was started straight away). */
-export async function startItemWithCommercial(itemId: string, adminId: string) {
-  const clip = await autoCommercialFor(itemId)
+/** Host tapped Start (`withVideo` false = "Start without video": straight to bidding). Returns whether a commercial is now playing first (otherwise the item was started straight away). */
+export async function startItemWithCommercial(itemId: string, adminId: string, withVideo = true) {
+  const clip = withVideo ? await autoCommercialFor(itemId) : null
   if (clip) {
     // Only when the start would succeed anyway — otherwise let startLiveItem report the real problem (busy block, emergency…).
     const ok = await tx(async (c) => {
