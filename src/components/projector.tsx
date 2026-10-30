@@ -647,7 +647,7 @@ function CommercialBreak({ c, now, muted, onSound, reduced, joinUrl }: { c: NonN
   }, [expectedMs, byClock])
   const total = expectedMs
   const leftMs = Math.max(0, new Date(c.endsAt).getTime() - now)
-  const src = `https://www.youtube-nocookie.com/embed/${c.youtubeId}?autoplay=1&mute=${startMuted ? 1 : 0}&controls=0&rel=0&modestbranding=1&playsinline=1&iv_load_policy=3&disablekb=1&fs=0&cc_load_policy=0&enablejsapi=1&origin=${encodeURIComponent(new URL(joinUrl).origin)}`
+  const src = `https://www.youtube-nocookie.com/embed/${c.youtubeId}?autoplay=1&mute=${startMuted ? 1 : 0}&controls=0&rel=0&modestbranding=1&playsinline=1&iv_load_policy=3&disablekb=1&fs=0&cc_load_policy=0${c.fixed ? `&start=0&end=${Math.ceil(expectedMs / 1000)}` : ''}&enablejsapi=1&origin=${encodeURIComponent(new URL(joinUrl).origin)}`
   const item = c.item
   const anim = (cls: string) => (reduced ? '' : cls)
   // A QR straight to this item's page (/i/<number>), made in the browser so it follows whatever item is being promoted.

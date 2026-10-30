@@ -6,8 +6,8 @@
  * `seconds` is the video's exact length. The projector ends the break the instant the video really finishes (YouTube tells the
  * page), so a slow-loading video — or one that starts with an ad — isn't cut short. GRACE_MS is only the outer limit for how long
  * the server keeps reporting a break past `seconds`.
- * `fixed` means the break is deliberately longer than the video (the video is 30 s, the break 35 s), so the projector ends it at
- * `seconds` instead of waiting for the video to report that it finished.
+ * `fixed` means the break is deliberately not the video's length (IHOP: 30 s video, 35 s break; the long clips are cut to their first
+ * 15 s), so the projector ends it at `seconds` and stops the video there (`end=`), instead of waiting for the video to report it finished.
  * The projector needs internet to play it.
  */
 export type Commercial = { key: string; title: string; youtubeId: string; seconds: number; tagline: string; promote?: string; autoOnStart?: boolean; fixed?: boolean }
@@ -18,7 +18,8 @@ export const COMMERCIALS: Commercial[] = [
   { key: 'chickfila-honest', title: 'If Chick-fil-A Commercials Were Honest (pt 2) — for the 1st package', youtubeId: 'LXdxNhv4eXw', seconds: 30, tagline: 'A word from our sponsors…', promote: 'Sandwiches (1 of 2)' },
   { key: 'royal-gorge', title: 'The Royal Gorge Route Railroad Experience', youtubeId: 'eeQusf7Gp0E', seconds: 30, tagline: 'A word from our sponsors…', promote: 'Royal Gorge Train', autoOnStart: true },
   { key: 'mercyme', title: 'MercyMe — Coming November 5, 2026 (Broadmoor World Arena)', youtubeId: 'OG7-gbbOj8I', seconds: 30.4, tagline: 'A word from our sponsors…', promote: 'Mercy Me', autoOnStart: true },
-  { key: 'horseback', title: 'Colorado Horseback Riding & Hot Springs Vacation', youtubeId: 'zQiW-GrNvQI', seconds: 71.5, tagline: 'A word from our sponsors…', promote: 'Horseback', autoOnStart: true },
+  { key: 'horseback', title: 'Colorado Horseback Riding & Hot Springs Vacation', youtubeId: 'zQiW-GrNvQI', seconds: 15, tagline: 'A word from our sponsors…', promote: 'Horseback', autoOnStart: true, fixed: true },
+  { key: 'fallen-heroes', title: 'Fallen Heroes Tattoo & Piercing', youtubeId: '7HfCnUoZApY', seconds: 15, tagline: 'A word from our sponsors…', promote: 'Fallen Heroes', autoOnStart: true, fixed: true },
   { key: 'broadmoor', title: 'The Broadmoor Hotel: Legendary. Historic. Timeless.', youtubeId: 'KLWjfvweSA4', seconds: 30.2, tagline: 'A word from our sponsors…', promote: 'Broadmoor Stay', autoOnStart: true },
 ]
 
