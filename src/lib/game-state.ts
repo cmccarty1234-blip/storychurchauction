@@ -63,6 +63,7 @@ export type GameState = {
     title: string
     youtubeId: string
     fixed: boolean
+    startAt: number
     tagline: string
     startedAt: string
     endsAt: string
@@ -193,6 +194,7 @@ export async function gameState(eventId: string): Promise<GameState> {
           title: clip.title,
           youtubeId: clip.youtubeId,
           fixed: !!clip.fixed,
+          startAt: clip.startAt ?? 0,
           tagline: clip.tagline,
           startedAt: c.commercial_started_at.toISOString(),
           endsAt: endsAt.toISOString(),
