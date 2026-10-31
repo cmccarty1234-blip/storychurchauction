@@ -1,7 +1,7 @@
 -- Item #109 "Peppertree: $300 Gift (1 of 2)": the winning $320 bid was entered under bidder #1045 (Dawn Kuster). It was bidder #1031 (Allison).
 -- This voids that $320 bid (it stays in the history, marked void, with the reason) and records $320 for #1031, paddle, as the top bid.
 -- If the item was already finalized, the old result is voided (kept for history) and a new result is made for #1031 at $320,
--- with a fresh checkout record. It REFUSES to run if a payment is already recorded against the old result, or if a higher bid exists.
+-- with a fresh checkout record. The one $320 payment recorded for #1045 (recorded by mistake) is voided first. It REFUSES to run if any other payment is on the old result, or if a higher bid exists.
 do $$
 declare ev uuid; it uuid; allison uuid; bad_id uuid; bad_seq int; adm uuid; new_id uuid; old_wr uuid; new_wr uuid; n int;
 begin
@@ -41,10 +41,18 @@ begin
 
   select id into old_wr from winning_results where item_id = it and voided_at is null;
   if old_wr is not null then
-    select count(*) into n from payment_allocations a join payments p on p.id = a.payment_id where a.winning_result_id = old_wr and p.voided_at is null;
+    -- The one payment on this win ($320 recorded for #1045) was recorded by mistake - she did not pay. Void that payment (kept for history).
+    -- Any OTHER payment on this win stops the fix: that one is real money and needs a person.
+    select count(*) into n from payment_allocations a join payments p on p.id = a.payment_id
+     where a.winning_result_id = old_wr and p.voided_at is null and p.id <> '4d274980-97a6-49b1-8a1f-168700c8e33e';
     if n > 0 then
-      raise exception 'A payment is already recorded against this win (% rows) - nothing was changed. Void that payment in Checkout first.', n;
+      raise exception 'Another payment is recorded against this win (% rows) - nothing was changed. Void it in Checkout first.', n;
     end if;
+    update payments set voided_at = now(), voided_by_admin_id = adm, void_reason = 'Recorded by mistake: bidder #1045 did not pay, and the item belongs to bidder #1031'
+     where id = '4d274980-97a6-49b1-8a1f-168700c8e33e' and amount_cents = 32000 and voided_at is null;
+    insert into audit_logs (event_id, actor_type, actor_id, action, entity_type, entity_id, details)
+    select ev, 'admin', adm, 'payment.voided', 'payment', id, jsonb_build_object('amountCents', amount_cents, 'reason', 'recorded by mistake', 'releasedItemNumbers', '[]'::jsonb)
+      from payments where id = '4d274980-97a6-49b1-8a1f-168700c8e33e' and voided_at is not null;
   end if;
 
   insert into live_bid_voids (accepted_bid_id, voided_by, reason)

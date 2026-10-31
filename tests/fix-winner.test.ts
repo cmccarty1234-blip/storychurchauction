@@ -72,4 +72,25 @@ describe('fix the #109 winner', () => {
     expect(await top()).toMatchObject({ current_bid_cents: 32000, current_bidder_id: allison.id })
     expect((await query('select 1 from live_bid_voids')).length).toBe(1)
   })
+
+  it('voids the mistaken $320 payment for #1045 and moves the win', async () => {
+    await setLiveRunState(item.id, 'close', admin, true)
+    await finalizeNow(item.id, admin)
+    const wr = (await query<{ id: string }>('select id from winning_results where item_id = $1 and voided_at is null', [item.id]))[0].id
+    await query(`insert into payments (id, event_id, bidder_id, method, amount_cents, received_by_admin_id, idempotency_key) values ('4d274980-97a6-49b1-8a1f-168700c8e33e', $1, $2, 'cash', 32000, $3, 'k1')`, [ev.id, dawn.id, admin])
+    await query('insert into payment_allocations (payment_id, winning_result_id, amount_cents) values ($1, $2, 32000)', ['4d274980-97a6-49b1-8a1f-168700c8e33e', wr])
+    await pool().query(sql)
+    expect((await one<{ voided_at: Date | null }>(`select voided_at from payments where id = '4d274980-97a6-49b1-8a1f-168700c8e33e'`))!.voided_at).not.toBeNull()
+    expect((await query('select 1 from winning_results where item_id = $1 and voided_at is null and bidder_id = $2', [item.id, allison.id])).length).toBe(1)
+    expect((await query(`select 1 from audit_logs where action = 'payment.voided'`)).length).toBe(1)
+  })
+
+  it('still refuses when a DIFFERENT payment is on the win', async () => {
+    await setLiveRunState(item.id, 'close', admin, true)
+    await finalizeNow(item.id, admin)
+    const wr = (await query<{ id: string }>('select id from winning_results where item_id = $1 and voided_at is null', [item.id]))[0].id
+    const p = await query<{ id: string }>(`insert into payments (event_id, bidder_id, method, amount_cents, received_by_admin_id, idempotency_key) values ($1, $2, 'cash', 32000, $3, 'k2') returning id`, [ev.id, dawn.id, admin])
+    await query('insert into payment_allocations (payment_id, winning_result_id, amount_cents) values ($1, $2, 32000)', [p[0].id, wr])
+    await expect(pool().query(sql)).rejects.toThrow(/Another payment/)
+  })
 })
