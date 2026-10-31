@@ -57,7 +57,7 @@ export async function myChili(bidderId: string) {
 }
 
 export async function castChiliVote(p: { bidderId: string; entryId: string; votes: number; idempotencyKey: string }) {
-  if (!Number.isInteger(p.votes) || p.votes < 1 || p.votes > 100) throw new AppError('INVALID_AMOUNT', 'Choose between 1 and 100 votes at a time.')
+  if (!Number.isInteger(p.votes) || p.votes < 1 || p.votes > 1000) throw new AppError('INVALID_AMOUNT', 'Choose between $1 and $1,000 at a time. You can vote again for more.')
   if (!p.idempotencyKey) throw new AppError('INVALID_REQUEST', 'Missing request id.')
   return tx(async (c) => {
     const b = await one<{ id: string; event_id: string; bidder_number: number }>('select id, event_id, bidder_number from bidders where id = $1', [p.bidderId], c)

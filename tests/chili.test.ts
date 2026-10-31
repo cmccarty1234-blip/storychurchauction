@@ -46,7 +46,7 @@ describe('chili cook-off', () => {
     const [g] = await makeBidders(ev.id, 1)
     await setChiliState(ev.id, 'open', admin.id)
     await expectError(castChiliVote({ bidderId: g.id, entryId: a, votes: 0, idempotencyKey: key() }), 'INVALID_AMOUNT')
-    await expectError(castChiliVote({ bidderId: g.id, entryId: a, votes: 101, idempotencyKey: key() }), 'INVALID_AMOUNT')
+    await expectError(castChiliVote({ bidderId: g.id, entryId: a, votes: 1001, idempotencyKey: key() }), 'INVALID_AMOUNT')
     await expectError(castChiliVote({ bidderId: g.id, entryId: '00000000-0000-0000-0000-000000000000', votes: 1, idempotencyKey: key() }), 'NOT_FOUND')
   })
 

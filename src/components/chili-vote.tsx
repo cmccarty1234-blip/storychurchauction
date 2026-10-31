@@ -16,6 +16,7 @@ export function ChiliVote({ highlight }: { highlight?: number }) {
   const [busy, setBusy] = useState<string | null>(null)
   const [note, setNote] = useState<{ id: string; ok: boolean; text: string } | null>(null)
   const scrolled = useRef(false)
+  const [custom, setCustom] = useState<Record<string, string>>({}) // what each guest is typing in "any amount"
 
   const load = useCallback(async () => {
     try {
@@ -109,11 +110,27 @@ export function ChiliVote({ highlight }: { highlight?: number }) {
               </div>
               {open && data.signedIn ? (
                 <div className="mt-3 flex flex-wrap gap-2">
-                  {[1, 5, 10].map((n) => (
-                    <Button key={n} variant="bid" className="h-12 min-w-24 flex-1 text-base" disabled={busy !== null} onClick={() => vote(e, n)}>
+                  {[1, 5, 10, 20].map((n) => (
+                    <Button key={n} variant="bid" className="h-12 min-w-20 flex-1 text-base" disabled={busy !== null} onClick={() => vote(e, n)}>
                       {busy === e.id + n ? <Loader2 className="size-5 animate-spin" /> : `+${n} vote${n === 1 ? '' : 's'} · $${n}`}
                     </Button>
                   ))}
+                  <form
+                    className="flex w-full items-center gap-2"
+                    onSubmit={(ev) => {
+                      ev.preventDefault()
+                      const n = parseInt(custom[e.id] ?? '', 10)
+                      if (Number.isInteger(n) && n >= 1) void vote(e, n).then(() => setCustom((c) => ({ ...c, [e.id]: '' })))
+                    }}
+                  >
+                    <label className="flex h-12 flex-1 items-center gap-1 rounded-xl border bg-white px-3 text-lg font-bold">
+                      <span aria-hidden>$</span>
+                      <input inputMode="numeric" pattern="[0-9]*" aria-label={`Any amount for ${e.name}`} placeholder="Any amount" value={custom[e.id] ?? ''} onChange={(ev) => setCustom((c) => ({ ...c, [e.id]: ev.target.value.replace(/[^0-9]/g, '').slice(0, 4) }))} className="w-full min-w-0 bg-transparent outline-none placeholder:font-normal placeholder:text-muted-foreground" />
+                    </label>
+                    <Button type="submit" variant="bid" className="h-12 px-5 text-base" disabled={busy !== null || !(parseInt(custom[e.id] ?? '', 10) >= 1)}>
+                      {busy !== null && busy === e.id + parseInt(custom[e.id] ?? '', 10) ? <Loader2 className="size-5 animate-spin" /> : `Give $${parseInt(custom[e.id] ?? '', 10) >= 1 ? parseInt(custom[e.id], 10) : ''}`}
+                    </Button>
+                  </form>
                 </div>
               ) : null}
               {note && note.id === e.id ? <p role={note.ok ? 'status' : 'alert'} className={`mt-2 text-sm font-semibold ${note.ok ? 'text-[#0f5c4f]' : 'text-danger'}`}>{note.text}</p> : null}
