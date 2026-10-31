@@ -10,7 +10,7 @@ import { notify } from './realtime'
 import { formatCents } from './money'
 
 export type ChiliState = 'off' | 'open' | 'closed'
-export type ChiliEntry = { id: string; number: number; name: string; cook: string | null; cents: number; votes: number; voters: number }
+export type ChiliEntry = { id: string; number: number; name: string; cook: string | null; cents: number; votes: number; voters: number; hearts: number }
 export type ChiliBoard = { state: ChiliState; entries: ChiliEntry[]; totalCents: number }
 
 const EMPTY: ChiliBoard = { state: 'off', entries: [], totalCents: 0 }
@@ -28,7 +28,10 @@ export async function chiliBoard(eventId: string): Promise<ChiliBoard> {
         where e.event_id = $1 and e.enabled group by e.id order by cents desc, e.entry_number`,
       [eventId],
     )
-    const entries = rows.map((r) => ({ id: r.id, number: r.entry_number, name: r.name, cook: r.cook, cents: r.cents, votes: r.cents / 100, voters: r.voters }))
+    // Hearts are free and separate from votes; if their table isn't there yet, everything else still works.
+    const hearts = await query<{ entry_id: string; n: number }>('select entry_id, count(*)::int n from chili_hearts group by entry_id').catch(() => [])
+    const heartsBy = new Map(hearts.map((h) => [h.entry_id, h.n]))
+    const entries = rows.map((r) => ({ id: r.id, number: r.entry_number, name: r.name, cook: r.cook, cents: r.cents, votes: r.cents / 100, voters: r.voters, hearts: heartsBy.get(r.id) ?? 0 }))
     return { state: ev.chili_voting, entries, totalCents: entries.reduce((s, e) => s + e.cents, 0) }
   } catch {
     return EMPTY
@@ -44,7 +47,9 @@ export async function myChili(bidderId: string) {
        from chili_votes where bidder_id = $1 and voided_at is null group by entry_id`,
     [bidderId],
   ).catch(() => [])
+  const hearted = await query<{ entry_id: string }>('select entry_id from chili_hearts where bidder_id = $1', [bidderId]).catch(() => [])
   return {
+    hearts: hearted.map((h) => h.entry_id),
     byEntry: Object.fromEntries(rows.map((r) => [r.entry_id, r.cents])) as Record<string, number>,
     owedCents: rows.reduce((s, r) => s + r.owed, 0),
     paidCents: rows.reduce((s, r) => s + r.paid, 0),
@@ -67,6 +72,22 @@ export async function castChiliVote(p: { bidderId: string; entryId: string; vote
     await audit({ eventId: b.event_id, actorType: 'bidder', actorId: b.id, action: 'chili.vote', entityType: 'chili_entry', entityId: entry.id, details: { bidderNumber: b.bidder_number, votes: p.votes, entry: entry.name } }, c)
     await notify(c, { t: 'game' })
     return { replay: false, entry: entry.name, cents: p.votes * 100 }
+  })
+}
+
+/** A free heart on a chili: tap once to add it, tap again to take it back. Has nothing to do with votes or money. */
+export async function toggleChiliHeart(p: { bidderId: string; entryId: string }) {
+  return tx(async (c) => {
+    const b = await one<{ id: string; event_id: string }>('select id, event_id from bidders where id = $1', [p.bidderId], c)
+    if (!b) throw new AppError('BIDDER_NOT_FOUND', 'Bidder not found.', 404)
+    const ev = await one<{ chili_voting: ChiliState }>('select chili_voting from events where id = $1', [b.event_id], c)
+    if (!ev || ev.chili_voting === 'off') throw new AppError('CHILI_CLOSED', 'The chili cook-off isn’t open right now.', 409)
+    const entry = await one<{ id: string }>('select id from chili_entries where id = $1 and event_id = $2 and enabled', [p.entryId, b.event_id], c)
+    if (!entry) throw new AppError('NOT_FOUND', 'That chili isn’t in the cook-off.', 404)
+    const removed = await one('delete from chili_hearts where entry_id = $1 and bidder_id = $2 returning entry_id', [entry.id, b.id], c)
+    if (!removed) await c.query('insert into chili_hearts (entry_id, bidder_id) values ($1, $2) on conflict do nothing', [entry.id, b.id])
+    await notify(c, { t: 'game' })
+    return { hearted: !removed }
   })
 }
 

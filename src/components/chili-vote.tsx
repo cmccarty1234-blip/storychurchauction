@@ -2,13 +2,13 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import { Check, Loader2 } from 'lucide-react'
+import { Check, Heart, Loader2 } from 'lucide-react'
 import { newKey, post } from '@/lib/client'
 import { formatCents } from '@/lib/money'
 import { Button } from '@/components/ui/button'
 
-type Entry = { id: string; number: number; name: string; cook: string | null; cents: number; votes: number; voters: number }
-type Data = { state: 'off' | 'open' | 'closed'; entries: Entry[]; totalCents: number; signedIn: boolean; mine: { byEntry: Record<string, number>; owedCents: number; paidCents: number } | null }
+type Entry = { id: string; number: number; name: string; cook: string | null; cents: number; votes: number; voters: number; hearts: number }
+type Data = { state: 'off' | 'open' | 'closed'; entries: Entry[]; totalCents: number; signedIn: boolean; mine: { byEntry: Record<string, number>; hearts: string[]; owedCents: number; paidCents: number } | null }
 
 /** The guest chili page: $1 = 1 vote. Live totals; each vote is added to what the guest owes the desk at checkout. */
 export function ChiliVote({ highlight }: { highlight?: number }) {
@@ -38,6 +38,12 @@ export function ChiliVote({ highlight }: { highlight?: number }) {
     scrolled.current = true
     document.getElementById(`chili-${highlight}`)?.scrollIntoView({ block: 'center' })
   }, [data, highlight])
+
+  async function heart(entry: Entry) {
+    const r = await post('/api/chili/heart', { entryId: entry.id })
+    if (!r.ok) setNote({ id: entry.id, ok: false, text: r.error.message })
+    void load()
+  }
 
   async function vote(entry: Entry, votes: number) {
     setBusy(entry.id + votes)
@@ -77,6 +83,7 @@ export function ChiliVote({ highlight }: { highlight?: number }) {
       <ul className="space-y-3">
         {byNumber.map((e) => {
           const mine = data.mine?.byEntry[e.id] ?? 0
+          const hearted = data.mine?.hearts?.includes(e.id) ?? false
           return (
             <li key={e.id} id={`chili-${e.number}`} className={`rounded-2xl border bg-card p-4 shadow-sm ${e.number === highlight ? 'border-2 border-ink ring-4 ring-brand-yellow' : ''}`}>
               <div className="flex items-start justify-between gap-3">
@@ -90,7 +97,16 @@ export function ChiliVote({ highlight }: { highlight?: number }) {
                   <p className="text-xs text-muted-foreground">{e.votes} vote{e.votes === 1 ? '' : 's'}</p>
                 </div>
               </div>
-              {mine > 0 ? <p className="mt-2 text-sm font-semibold text-[#0f5c4f]"><Check className="mr-1 inline size-4" />You gave {formatCents(mine)}</p> : null}
+              <div className="mt-2 flex flex-wrap items-center gap-3">
+                {data.signedIn ? (
+                  <button type="button" onClick={() => heart(e)} aria-pressed={hearted} aria-label={hearted ? `Take back your heart for ${e.name}` : `Heart ${e.name}`} className={`inline-flex min-h-11 items-center gap-1.5 rounded-full border px-4 text-sm font-bold ${hearted ? 'border-red-300 bg-red-50 text-red-600' : 'bg-white text-ink hover:bg-secondary'}`}>
+                    <Heart className={`size-5 ${hearted ? 'fill-red-500 text-red-500' : ''}`} /> <span className="tnum">{e.hearts}</span>
+                  </button>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 text-sm font-bold text-muted-foreground"><Heart className="size-5" /> <span className="tnum">{e.hearts}</span></span>
+                )}
+                {mine > 0 ? <p className="text-sm font-semibold text-[#0f5c4f]"><Check className="mr-1 inline size-4" />You gave {formatCents(mine)}</p> : null}
+              </div>
               {open && data.signedIn ? (
                 <div className="mt-3 flex flex-wrap gap-2">
                   {[1, 5, 10].map((n) => (

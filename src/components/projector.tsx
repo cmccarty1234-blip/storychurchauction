@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import Image from 'next/image'
-import { Crown, Flame, Maximize2, Volume2, VolumeX, Zap } from 'lucide-react'
+import { Crown, Flame, Heart, Maximize2, Volume2, VolumeX, Zap } from 'lucide-react'
 import { GRACE_MS } from '@/lib/commercials'
 import { formatCents } from '@/lib/money'
 import { liveClock, mmss, secsUntil, useGameState, useTicker } from '@/lib/game-client'
@@ -354,7 +354,10 @@ function ChiliBoardView({ state, qr, joinUrl }: { state: GameState; qr?: string;
                   {i === 0 && e.cents > 0 ? <Crown className="mr-[calc(var(--u)*1)] inline size-[1em] align-[-0.1em] text-brand-yellow" /> : null}
                   #{e.number} {e.name}{e.cook ? <span className="font-normal text-white/60"> · {e.cook}</span> : null}
                 </p>
-                <p className="tnum shrink-0 font-heading text-[length:calc(var(--u)*3.2)] leading-none text-brand-yellow">{formatCents(e.cents)}</p>
+                <p className="flex shrink-0 items-center gap-[calc(var(--u)*2)]">
+                  {e.hearts > 0 ? <span className="tnum flex items-center gap-[calc(var(--u)*0.5)] text-[length:calc(var(--u)*2.2)] font-bold text-red-400"><Heart className="size-[1em] fill-red-500 text-red-500" />{e.hearts}</span> : null}
+                  <span className="tnum font-heading text-[length:calc(var(--u)*3.2)] leading-none text-brand-yellow">{formatCents(e.cents)}</span>
+                </p>
               </div>
               <div className="mt-[0.4vh] h-[2vh] overflow-hidden rounded-full bg-white/15">
                 <div className="h-full rounded-full bg-brand-yellow transition-all duration-1000" style={{ width: `${top > 0 ? Math.max(1.5, (e.cents / top) * 100) : 0}%` }} />
