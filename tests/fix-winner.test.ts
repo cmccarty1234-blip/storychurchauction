@@ -62,4 +62,14 @@ describe('fix the #109 winner', () => {
     await recordPaddleBid({ itemId: item.id, paddleNumber: 1031, amountCents: 33000, adminId: admin, idempotencyKey: key() })
     await expect(pool().query(sql)).rejects.toThrow(/higher bid/)
   })
+
+  it('works when the wrong bid was auto-accepted and has no admin on it', async () => {
+    await query('alter table live_accepted_bids disable trigger live_accepted_bids_immutable')
+    await query('alter table live_accepted_bids alter column entered_by_admin_id drop not null').catch(() => {})
+    await query(`update live_accepted_bids set entered_by_admin_id = null where item_id = $1 and amount_cents = 32000`, [item.id])
+    await query('alter table live_accepted_bids enable trigger live_accepted_bids_immutable')
+    await pool().query(sql)
+    expect(await top()).toMatchObject({ current_bid_cents: 32000, current_bidder_id: allison.id })
+    expect((await query('select 1 from live_bid_voids')).length).toBe(1)
+  })
 })

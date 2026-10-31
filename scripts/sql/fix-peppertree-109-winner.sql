@@ -28,6 +28,17 @@ begin
     raise exception 'A higher bid exists after the $320 - nothing was changed. Ask for help.';
   end if;
 
+  -- a phone bid that was auto-accepted has no admin on it: use the admin who entered another bid on this item, else any host or admin
+  if adm is null then
+    select entered_by_admin_id into adm from live_accepted_bids where item_id = it and entered_by_admin_id is not null order by seq desc limit 1;
+  end if;
+  if adm is null then
+    select id into adm from admin_users where role in ('admin', 'host') order by created_at limit 1;
+  end if;
+  if adm is null then
+    raise exception 'No admin account found to record this correction under - nothing was changed.';
+  end if;
+
   select id into old_wr from winning_results where item_id = it and voided_at is null;
   if old_wr is not null then
     select count(*) into n from payment_allocations a join payments p on p.id = a.payment_id where a.winning_result_id = old_wr and p.voided_at is null;
