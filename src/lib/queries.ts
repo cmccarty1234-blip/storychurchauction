@@ -66,13 +66,17 @@ function derive(r: any): ItemView {
   return { ...r, phase, min_next_cents: minNextBid(r) }
 }
 
-export async function listItems(eventId: string, opts: { kind?: 'silent' | 'live'; includeDraft?: boolean } = {}): Promise<ItemView[]> {
+/** Items still taking bids come first (open, then paused, then not-yet-open), and finished ones last. Keeps the usual order within each group. */
+const PHASE_RANK: Record<ItemPhase, number> = { open: 0, paused: 1, upcoming: 2, closed: 3 }
+
+export async function listItems(eventId: string, opts: { kind?: 'silent' | 'live'; includeDraft?: boolean; openFirst?: boolean } = {}): Promise<ItemView[]> {
   const rows = await query(
     `${SELECT} where i.event_id = $1 and ($2::text is null or i.kind = $2) and ($3 or i.status <> 'draft')
       order by i.kind, case when i.kind = 'live' then coalesce(i.live_order, 9999) end, i.item_number`,
     [eventId, opts.kind ?? null, !!opts.includeDraft],
   )
-  return rows.map(derive)
+  const items = rows.map(derive)
+  return opts.openFirst ? items.map((it, n) => ({ it, n })).sort((a, b) => PHASE_RANK[a.it.phase] - PHASE_RANK[b.it.phase] || a.n - b.n).map((x) => x.it) : items
 }
 
 export async function getItem(id: string, opts: { includeDraft?: boolean } = {}): Promise<ItemView | null> {

@@ -28,7 +28,7 @@ export default async function AdminItems({ searchParams }: { searchParams: Promi
   const kind = t === 'silent' || t === 'live' ? t : undefined
   const ev = await getEvent()
   await finalizeDueSilentItems()
-  const items = await listItems(ev.id, { kind, includeDraft: true })
+  const items = await listItems(ev.id, { kind, includeDraft: true, openFirst: true })
 
   const rows: ItemRow[] = items.map((i) => {
     const key = i.phase === 'closed' && i.status === 'open' ? 'closed' : i.status

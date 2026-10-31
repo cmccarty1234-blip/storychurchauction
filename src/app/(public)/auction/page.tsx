@@ -17,7 +17,7 @@ export default async function AuctionPage({ searchParams }: { searchParams: Prom
   const type = (await searchParams).type === 'live' ? 'live' : 'silent'
   const ev = await getEvent()
   await finalizeDueSilentItems()
-  const [bidder, live, items] = await Promise.all([getBidder(), currentLiveItem(ev.id), listItems(ev.id, { kind: type })])
+  const [bidder, live, items] = await Promise.all([getBidder(), currentLiveItem(ev.id), listItems(ev.id, { kind: type, openFirst: true })])
 
   // Which items has the signed-in guest bid on, and are they leading?
   const mine = new Map<string, 'leading' | 'outbid' | 'won'>()
