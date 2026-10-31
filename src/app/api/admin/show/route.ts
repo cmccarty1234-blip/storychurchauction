@@ -20,7 +20,7 @@ const Body = z.discriminatedUnion('action', [
   z.object({ action: z.literal('emergency-stop'), reason: z.string().max(200) }),
   z.object({ action: z.literal('emergency-release') }),
   z.object({ action: z.literal('announce'), headline: z.string().min(1).max(140), body: z.string().max(300).optional() }),
-  z.object({ action: z.literal('display'), mode: z.enum(['auto', 'dashboard', 'live', 'message', 'welcome', 'thanks', 'pie', 'chili', 'powerups']), message: z.string().max(200).optional() }),
+  z.object({ action: z.literal('display'), mode: z.enum(['auto', 'dashboard', 'live', 'message', 'welcome', 'thanks', 'pie', 'chili', 'powerups', 'howtobid']), message: z.string().max(200).optional() }),
   z.object({ action: z.literal('room-start'), code: z.enum(['lightning', 'jackpot', 'battle']), itemIds: z.array(uuid).optional(), prize: z.string().max(120).optional(), reward: z.string().max(120).optional(), seconds: z.number().int().optional() }),
   z.object({ action: z.literal('room-end'), sessionId: uuid }),
   z.object({ action: z.literal('pie-throw'), bidderNumber: z.number().int(), code: z.enum(['pie_small', 'pie_large']) }),

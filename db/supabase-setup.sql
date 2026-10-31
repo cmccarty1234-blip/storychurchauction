@@ -720,3 +720,11 @@ alter table chili_hearts enable row level security;
 
 insert into schema_migrations (name) values ('0013_chili_hearts.sql') on conflict do nothing;
 
+-- ════════════ 0014_howtobid_screen.sql ════════════
+-- A "How to bid" screen the host can put on the projector. Allows every screen name, so it is safe to run on its own.
+alter table events drop constraint events_display_mode_check;
+alter table events add constraint events_display_mode_check
+  check (display_mode in ('auto', 'dashboard', 'live', 'message', 'welcome', 'thanks', 'pie', 'chili', 'powerups', 'howtobid'));
+
+insert into schema_migrations (name) values ('0014_howtobid_screen.sql') on conflict do nothing;
+

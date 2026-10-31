@@ -185,6 +185,8 @@ export function Projector({ qr, chiliQr, joinUrl }: { qr: string; chiliQr?: stri
     main = <ChiliBoardView state={state} qr={chiliQr} joinUrl={joinUrl} />
   } else if (state.event.displayMode === 'powerups') {
     main = <PowerUpsScreen state={state} qr={qr} joinUrl={joinUrl} />
+  } else if (state.event.displayMode === 'howtobid') {
+    main = <HowToBidScreen state={state} qr={qr} joinUrl={joinUrl} />
   } else if (room?.code === 'lightning') {
     main = <LightningView state={state} now={t} />
   } else if (room?.code === 'battle') {
@@ -573,6 +575,46 @@ function PowerUpsScreen({ state, qr, joinUrl }: { state: GameState; qr: string; 
         })}
       </div>
       <p className="text-center text-[length:calc(var(--u)*1.6)] font-bold text-white/80">Open <b className="text-brand-yellow">Live ⚡</b> on your phone → <b className="text-brand-yellow">My Power-Ups</b> → <b className="text-brand-yellow">Use</b>. A Power-Up never wins by itself — you still have to out-bid.</p>
+    </div>
+  )
+}
+
+/** How to bid, for the host to talk through from the stage. */
+function HowToBidScreen({ state, qr, joinUrl }: { state: GameState; qr: string; joinUrl: string }) {
+  const close = clockTime(state.event.silentCloseAt, state.event.timezone)
+  const cards = [
+    { icon: '📱', big: close ?? '', color: '#f5c518', tag: 'BID FROM YOUR PHONE', name: 'SILENT AUCTION', lines: ['Scan the QR on the item card, or open the site and tap Auction.', 'Check the current bid and the minimum, then tap Place bid. Wait for the green message.'], note: `Outbid? The page tells you. Bid again any time${close ? ` until ${close}` : ''}.` },
+    { icon: '🙋', big: 'LIVE', color: '#fb923c', tag: 'RAISE YOUR PADDLE', name: 'LIVE AUCTION', lines: ['Your bidder number is your paddle number. Raise your paddle and the clerk enters it.', 'Or tap Live ⚡ on your phone, type your bid and tap Bid.'], note: 'Every bid restarts the countdown. After zero, a 5-minute Last Chance window.' },
+    { icon: '🤝', big: 'HELP', color: '#4ade80', tag: 'WE BID FOR YOU', name: 'NO PHONE? NO PROBLEM', lines: ['Go to the Bid Desk, or wave down a runner. A volunteer places your bid on their phone.', 'Tell them your paddle number, the item number and the amount.'], note: 'Bids are binding. Check the green confirmation.' },
+  ]
+  return (
+    <div className="flex min-h-0 flex-1 flex-col gap-[calc(var(--u)*1.2)] p-[calc(var(--u)*2)]">
+      <div className="flex items-end justify-between gap-[calc(var(--u)*3)]">
+        <div>
+          <p className="font-heading text-[length:calc(var(--u)*5)] leading-none text-brand-yellow">HOW TO BID</p>
+          <p className="mt-[0.4vh] text-[length:calc(var(--u)*1.8)] font-bold text-white/80">Two ways to bid tonight, and help if you don’t have a phone.</p>
+        </div>
+        <div className="flex items-center gap-[calc(var(--u)*1.5)] rounded-2xl bg-brand-yellow px-[calc(var(--u)*1.6)] py-[calc(var(--u)*0.8)] text-ink">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={qr} alt="" className="size-[calc(var(--u)*5.5)] rounded-lg bg-white p-[0.4vh]" />
+          <p className="text-[length:calc(var(--u)*1.4)] font-black leading-tight">Scan to register<br /><span className="font-bold">{joinUrl.replace(/^https?:\/\//, '')}</span></p>
+        </div>
+      </div>
+      <div className="grid min-h-0 flex-1 grid-cols-3 gap-[calc(var(--u)*1.6)]">
+        {cards.map((c) => (
+          <div key={c.name} className="sc-pop flex min-h-0 flex-col gap-[calc(var(--u)*0.5)] overflow-hidden rounded-3xl border-[calc(var(--u)*0.3)] bg-white/5 p-[calc(var(--u)*1.5)]" style={{ borderColor: c.color, boxShadow: `0 0 60px ${c.color}40` }}>
+            <div className="flex items-center justify-between">
+              <span className="text-[length:calc(var(--u)*5.5)] leading-none">{c.icon}</span>
+              <span className="tnum font-heading text-[length:calc(var(--u)*4.4)] leading-none" style={{ color: c.color }}>{c.big}</span>
+            </div>
+            <p className="text-[length:calc(var(--u)*1.3)] font-black tracking-[0.22em]" style={{ color: c.color }}>{c.tag}</p>
+            <p className="font-heading text-[length:calc(var(--u)*2.4)] leading-none">{c.name}</p>
+            {c.lines.map((l) => <p key={l} className="text-[length:calc(var(--u)*1.55)] font-semibold leading-snug text-white/90">{l}</p>)}
+            <p className="mt-auto text-[length:calc(var(--u)*1.25)] font-bold text-white/60">{c.note}</p>
+          </div>
+        ))}
+      </div>
+      <p className="text-center text-[length:calc(var(--u)*1.6)] font-bold text-white/80">First, register: scan the code to get a <b className="text-brand-yellow">bidder number and a PIN</b>. When you win, pay in the app or at the <b className="text-brand-yellow">checkout table</b>.</p>
     </div>
   )
 }
