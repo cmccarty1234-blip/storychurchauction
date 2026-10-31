@@ -1,8 +1,8 @@
 -- Reopens every silent item that ended with NO bids, until the closing time below. Items that got a bid are never touched.
--- CHANGE THE TIME on the line marked  <<< HERE  if you want a different closing time (keep the -06 for Mountain time, daylight saving ended Nov 1).
+-- The new closing time is 30 minutes from the moment you run it. Change the number on the line marked  <<< HERE  for a different length.
 do $$
 declare
-  new_close timestamptz := '2026-10-30 21:00:00-06';   -- <<< HERE: 9:00 PM tonight
+  new_close timestamptz := now() + interval '30 minutes';   -- <<< HERE: closes 30 minutes from now
   ev uuid; n int;
 begin
   if new_close <= now() then

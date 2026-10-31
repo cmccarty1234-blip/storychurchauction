@@ -4,8 +4,8 @@ import { one, pool, query } from '@/lib/db'
 import { placeSilentBid } from '@/lib/bidding'
 import { key, makeBidders, makeEvent, makeItem, resetDb } from './helpers'
 
-// the script's time is tonight's 9 PM; tests need one that is still in the future
-const sql = readFileSync('scripts/sql/reopen-unbid-silent-items.sql', 'utf8').replace("'2026-10-30 21:00:00-06'", "now() + interval '2 hours'")
+// the script closes the items 30 minutes from now; the test uses a longer window so it can check the time was applied
+const sql = readFileSync('scripts/sql/reopen-unbid-silent-items.sql', 'utf8').replace("now() + interval '30 minutes'", "now() + interval '2 hours'")
 
 let ev: { id: string }
 beforeEach(async () => {
@@ -38,7 +38,7 @@ describe('reopen silent items with no bids', () => {
 
   it('refuses a closing time that has already passed', async () => {
     await makeItem(ev.id, { num: 4, title: 'No bids', status: 'finalized' })
-    const past = readFileSync('scripts/sql/reopen-unbid-silent-items.sql', 'utf8').replace("'2026-10-30 21:00:00-06'", "now() - interval '1 hour'")
+    const past = readFileSync('scripts/sql/reopen-unbid-silent-items.sql', 'utf8').replace("now() + interval '30 minutes'", "now() - interval '1 hour'")
     await expect(pool().query(past)).rejects.toThrow(/already passed/)
   })
 })
